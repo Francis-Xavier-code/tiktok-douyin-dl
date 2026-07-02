@@ -78,3 +78,13 @@ tiktok-dl "Share text or link" [output_directory]
 
 ## ⚖️ Disclaimer
 By downloading or using this software, you agree that it is strictly for educational, academic, and web-testing purposes. Commercial use or illegal scraping is strictly prohibited. You are solely responsible for any copyright or legal disputes arising from its use.
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=Xynrin%2Ftiktok-douyin-dl&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Xynrin/tiktok-douyin-dl&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Xynrin/tiktok-douyin-dl&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Xynrin/tiktok-douyin-dl&type=date&legend=top-left" />
+ </picture>
+</a>
