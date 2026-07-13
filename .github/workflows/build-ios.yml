@@ -1,0 +1,53 @@
+name: Build iOS App
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios/**"
+      - ".github/workflows/build-ios.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - ".github/workflows/build-ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-simulator:
+    name: Build iOS Simulator App
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+
+      - name: Build without code signing
+        run: |
+          xcodebuild \
+            -project ios/MediaDownloader.xcodeproj \
+            -scheme MediaDownloader \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package Simulator app
+        run: |
+          app_path="$(find ~/Library/Developer/Xcode/DerivedData -path '*Release-iphonesimulator/MediaDownloader.app' -print -quit)"
+          test -n "$app_path"
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" artifacts/MediaDownloader-iOS-simulator.app.zip
+
+      - name: Upload Simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediaDownloader-iOS-simulator
+          path: artifacts/MediaDownloader-iOS-simulator.app.zip
+          if-no-files-found: error
+          retention-days: 14

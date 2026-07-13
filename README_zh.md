@@ -36,6 +36,9 @@
 3. *语言切换：* 安装后在主界面点击“🌐 Language / 语言”即可一键重启切换。
 4. *可选：* 如果你偏好命令行，也可以在同页面直接下载 `douyin-dl.exe` 或 `tiktok-dl.exe`。
 
+### 📱 iOS 客户端
+原生 SwiftUI 客户端位于 [`ios/MediaDownloader.xcodeproj`](ios/MediaDownloader.xcodeproj)：可将可直连媒体保存至“文件”App，并在 App 内使用本仓库的 Docker WebUI 解析抖音/TikTok 分享链接。请在 macOS 上使用 Xcode 16+ 打开，最低支持 iOS 17；部署与签名说明见 [`ios/README.md`](ios/README.md)。
+
 ### 🐳 NAS 玩家 (飞牛 OS / Docker WebUI)
 如果你拥有 NAS 设备（如 飞牛 OS），直接在设备上新建一个自定义应用（Docker Compose），贴入以下代码一键启动服务：
 ```yaml

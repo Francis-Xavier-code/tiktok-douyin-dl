@@ -28,6 +28,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
 from playwright.sync_api import sync_playwright
+from i18n import translate
 
 # 禁用全局 SSL 证书验证，防止本地 CA 证书缺失导致网络请求失败
 try:
@@ -35,8 +36,9 @@ try:
 except AttributeError:
     pass
 
-# 强制设置浏览器路径为用户的全局缓存目录，防止打包后寻找 tmp 目录而崩溃
-os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.expanduser('~/.cache/ms-playwright')
+# 强制设置浏览器路径为用户的全局缓存目录，防止打包后寻找 tmp 目录而崩溃（仅在未预设时设置）
+if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
+    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.expanduser('~/.cache/ms-playwright')
 
 # ============================================================================
 # 修复 Windows 环境下子进程（如下载 Playwright 时）弹出 CMD 黑框的问题
@@ -160,8 +162,7 @@ def _mkdir_with_fallback(path: str, log_queue=None, lang: str = "zh") -> str:
         fallback = os.path.join(temp_root, basename)
         os.makedirs(fallback, exist_ok=True)
         if log_queue is not None:
-            msg_tpl = "输出目录 {orig} 不可用，已回退到临时目录：{fallback}" if lang == "zh" \
-                else "Output path {orig} inaccessible, falling back to: {fallback}"
+            msg_tpl = translate("gui.run.fallback_directory", locale=lang, orig=path, fallback=fallback)
             try:
                 log_queue.put(("log", "warning", msg_tpl.format(orig=path, fallback=fallback)))
             except Exception:
@@ -233,36 +234,18 @@ class _GuiLogWriter:
 
 
 # ============================================================================
-# 文案（中英双语，根据 get_lang() 选择）
+# 文案通过 locales/{zh,en}.json 和 i18n.translate() 读取。
 # ============================================================================
-
-_GUI_STRINGS = {
-    "zh": {
-        "no_links": "未检测到链接，请粘贴含有抖音或 TikTok 链接的文本后重试。",
-        "found_links": "共解析到 {n} 个链接，开始下载...",
-        "progress_text": "下载进度：{cur}/{total}（成功 {ok}，失败 {fail}）",
-        "done_summary": "全部下载完成（成功 {ok} | 失败 {fail}）",
-        "cancelled_summary": "下载已取消（成功 {ok} | 失败 {fail}）",
-        "path_info": "存放目录：{path}",
-        "error_prefix": "[错误] ",
-    },
-    "en": {
-        "no_links": "No links detected. Please paste text containing Douyin or TikTok URLs and try again.",
-        "found_links": "Parsed {n} URLs, starting download...",
-        "progress_text": "Progress: {cur}/{total} (success {ok}, failed {fail})",
-        "done_summary": "Download complete (Success: {ok} | Failed: {fail})",
-        "cancelled_summary": "Download cancelled (Success: {ok} | Failed: {fail})",
-        "path_info": "Saved to: {path}",
-        "error_prefix": "[ERROR] ",
-    },
-}
-
 
 def _current_lang() -> str:
     try:
         return get_lang()
     except Exception:
         return "zh"
+
+
+def _run_text(key: str, lang: str, **variables) -> str:
+    return translate(f"gui.run.{key}", locale=lang, **variables)
 
 
 # ============================================================================
@@ -312,11 +295,9 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
         try:
             actual_output_dir = _mkdir_with_fallback(output_dir, log_queue, lang)
         except Exception as e:
-            err_msg = _GUI_STRINGS[lang].get("error_prefix", "") + str(e)
+            err_msg = _run_text("error_prefix", lang) + str(e)
             _send_log(log_queue, "error", err_msg)
-            hint = "提示：请尝试点击『浏览』选择其他目录（如 D:\\下载 或 文档）" \
-                if lang == "zh" else "Hint: Click 'Browse' to choose another directory (e.g. Documents)"
-            _send_log(log_queue, "warning", hint)
+            _send_log(log_queue, "warning", _run_text("change_directory_hint", lang))
             _send_done(log_queue, 0, 0, False, output_dir)
             return
 
@@ -325,7 +306,7 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
             module = get_module(platform)
         except Exception as e:
             _send_log(log_queue, "error",
-                      _GUI_STRINGS[lang].get("error_prefix", "") + str(e))
+                      _run_text("error_prefix", lang) + str(e))
             _send_done(log_queue, 0, 0, False, actual_output_dir)
             return
 
@@ -339,31 +320,25 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
         try:
             urls = extract_unique_urls(module, raw_text)
         except Exception as e:
-            _send_log(log_queue, "error", f"链接解析失败: {e}")
+            _send_log(log_queue, "error", _run_text("url_parse_failed", lang, error=e))
             _send_done(log_queue, 0, 0, False, actual_output_dir)
             return
         total = len(urls)
 
         if total == 0:
-            _send_log(log_queue, "info", _GUI_STRINGS[lang]["no_links"])
-            hint2 = "提示：请粘贴含有 URL 或分享文本的内容（每行一个，或整段分享语）" \
-                if lang == "zh" else "Hint: Paste content containing URLs (one per line or full share message)"
-            _send_log(log_queue, "warning", hint2)
+            _send_log(log_queue, "info", _run_text("no_links", lang))
+            _send_log(log_queue, "warning", _run_text("no_links_hint", lang))
             _send_progress(log_queue, 0, 0)
             _send_done(log_queue, 0, 0, False, actual_output_dir)
             return
 
-        _send_log(log_queue, "info", _GUI_STRINGS[lang]["found_links"].format(n=total))
-        _send_log(log_queue, "info",
-                  ("保存位置：" if lang == "zh" else "Saved to: ") + actual_output_dir)
+        _send_log(log_queue, "info", _run_text("found_links", lang, count=total))
+        _send_log(log_queue, "info", _run_text("saved_to", lang, path=actual_output_dir))
         _send_progress(log_queue, 0, total)
 
         # 5. Playwright 启动 + 逐个链接下载
         # 启动前给个提示，因为浏览器下载可能比较慢
-        _send_log(log_queue, "info",
-                  ("正在初始化浏览器（首次运行会自动下载，约需 1-3 分钟，请耐心等待）..."
-                   if lang == "zh"
-                   else "Initializing browser (first run auto-downloads Chromium, may take 1-3 min)..."))
+        _send_log(log_queue, "info", _run_text("browser_initializing", lang))
 
         browser = None
         try:
@@ -371,33 +346,26 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
                 try:
                     module.ensure_browser_installed(p)
                 except Exception as e:
-                    _send_log(log_queue, "error",
-                              f"{'浏览器安装失败' if lang == 'zh' else 'Browser install failed'}: {e}")
-                    hint3 = "提示：请运行 'python -m playwright install chromium' 手动安装" \
-                        if lang == "zh" else "Hint: Run 'python -m playwright install chromium' to install"
-                    _send_log(log_queue, "warning", hint3)
+                    _send_log(log_queue, "error", _run_text("browser_install_failed", lang, error=e))
+                    _send_log(log_queue, "warning", _run_text("browser_install_hint", lang))
                     _send_done(log_queue, 0, 0, False, actual_output_dir)
                     return
 
                 try:
                     browser = p.chromium.launch(headless=True)
                 except Exception as e:
-                    _send_log(log_queue, "error",
-                              f"{'浏览器启动失败' if lang == 'zh' else 'Browser launch failed'}: {e}")
+                    _send_log(log_queue, "error", _run_text("browser_launch_failed", lang, error=e))
                     _send_done(log_queue, 0, 0, False, actual_output_dir)
                     return
 
-                _send_log(log_queue, "info",
-                          ("浏览器就绪，开始下载..." if lang == "zh"
-                           else "Browser ready, starting download..."))
+                _send_log(log_queue, "info", _run_text("browser_ready", lang))
 
                 for i, url in enumerate(urls, 1):
                     # 取消检测
                     if cancel_event is not None and cancel_event.is_set():
                         cancelled = True
                         _send_log(log_queue, "warning",
-                                  _GUI_STRINGS[lang]["cancelled_summary"].format(
-                                      ok=success, fail=fail))
+                                  _run_text("cancelled_summary", lang, success=success, failed=fail))
                         break
 
                     try:
@@ -408,8 +376,8 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
                             fail += 1
                     except Exception as e:
                         fail += 1
-                        _send_log(log_queue, "error",
-                                  f"{'下载出错' if lang == 'zh' else 'Download error'} [{i}/{total}]: {e}")
+                        _send_log(log_queue, "error", _run_text(
+                            "download_error", lang, current=i, total=total, error=e))
 
                     _send_progress(log_queue, i, total)
         finally:
@@ -422,9 +390,9 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
         # 6. 完成日志
         summary_key = "cancelled_summary" if cancelled else "done_summary"
         _send_log(log_queue, "info",
-                  _GUI_STRINGS[lang][summary_key].format(ok=success, fail=fail))
+                  _run_text(summary_key, lang, success=success, failed=fail))
         _send_log(log_queue, "info",
-                  _GUI_STRINGS[lang]["path_info"].format(path=os.path.abspath(actual_output_dir)))
+                  _run_text("path_info", lang, path=os.path.abspath(actual_output_dir)))
 
     except Exception as e:
         # 异常分支：发送错误日志
@@ -432,7 +400,7 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
             sys.stdout = original_stdout
         except Exception:
             pass
-        err_text = _GUI_STRINGS[lang].get("error_prefix", "") + str(e)
+        err_text = _run_text("error_prefix", lang) + str(e)
         _send_log(log_queue, "error", err_text)
 
     finally:
@@ -463,117 +431,11 @@ def start_download_thread(platform: str, raw_text: str, output_dir: str,
 
 
 # ============================================================================
-# GUI 界面文案（中/英）
-# ============================================================================
-
-_GUI_DISCLAIMER_ZH = """================================================================================
-                                【 免 责 声 明 】
-================================================================================
- 1. 【核心定位与技术本质】本工具仅作为网络自动化测试、前端渲染解析及编程学习的纯技术演示项目。
-    本软件不提供、不存储、不分发任何媒体数据，仅为模拟用户在公开网络环境下的常规浏览器行为。
- 2. 【禁止非法与商业用途】本软件及源代码严禁用于任何形式的商业盈利、代下载服务、批量刷量、恶意攻击
-    或其他任何破坏网络生态及违反国家法律法规的行为。用户仅可用于个人私下的学习与合规技术验证。
- 3. 【版权与知识产权免责】本软件运行中解析的数据均直接来源于目标平台公开页面。所有媒体资源知识产权
-    归属于原作者或相关版权方。用户有义务在测试后24小时内销毁数据，严禁未经授权的传播或商用。
-    作者对用户的任何侵权行为不承担连带赔偿责任。
- 4. 【风控与账号安全免责】由于目标平台存在风控机制，频繁调用可能触发警报导致账号限流、IP被封禁。
-    本软件不承诺规避上述风险，因使用本软件导致的任何账号财产损失或服务限制，由用户自行承担一切后果。
- 5. 【绝对的免责与开发者权利】本软件按"原样"（AS IS）免费提供，不附带任何明示或暗示的担保。
-    本软件作者及其合法授权团队不对因使用本软件造成的任何直接或间接损害承担责任，并在合法合规
-    的前提下保留自主使用或研究本核心技术的权利。
- 
- * 任何运行本软件的行为，即视为您已无条件接受本声明的所有条款并承诺自行承担100%独立法律责任。
-================================================================================"""
-
-_GUI_DISCLAIMER_EN = """================================================================================
-                                【 DISCLAIMER 】
-================================================================================
- 1. [Core Purpose] This tool is purely a technical demonstration for web automation testing, frontend
-    parsing, and programming learning. It simulates normal browser behavior in public networks.
- 2. [Prohibited Uses] Commercial use, proxy downloading, malicious scraping, or any illegal activities
-    are strictly prohibited. Users must only use this tool for personal learning and compliance testing.
- 3. [Copyright Exemption] All parsed data originates from public pages. Intellectual property rights
-    belong to the original creators. Users must destroy data within 24 hours. Unauthorized commercial
-    use is forbidden. The author bears no liability for user infringement.
- 4. [Risk & Account Safety] Frequent requests may trigger platform anti-bot mechanisms, leading to IP
-    bans or account restrictions. The user assumes all consequences and liabilities.
- 5. [Absolute Exemption & Dev Rights] Provided "AS IS" with no warranties. The author is not liable
-    for any damages. The creator/author reserves the right to use this tool for legal research.
- 
- * Running this software constitutes unconditional acceptance of this legally binding disclaimer.
-================================================================================"""
-
-
-_GUI_UI_STRINGS = {
-    "zh": {
-        "disclaimer_title": "免责声明",
-        "agree_check": "我已阅读并同意以上免责声明",
-        "dont_show": "不再提示",
-        "continue_btn": "继续",
-        "exit_btn": "退出",
-        "must_agree": "请先勾选『我已阅读并同意以上免责声明』后再继续。",
-        "app_title": "抖音 / TikTok 批量下载器",
-        "platform_label": "平台：",
-        "platform_douyin": "抖音 (Douyin)",
-        "platform_tiktok": "TikTok",
-        "links_label": "链接 / 分享文本：",
-        "path_label": "保存路径：",
-        "browse_btn": "浏览",
-        "browse_title": "选择输出目录",
-        "start_btn": "开始下载",
-        "cancel_btn": "取消下载",
-        "open_dir_btn": "打开输出目录",
-        "status_ready": "就绪",
-        "status_downloading": "下载中...",
-        "status_cancelled": "已取消",
-        "status_done": "完成（成功 {ok} | 失败 {fail}）",
-        "empty_path": "输出目录为空，已使用默认路径：{path}",
-        "path_not_found": "目录不存在，已创建：{path}",
-        "no_output_path": "请先设置或开始下载以生成输出目录。",
-        "open_dir_error": "无法打开目录：{err}",
-        "cancel_log": "正在取消...",
-    },
-    "en": {
-        "disclaimer_title": "Disclaimer",
-        "agree_check": "I have read and agree to the above disclaimer",
-        "dont_show": "Don't show again",
-        "continue_btn": "Continue",
-        "exit_btn": "Exit",
-        "must_agree": "Please check 'I have read and agree to the above disclaimer' to continue.",
-        "app_title": "Douyin / TikTok Batch Downloader",
-        "platform_label": "Platform:",
-        "platform_douyin": "Douyin",
-        "platform_tiktok": "TikTok",
-        "links_label": "Links / Share text:",
-        "path_label": "Save to:",
-        "browse_btn": "Browse",
-        "browse_title": "Select output folder",
-        "start_btn": "Start Download",
-        "cancel_btn": "Cancel Download",
-        "open_dir_btn": "Open Output Folder",
-        "status_ready": "Ready",
-        "status_downloading": "Downloading...",
-        "status_cancelled": "Cancelled",
-        "status_done": "Done (Success: {ok} | Failed: {fail})",
-        "empty_path": "Output path is empty. Using default path: {path}",
-        "path_not_found": "Directory does not exist, created: {path}",
-        "no_output_path": "Please set an output path or start a download first.",
-        "open_dir_error": "Failed to open folder: {err}",
-        "cancel_log": "Cancelling...",
-    },
-}
-
-
-def _t(key: str) -> str:
-    """读取 GUI 文案（中/英）。"""
-    lang = "zh"
-    try:
-        lang = get_lang()
-    except Exception:
-        lang = "zh"
-    if lang not in _GUI_UI_STRINGS:
-        lang = "zh"
-    return _GUI_UI_STRINGS[lang].get(key, key)
+def _t(key: str, **variables) -> str:
+    """Read a GUI string from the shared JSON translation catalog."""
+    if "err" in variables and "error" not in variables:
+        variables["error"] = variables["err"]
+    return translate(f"gui.ui.{key}", locale=_current_lang(), **variables)
 
 
 # ============================================================================
@@ -629,12 +491,7 @@ class DisclaimerDialog(tk.Toplevel):
     def _build_ui(self):
         pad = {"padx": 10, "pady": 6}
 
-        lang = "zh"
-        try:
-            lang = get_lang()
-        except Exception:
-            lang = "zh"
-        disclaimer_text = _GUI_DISCLAIMER_ZH if lang != "en" else _GUI_DISCLAIMER_EN
+        disclaimer_text = _t("disclaimer_text")
 
         text_frame = ttk.Frame(self)
         text_frame.pack(fill="both", expand=True, padx=12, pady=(12, 4))
@@ -814,7 +671,7 @@ class App(tk.Tk):
         self._open_dir_btn = ttk.Button(row4, text=_t("open_dir_btn"), command=self._on_open_dir)
         self._open_dir_btn.pack(side="left", padx=(8, 0))
         
-        self._about_btn = ttk.Button(row4, text="关于 / 更新", command=self._show_about)
+        self._about_btn = ttk.Button(row4, text=_t("about_title"), command=self._show_about)
         self._about_btn.pack(side="right")
         
         def _toggle_lang():
@@ -822,13 +679,13 @@ class App(tk.Tk):
             new_lang = "en" if cfg.get("lang", "zh") == "zh" else "zh"
             cfg["lang"] = new_lang
             save_config(cfg)
-            if messagebox.askyesno("切换语言 / Language", "语言已更改，需要重启软件才能完全生效。是否立即重启？\nLanguage changed. Restart now?", parent=self):
+            if messagebox.askyesno(_t("language_restart_title"), _t("language_restart_message"), parent=self):
                 self.destroy()
                 import os
                 import sys
                 os.execl(sys.executable, sys.executable, *sys.argv)
                 
-        self._lang_btn = ttk.Button(row4, text="🌐 Language / 语言", command=_toggle_lang)
+        self._lang_btn = ttk.Button(row4, text=_t("language_button"), command=_toggle_lang)
         self._lang_btn.pack(side="right", padx=(0, 8))
 
         # 进度条行
@@ -902,7 +759,7 @@ class App(tk.Tk):
             
         import webbrowser
         about_win = tk.Toplevel(self)
-        about_win.title("关于")
+        about_win.title(_t("about_title"))
         about_win.geometry("350x280")
         about_win.resizable(False, False)
         about_win.transient(self)
@@ -915,16 +772,16 @@ class App(tk.Tk):
         about_win.geometry(f"+{max(0, x)}+{max(0, y)}")
 
         ttk.Label(about_win, text="MediaDownloader", font=("", 16, "bold")).pack(pady=(20, 5))
-        ttk.Label(about_win, text=f"当前版本: {version}").pack(pady=2)
-        ttk.Label(about_win, text="基于 Playwright 的无水印批量下载器").pack(pady=(10, 2))
+        ttk.Label(about_win, text=_t("about_version", version=version)).pack(pady=2)
+        ttk.Label(about_win, text=_t("about_description")).pack(pady=(10, 2))
 
         # 仓库链接
-        repo_link = ttk.Label(about_win, text="🔗 项目主页: GitHub 仓库", foreground="#58a6ff", cursor="hand2")
+        repo_link = ttk.Label(about_win, text=_t("project_home"), foreground="#58a6ff", cursor="hand2")
         repo_link.pack(pady=4)
         repo_link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/Xynrin/tiktok-douyin-dl"))
 
         # 作者链接
-        author_link = ttk.Label(about_win, text="👨‍💻 作者: Xynrin", foreground="#58a6ff", cursor="hand2")
+        author_link = ttk.Label(about_win, text=_t("author"), foreground="#58a6ff", cursor="hand2")
         author_link.pack(pady=4)
         author_link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/Xynrin"))
 
@@ -934,9 +791,9 @@ class App(tk.Tk):
                 import auto_updater
                 auto_updater.check_for_updates(self, silent=False)
             except ImportError:
-                messagebox.showerror("错误", "自动更新模块未找到！", parent=self)
+                messagebox.showerror(_t("app_title"), _t("update_module_missing"), parent=self)
 
-        ttk.Button(about_win, text="检查更新", command=_do_update).pack(pady=(20, 10))
+        ttk.Button(about_win, text=_t("check_update"), command=_do_update).pack(pady=(20, 10))
 
     # ------------------------------------------------------------------ 事件处理
 
@@ -1010,14 +867,14 @@ class App(tk.Tk):
             if not path:
                 platform = self._current_platform()
                 path = get_default_output_dir(platform)
-                self._log_append("warning", _t("empty_path").format(path=path))
+                self._log_append("warning", _t("empty_path", path=path))
             try:
                 os.makedirs(path, exist_ok=True)
             except Exception as e:
-                self._log_append("error", _t("open_dir_error").format(err=str(e)))
+                self._log_append("error", _t("open_dir_error", error=str(e)))
                 return
             if not os.path.isdir(path):
-                self._log_append("error", _t("open_dir_error").format(err="not a directory"))
+                self._log_append("error", _t("open_dir_error", error="not a directory"))
                 return
             try:
                 if os.name == "nt":
@@ -1029,10 +886,10 @@ class App(tk.Tk):
                     import subprocess
                     subprocess.Popen(["xdg-open", path])
             except Exception as e:
-                self._log_append("error", _t("open_dir_error").format(err=str(e)))
+                self._log_append("error", _t("open_dir_error", error=str(e)))
         except Exception as e:
             try:
-                self._log_append("error", _t("open_dir_error").format(err=str(e)))
+                self._log_append("error", _t("open_dir_error", error=str(e)))
             except Exception:
                 pass
 
@@ -1055,7 +912,7 @@ class App(tk.Tk):
             if not output_dir:
                 output_dir = get_default_output_dir(platform)
                 self._output_dir_var.set(output_dir)
-                self._log_append("warning", _t("empty_path").format(path=output_dir))
+                self._log_append("warning", _t("empty_path", path=output_dir))
             else:
                 # 用户已修改目录，保存到配置
                 try:
@@ -1165,7 +1022,7 @@ class App(tk.Tk):
                 if cancelled:
                     status_text = _t("status_cancelled")
                 else:
-                    status_text = _t("status_done").format(ok=success, fail=fail)
+                    status_text = _t("status_done", ok=success, fail=fail)
                 try:
                     self._status_label.configure(text=status_text)
                 except Exception:
@@ -1248,4 +1105,3 @@ if __name__ == "__main__":
             messagebox.showerror(_t("app_title"), str(e))
         except Exception:
             print(f"[ERROR] {e}")
-

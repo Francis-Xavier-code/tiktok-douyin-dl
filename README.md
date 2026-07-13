@@ -38,6 +38,9 @@ Available as a **Modern Windows GUI app** with one-click installation, and an **
 3. *Language Switch:* Click the "🌐 Language / 语言" button in the app to switch languages and restart instantly.
 4. *Optional:* Download the standalone `douyin-dl.exe` or `tiktok-dl.exe` if you prefer the CLI.
 
+### 📱 iOS Companion App
+The native SwiftUI client lives in [`ios/MediaDownloader.xcodeproj`](ios/MediaDownloader.xcodeproj). It saves direct media URLs to the Files app and embeds this repository's Docker WebUI for TikTok/Douyin share-link parsing. Open it with Xcode 16+ on macOS; it requires iOS 17 or later. See [`ios/README.md`](ios/README.md) for deployment and signing notes.
+
 ### 🐳 NAS Users (FeiNiu OS / Docker WebUI)
 If you have a NAS device, create a Custom App (Docker Compose) and paste the following configuration:
 ```yaml
