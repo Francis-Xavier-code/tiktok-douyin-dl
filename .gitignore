@@ -35,3 +35,14 @@ scratch/
 *.js
 
 scratch/tiktok_data.json
+
+# Playwright local browsers cache
+ms-playwright/
+
+# Packaged standalone setups and ZIP archives
+*.zip
+*.exe
+!app.ico
+
+# Test extract directories
+test_extract/
