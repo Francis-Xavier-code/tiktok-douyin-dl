@@ -40,7 +40,7 @@ struct DownloadFormView: View {
                 }
                 .disabled(shareText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || downloadStore.isDownloading)
             } footer: {
-                Text("此模式只保存服务器直接提供的视频、图片或音频。抖音和 TikTok 分享链接的完整解析，请使用已部署的 Docker WebUI。")
+                Text("免责声明：本软件仅用于个人合规的学习与测试。因使用本软件下载媒体文件所引致的任何版权争议或法律责任，均由使用者本人承担。请尊重原作者的知识产权。")
             }
         }
         .navigationTitle("新建下载")

@@ -17,6 +17,8 @@ dist/
 # PyCharm / IDE settings
 .idea/
 .vscode/
+xcuserdata/
+*.xcuserstate
 
 # Download outputs
 douyin_downloads/
@@ -33,6 +35,7 @@ scratch/
 *.html
 *.json
 *.js
+!ios/MediaDownloader/Assets.xcassets/**/Contents.json
 
 scratch/tiktok_data.json
 

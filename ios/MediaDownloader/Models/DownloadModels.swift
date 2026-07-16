@@ -74,11 +74,18 @@ final class DownloadStore {
             )
 
             do {
-                let savedFileURL = try await MediaDownloadService.downloadDirectMedia(from: sourceURL)
-                update(id: recordID, state: .completed, savedFileURL: savedFileURL)
+                let savedFileURLs = try await MediaDownloadService.downloadDirectMedia(from: sourceURL)
+                update(id: recordID, state: .completed, savedFileURL: savedFileURLs.first)
+                await DownloadPostProcessingService.processDownloadedFiles(savedFileURLs)
             } catch {
                 update(id: recordID, state: .failed(error.localizedDescription), savedFileURL: nil)
             }
+        }
+    }
+
+    func removeLocalFileReference(to fileURL: URL) {
+        for index in records.indices where records[index].savedFileURL == fileURL {
+            records[index].savedFileURL = nil
         }
     }
 

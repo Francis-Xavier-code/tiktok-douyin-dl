@@ -10,8 +10,14 @@
 		A00100010000000000000002 /* DownloadModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000002 /* DownloadModels.swift */; };
 		A00100010000000000000003 /* MediaDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000003 /* MediaDownloadService.swift */; };
 		A00100010000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000004 /* ContentView.swift */; };
-		A00100010000000000000005 /* DownloadFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00210000000000000000005 /* DownloadFormView.swift */; };
+		A00100010000000000000005 /* DownloadFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000005 /* DownloadFormView.swift */; };
 		A00100010000000000000006 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000006 /* SettingsView.swift */; };
+		A00100010000000000000007 /* NativeMediaScraper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000008 /* NativeMediaScraper.swift */; };
+		A00100010000000000000008 /* LocalFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000009 /* LocalFilesView.swift */; };
+		A00100010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000010 /* Assets.xcassets */; };
+		A00100010000000000000010 /* AppUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000011 /* AppUpdateService.swift */; };
+		A00100010000000000000011 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000012 /* LaunchScreen.storyboard */; };
+		A00100010000000000000012 /* DownloadPostProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000013 /* DownloadPostProcessingService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +28,12 @@
 		A00200010000000000000005 /* DownloadFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadFormView.swift; sourceTree = "<group>"; };
 		A00200010000000000000006 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A00200010000000000000007 /* MediaDownloader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaDownloader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00200010000000000000008 /* NativeMediaScraper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMediaScraper.swift; sourceTree = "<group>"; };
+		A00200010000000000000009 /* LocalFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFilesView.swift; sourceTree = "<group>"; };
+		A00200010000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A00200010000000000000011 /* AppUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateService.swift; sourceTree = "<group>"; };
+		A00200010000000000000012 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		A00200010000000000000013 /* DownloadPostProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadPostProcessingService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +61,8 @@
 				A00400010000000000000003 /* Models */,
 				A00400010000000000000004 /* Services */,
 				A00410000000000000000006 /* Views */,
+				A00200010000000000000010 /* Assets.xcassets */,
+				A00200010000000000000012 /* LaunchScreen.storyboard */,
 			);
 			path = MediaDownloader;
 			sourceTree = "<group>";
@@ -61,7 +75,12 @@
 		};
 		A00400010000000000000004 /* Services */ = {
 			isa = PBXGroup;
-			children = (A00200010000000000000003 /* MediaDownloadService.swift */,);
+			children = (
+				A00200010000000000000003 /* MediaDownloadService.swift */,
+				A00200010000000000000008 /* NativeMediaScraper.swift */,
+				A00200010000000000000011 /* AppUpdateService.swift */,
+				A00200010000000000000013 /* DownloadPostProcessingService.swift */,
+			);
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -70,7 +89,8 @@
 			children = (
 				A00200010000000000000004 /* ContentView.swift */,
 				A00200010000000000000005 /* DownloadFormView.swift */,
-				A00210000000000000000006 /* SettingsView.swift */,
+				A00200010000000000000006 /* SettingsView.swift */,
+				A00200010000000000000009 /* LocalFilesView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -122,7 +142,10 @@
 		A00800010000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = ();
+			files = (
+				A00100010000000000000009 /* Assets.xcassets in Resources */,
+				A00100010000000000000011 /* LaunchScreen.storyboard in Resources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -138,6 +161,10 @@
 				A00100010000000000000004 /* ContentView.swift in Sources */,
 				A00100010000000000000005 /* DownloadFormView.swift in Sources */,
 				A00100010000000000000006 /* SettingsView.swift in Sources */,
+				A00100010000000000000007 /* NativeMediaScraper.swift in Sources */,
+				A00100010000000000000008 /* LocalFilesView.swift in Sources */,
+				A00100010000000000000010 /* AppUpdateService.swift in Sources */,
+				A00100010000000000000012 /* DownloadPostProcessingService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,13 +200,18 @@
 		A01000010000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MediaDownloader;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用于在你开启选项后，将下载完成的图片和视频额外保存到系统照片。";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xynrin.MediaDownloader;
@@ -195,13 +227,18 @@
 		A01000010000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = MediaDownloader;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_UIFileSharingEnabled = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "用于在你开启选项后，将下载完成的图片和视频额外保存到系统照片。";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xynrin.MediaDownloader;
@@ -219,13 +256,13 @@
 /* Begin XCConfigurationList section */
 		A00600010000000000000001 /* Build configuration list for PBXProject "MediaDownloader" */ = {
 			isa = XCConfigurationList;
-			buildConfigurations = (A01000010000000000000001 /* Debug */, A01010000000000000000002 /* Release */,);
+			buildConfigurations = (A01000010000000000000001 /* Debug */, A01000010000000000000002 /* Release */,);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		A00600010000000000000002 /* Build configuration list for PBXNativeTarget "MediaDownloader" */ = {
 			isa = XCConfigurationList;
-			buildConfigurations = (A01010000000000000000003 /* Debug */, A01010000000000000000004 /* Release */,);
+			buildConfigurations = (A01000010000000000000003 /* Debug */, A01000010000000000000004 /* Release */,);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
