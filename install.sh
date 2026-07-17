@@ -8,6 +8,7 @@ set -e
 # GitHub Repository Configuration
 GITHUB_USER="Xynrin"
 GITHUB_REPO="tiktok-douyin-dl"
+RELEASE_TAG="v1.6.4"
 
 INSTALL_DIR="$HOME/.local/share/tiktok-douyin-dl"
 BIN_DIR="$HOME/.local/bin"
@@ -61,39 +62,23 @@ install_binary() {
             exit 1
         fi
 
+        DOWNLOAD_URL="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$name"
+
         if [ "$USER_LANG" = "zh" ]; then
-            echo -e "🌐 正在从 GitHub 获取最新版本 $name 的下载链接..."
+            echo -e "⚡ 正在从 GitHub $RELEASE_TAG 下载 $name ..."
         else
-            echo -e "🌐 Fetching download link for $name from GitHub..."
+            echo -e "⚡ Downloading $name from GitHub release $RELEASE_TAG ..."
         fi
-        
-        # Resolve redirect from latest releases
-        REDIRECT_URL=$(curl -sI "https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/latest" | grep -i '^location:' | cut -d' ' -f2 | tr -d '\r\n' || true)
-        
-        if [ -n "$REDIRECT_URL" ] && [[ "$REDIRECT_URL" == *"/releases/tag/"* ]]; then
-            TAG=$(basename "$REDIRECT_URL")
-            DOWNLOAD_URL="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$TAG/$name"
-        else
-            # Fallback REST API
-            API_URL="https://api.github.com/repos/$GITHUB_USER/$GITHUB_REPO/releases/latest"
-            DOWNLOAD_URL=$(curl -s "$API_URL" | grep -o '"browser_download_url": *"[^"]*"' | grep -o 'http[^"]*' | grep -E "/$name$" | head -n 1 || true)
-        fi
-        
-        if [ -z "$DOWNLOAD_URL" ] || [[ "$DOWNLOAD_URL" == *"rate limit exceeded"* ]]; then
+
+        if ! curl -fL --retry 3 --retry-delay 2 -# "$DOWNLOAD_URL" -o "$INSTALL_DIR/$name"; then
+            rm -f "$INSTALL_DIR/$name"
             if [ "$USER_LANG" = "zh" ]; then
-                echo -e "${RED}❌ 错误: 无法获取 $name 的下载链接，可能 Releases 中尚未发布此文件。${NC}"
+                echo -e "${RED}❌ 错误: 无法从 $RELEASE_TAG 下载 $name。${NC}"
             else
-                echo -e "${RED}❌ Error: Failed to retrieve download link for $name. Check if the asset exists in Releases.${NC}"
+                echo -e "${RED}❌ Error: Failed to download $name from $RELEASE_TAG.${NC}"
             fi
             exit 1
         fi
-
-        if [ "$USER_LANG" = "zh" ]; then
-            echo -e "⚡ 正在下载最新版 $name ..."
-        else
-            echo -e "⚡ Downloading latest release of $name ..."
-        fi
-        curl -L -# "$DOWNLOAD_URL" -o "$INSTALL_DIR/$name"
     fi
     
     chmod +x "$INSTALL_DIR/$name"
