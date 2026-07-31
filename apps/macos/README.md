@@ -16,6 +16,6 @@ The unsigned release disk image is written to:
 dist/apple/macos/MediaDownloader-macOS-1.7.0-unsigned.dmg
 ```
 
-The DMG contains `MediaDownloader.app` and an `Applications` shortcut. The app also exposes a menu bar item for opening the main window, downloading the URL currently on the clipboard, opening the download folder, and quitting.
+The DMG contains `MediaDownloader.app` and an `Applications` shortcut. The menu bar icon opens a compact quick-download panel that watches the clipboard while it is visible, identifies Douyin and TikTok links, and starts a download with one click. The panel also keeps the current download status, main window, download folder, refresh, and quit actions close at hand.
 
 For a signed distribution build, open `apps/macos/MediaDownloader.xcodeproj`, select your development team, then use **Product > Archive**. Distribution outside your own Mac also requires the appropriate Developer ID signing and notarization.

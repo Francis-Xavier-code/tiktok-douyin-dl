@@ -29,6 +29,7 @@ class NativeMediaScraper: NSObject, WKNavigationDelegate {
 
             let config = WKWebViewConfiguration()
             config.websiteDataStore = .default()
+            config.preferences.javaScriptCanOpenWindowsAutomatically = false
 
             // applicationNameForUserAgent appends a token to the system UA. A full
             // UA there creates a malformed doubled value, so set it directly.
@@ -77,6 +78,29 @@ class NativeMediaScraper: NSObject, WKNavigationDelegate {
     }
 
     // WKNavigationDelegate
+    func webView(
+        _ webView: WKWebView,
+        decidePolicyFor navigationAction: WKNavigationAction,
+        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+    ) {
+        guard let url = navigationAction.request.url,
+              let scheme = url.scheme?.lowercased() else {
+            decisionHandler(.cancel)
+            return
+        }
+
+        switch scheme {
+        case "http", "https", "about":
+            decisionHandler(.allow)
+        default:
+            // Douyin's mobile page tries to launch the native app with schemes
+            // such as snssdk1128:// or aweme://. A hidden scraper must never
+            // hand those URLs to Launch Services on macOS.
+            print("[NativeMediaScraper] blocked external navigation scheme: \(scheme)")
+            decisionHandler(.cancel)
+        }
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("[NativeMediaScraper] navigation finished: \(webView.url?.absoluteString ?? "unknown")")
         timer?.invalidate()
@@ -102,15 +126,28 @@ class NativeMediaScraper: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if isCancelledNavigation(error) {
+            print("[NativeMediaScraper] ignored cancelled navigation")
+            return
+        }
         print("[NativeMediaScraper] navigation failed: \(error.localizedDescription)")
         continuation?.resume(throwing: error)
         cleanup()
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if isCancelledNavigation(error) {
+            print("[NativeMediaScraper] ignored cancelled provisional navigation")
+            return
+        }
         print("[NativeMediaScraper] provisional navigation failed: \(error.localizedDescription)")
         continuation?.resume(throwing: error)
         cleanup()
+    }
+
+    private func isCancelledNavigation(_ error: Error) -> Bool {
+        let error = error as NSError
+        return error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {

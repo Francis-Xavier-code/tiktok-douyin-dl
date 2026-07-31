@@ -21,5 +21,6 @@ struct MediaDownloaderApp: App {
                 systemImage: controller.isDownloading ? "arrow.down.circle.fill" : "arrow.down.circle"
             )
         }
+        .menuBarExtraStyle(.window)
     }
 }

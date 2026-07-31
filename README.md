@@ -28,6 +28,17 @@ Packaged desktop applications include the required runtime and browser component
 
 <table width="100%">
   <tr>
+    <th align="center" width="50%">Waiting for a Link</th>
+    <th align="center" width="50%">Link Detected · One-Click Download</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/macos-menubar-preview.png" alt="MediaDownloader menu bar waiting for a share link" width="430"></td>
+    <td align="center"><img src="assets/macos-menubar-ready-preview.png" alt="MediaDownloader menu bar with a detected Douyin link" width="430"></td>
+  </tr>
+</table>
+
+<table width="100%">
+  <tr>
     <th align="center" width="33%">New Download</th>
     <th align="center" width="33%">Local File Management</th>
     <th align="center" width="33%">Photos &amp; iCloud Settings</th>

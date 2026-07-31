@@ -29,6 +29,17 @@
 
 <table width="100%">
   <tr>
+    <th align="center" width="50%">等待分享链接</th>
+    <th align="center" width="50%">识别链接 · 一键下载</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/macos-menubar-preview.png" alt="MediaDownloader macOS 菜单栏等待分享链接" width="430"></td>
+    <td align="center"><img src="assets/macos-menubar-ready-preview.png" alt="MediaDownloader macOS 菜单栏已识别抖音链接" width="430"></td>
+  </tr>
+</table>
+
+<table width="100%">
+  <tr>
     <th align="center" width="33%">新建下载</th>
     <th align="center" width="33%">本地文件管理</th>
     <th align="center" width="33%">照片与 iCloud 设置</th>

@@ -8,19 +8,54 @@ final class DownloadController {
     var shareText = ""
     private(set) var status = "粘贴抖音或 TikTok 分享链接。"
     private(set) var isDownloading = false
+    private(set) var clipboardText = ""
+    private(set) var clipboardURL: URL?
+
+    private var pasteboardChangeCount = -1
 
     var canDownload: Bool {
-        !isDownloading && !ShareTextParser.urls(in: shareText).isEmpty
+        !isDownloading && sourceURL != nil
     }
 
-    func downloadFromClipboard() {
-        guard let clipboardText = NSPasteboard.general.string(forType: .string),
-              !ShareTextParser.urls(in: clipboardText).isEmpty else {
+    var sourceURL: URL? {
+        ShareTextParser.urls(in: shareText).first
+    }
+
+    var sourcePlatform: DownloadPlatform? {
+        sourceURL.flatMap(Self.platform(for:))
+    }
+
+    var clipboardPlatform: DownloadPlatform? {
+        clipboardURL.flatMap(Self.platform(for:))
+    }
+
+    func refreshClipboard(force: Bool = false) {
+        let pasteboard = NSPasteboard.general
+        guard force || pasteboard.changeCount != pasteboardChangeCount else { return }
+
+        pasteboardChangeCount = pasteboard.changeCount
+        clipboardText = pasteboard.string(forType: .string) ?? ""
+        clipboardURL = ShareTextParser.urls(in: clipboardText).first
+    }
+
+    func pasteFromClipboard() {
+        refreshClipboard(force: true)
+        guard clipboardURL != nil else {
             status = "剪贴板中没有可识别的抖音或 TikTok 链接。"
             return
         }
 
         shareText = clipboardText
+        status = "已从剪贴板识别链接，可以开始下载。"
+    }
+
+    func downloadFromClipboard() {
+        pasteFromClipboard()
+        guard sourceURL != nil else {
+            status = "剪贴板中没有可识别的抖音或 TikTok 链接。"
+            return
+        }
+
         startDownload()
     }
 
@@ -56,5 +91,16 @@ final class DownloadController {
         } catch {
             status = "无法打开下载目录：\(error.localizedDescription)"
         }
+    }
+
+    private static func platform(for url: URL) -> DownloadPlatform? {
+        let host = url.host?.lowercased() ?? ""
+        if host.contains("douyin.com") || host.contains("iesdouyin.com") {
+            return .douyin
+        }
+        if host.contains("tiktok.com") {
+            return .tiktok
+        }
+        return nil
     }
 }
