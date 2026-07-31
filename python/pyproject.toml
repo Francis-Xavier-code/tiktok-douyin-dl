@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "media-downloader"
+version = "1.7.0"
+description = "TikTok and Douyin media downloader core and CLI"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "MediaDownloader contributors" }]
+dependencies = [
+  "Pillow>=10.0.0",
+  "playwright>=1.40.0",
+  "playwright-stealth>=1.0.6",
+  "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+web = ["gradio>=4.0.0"]
+windows = ["sv-ttk>=2.6.0"]
+
+[project.scripts]
+media-downloader = "media_downloader.cli:main"
+douyin-dl = "media_downloader.cli:douyin_main"
+tiktok-dl = "media_downloader.cli:tiktok_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

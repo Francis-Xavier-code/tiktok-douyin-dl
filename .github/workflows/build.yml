@@ -1,99 +1,127 @@
-name: Build Windows Setup and CLI
+name: Release Windows and Linux
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  build-windows:
+    name: Build Windows x64
     runs-on: windows-latest
-    permissions:
-      contents: write
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller playwright Pillow sv_ttk requests playwright-stealth
-        $env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE\.cache\ms-playwright"
-        python -m playwright install chromium
-        xcopy "$env:USERPROFILE\.cache\ms-playwright" "ms-playwright" /E /H /C /I
+      - name: Select release version
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: Build GUI with PyInstaller (OneDir)
-      run: |
-        $stealth_path = (python -c "import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))")
-        python -m PyInstaller --noconfirm --onedir --noconsole --icon="app.ico" --name "MediaDownloader_GUI" --hidden-import douyin_image_downloader --hidden-import tiktok_downloader --hidden-import auto_updater --hidden-import sv_ttk --add-data "$stealth_path\js;playwright_stealth\js" --collect-all playwright --collect-all PIL --collect-all sv_ttk --clean gui_downloader.py
+      - name: Build Windows applications
+        shell: powershell
+        run: ./scripts/build-windows.ps1
 
-    - name: Compile Inno Setup Installer
-      run: |
-        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+      - name: Package Windows release assets
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          Copy-Item "dist\MediaDownloader-Windows-x64-Setup-$env:APP_VERSION.exe" release-assets\
+          Compress-Archive `
+            -Path dist\media-downloader.exe `
+            -DestinationPath "release-assets\MediaDownloader-Windows-x64-CLI-$env:APP_VERSION.zip"
 
-    - name: Build CLI (Douyin)
-      run: |
-        $stealth_path = (python -c "import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))")
-        python -m PyInstaller --noconfirm --onefile --name "douyin-dl" --hidden-import douyin_image_downloader --add-data "$stealth_path\js;playwright_stealth\js" --clean douyin_image_downloader.py
-
-    - name: Build CLI (TikTok)
-      run: |
-        $stealth_path = (python -c "import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))")
-        python -m PyInstaller --noconfirm --onefile --name "tiktok-dl" --hidden-import tiktok_downloader --add-data "$stealth_path\js;playwright_stealth\js" --clean tiktok_downloader.py
-
-    - name: Compress Setup to ZIP
-      run: |
-        Compress-Archive -Path dist\MediaDownloader_Setup.exe -DestinationPath MediaDownloader_Windows_Setup.zip
-
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          MediaDownloader_Windows_Setup.zip
-          dist/douyin-dl.exe
-          dist/tiktok-dl.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: release-assets/*
+          if-no-files-found: error
 
   build-linux:
+    name: Build Linux x86_64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Select release version
+        shell: bash
+        run: echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Build Linux CLI binaries
+        run: ./scripts/build-linux.sh
+
+      - name: Package Linux release assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          tar -C dist -czf "release-assets/MediaDownloader-Linux-x86_64-$APP_VERSION.tar.gz" media-downloader
+          cp dist/media-downloader release-assets/media-downloader
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: release-assets/*
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish GitHub Release
+    needs:
+      - build-windows
+      - build-linux
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout release notes
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-assets
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller playwright Pillow requests playwright-stealth
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          notes_file="docs/releases/${GITHUB_REF_NAME}.md"
+          if [[ ! -f "$notes_file" ]]; then
+            notes_file="docs/releases/v1.7.0.md"
+          fi
 
-    - name: Build CLI (Douyin)
-      run: |
-        stealth_path=$(python -c "import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))")
-        python -m PyInstaller --noconfirm --onefile --name "douyin-dl-linux" --hidden-import douyin_image_downloader --add-data "$stealth_path/js:playwright_stealth/js" --clean douyin_image_downloader.py
-
-    - name: Build CLI (TikTok)
-      run: |
-        stealth_path=$(python -c "import playwright_stealth, os; print(os.path.dirname(playwright_stealth.__file__))")
-        python -m PyInstaller --noconfirm --onefile --name "tiktok-dl-linux" --hidden-import tiktok_downloader --add-data "$stealth_path/js:playwright_stealth/js" --clean tiktok_downloader.py
-
-    - name: Append to GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          dist/douyin-dl-linux
-          dist/tiktok-dl-linux
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "MediaDownloader $GITHUB_REF_NAME" \
+              --notes-file "$notes_file" \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" release-assets/* \
+              --verify-tag \
+              --title "MediaDownloader $GITHUB_REF_NAME" \
+              --notes-file "$notes_file" \
+              --repo "$GITHUB_REPOSITORY"
+          fi

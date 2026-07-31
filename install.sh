@@ -6,9 +6,9 @@
 set -e
 
 # GitHub Repository Configuration
-GITHUB_USER="Xynrin"
+GITHUB_USER="Francis-Xavier-code"
 GITHUB_REPO="tiktok-douyin-dl"
-RELEASE_TAG="v1.6.4"
+RELEASE_TAG="v1.7.0"
 
 INSTALL_DIR="$HOME/.local/share/tiktok-douyin-dl"
 BIN_DIR="$HOME/.local/bin"
@@ -84,34 +84,12 @@ install_binary() {
     chmod +x "$INSTALL_DIR/$name"
 }
 
-# Install both tools
-install_binary "douyin-dl"
-install_binary "tiktok-dl"
+# Install the unified auto-detecting CLI
+install_binary "media-downloader"
 
-# 3. Configure Terminals/Aliases
+# 3. Configure terminal command
 echo -e "\n${YELLOW}💬 配置启动命令 / Configure Startup Commands:${NC}"
-
-# Configure Douyin Command
-if [ "$USER_LANG" = "zh" ]; then
-    read -p "请输入 抖音下载器 终端激活命令 (回车默认使用 'douyin-dl'): " CUSTOM_DOUYIN < /dev/tty
-else
-    read -p "Enter terminal command for Douyin downloader (Press Enter for 'douyin-dl'): " CUSTOM_DOUYIN < /dev/tty
-fi
-if [ -z "$CUSTOM_DOUYIN" ]; then
-    CUSTOM_DOUYIN="douyin-dl"
-fi
-ln -sf "$INSTALL_DIR/douyin-dl" "$BIN_DIR/$CUSTOM_DOUYIN"
-
-# Configure TikTok Command
-if [ "$USER_LANG" = "zh" ]; then
-    read -p "请输入 TikTok下载器 终端激活命令 (回车默认使用 'tiktok-dl'): " CUSTOM_TIKTOK < /dev/tty
-else
-    read -p "Enter terminal command for TikTok downloader (Press Enter for 'tiktok-dl'): " CUSTOM_TIKTOK < /dev/tty
-fi
-if [ -z "$CUSTOM_TIKTOK" ]; then
-    CUSTOM_TIKTOK="tiktok-dl"
-fi
-ln -sf "$INSTALL_DIR/tiktok-dl" "$BIN_DIR/$CUSTOM_TIKTOK"
+ln -sf "$INSTALL_DIR/media-downloader" "$BIN_DIR/media-downloader"
 
 # 4. Check Environment $PATH
 NEED_SOURCE=false
@@ -145,29 +123,29 @@ if [ "$USER_LANG" = "zh" ]; then
     echo -e "${GREEN}🎉 安装与配置成功！${NC}"
     echo -e "${GREEN}==================================================${NC}"
     echo -e "📁 程序保存路径: ${BLUE}$INSTALL_DIR${NC}"
-    echo -e "🚀 抖音下载命令: ${BLUE}$CUSTOM_DOUYIN${NC}"
-    echo -e "🚀 TikTok下载命令: ${BLUE}$CUSTOM_TIKTOK${NC}"
+    echo -e "🚀 统一下载命令: ${BLUE}media-downloader \"分享文本或链接\"${NC}"
+    echo -e "🔎 程序会自动识别抖音或 TikTok 链接。"
     echo -e ""
     echo -e "${YELLOW}🔔 使用提示:${NC}"
     if [ "$NEED_SOURCE" = true ]; then
         echo -e "1. 💡 ${YELLOW}请先运行 'source ~/.bashrc' (或 'source ~/.zshrc') 使配置生效！${NC}"
-        echo -e "2. 之后在终端任意目录下运行 ${GREEN}$CUSTOM_DOUYIN${NC} 或 ${GREEN}$CUSTOM_TIKTOK${NC} 即可下载！"
+        echo -e "2. 之后在终端任意目录运行 ${GREEN}media-downloader \"分享文本或链接\"${NC} 即可下载！"
     else
-        echo -e "1. 终端任意目录下直接运行 ${GREEN}$CUSTOM_DOUYIN${NC} 或 ${GREEN}$CUSTOM_TIKTOK${NC} 即可下载！"
+        echo -e "1. 终端任意目录下直接运行 ${GREEN}media-downloader \"分享文本或链接\"${NC} 即可下载！"
     fi
 else
     echo -e "${GREEN}🎉 Installation & Configuration Successful!${NC}"
     echo -e "${GREEN}==================================================${NC}"
     echo -e "📁 Installation Directory: ${BLUE}$INSTALL_DIR${NC}"
-    echo -e "🚀 Douyin Command: ${BLUE}$CUSTOM_DOUYIN${NC}"
-    echo -e "🚀 TikTok Command: ${BLUE}$CUSTOM_TIKTOK${NC}"
+    echo -e "🚀 Unified command: ${BLUE}media-downloader \"share text or link\"${NC}"
+    echo -e "🔎 The platform is detected automatically from the link."
     echo -e ""
     echo -e "${YELLOW}🔔 Note:${NC}"
     if [ "$NEED_SOURCE" = true ]; then
         echo -e "1. 💡 ${YELLOW}Please run 'source ~/.bashrc' (or 'source ~/.zshrc') to apply PATH changes!${NC}"
-        echo -e "2. Then type ${GREEN}$CUSTOM_DOUYIN${NC} or ${GREEN}$CUSTOM_TIKTOK${NC} anywhere in terminal to start."
+        echo -e "2. Then run ${GREEN}media-downloader \"share text or link\"${NC} anywhere in the terminal."
     else
-        echo -e "1. Type ${GREEN}$CUSTOM_DOUYIN${NC} or ${GREEN}$CUSTOM_TIKTOK${NC} anywhere in your terminal to start."
+        echo -e "1. Run ${GREEN}media-downloader \"share text or link\"${NC} anywhere in the terminal."
     fi
 fi
 echo -e "=================================================="

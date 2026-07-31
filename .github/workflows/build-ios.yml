@@ -2,18 +2,6 @@ name: Build iOS App
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "**"
-    tags:
-      - "ios-v*"
-    paths:
-      - "ios/**"
-      - ".github/workflows/build-ios.yml"
-  pull_request:
-    paths:
-      - "ios/**"
-      - ".github/workflows/build-ios.yml"
 
 permissions:
   contents: read
@@ -33,7 +21,7 @@ jobs:
       - name: Build without code signing
         run: |
           xcodebuild \
-            -project ios/MediaDownloader.xcodeproj \
+            -project apps/ios/MediaDownloader.xcodeproj \
             -scheme MediaDownloader \
             -configuration Release \
             -sdk iphonesimulator \
@@ -74,14 +62,14 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/ios-v* ]]; then
             echo "value=${GITHUB_REF_NAME#ios-v}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=1.0.0" >> "$GITHUB_OUTPUT"
+            echo "value=1.7.0" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build unsigned IPA
         env:
           IOS_VERSION: ${{ steps.version.outputs.value }}
           IOS_BUILD_NUMBER: ${{ github.run_number }}
-        run: bash ios/scripts/build-unsigned-ipa.sh "$RUNNER_TEMP/ios-output"
+        run: bash apps/ios/scripts/build-unsigned-ipa.sh "$RUNNER_TEMP/ios-output"
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
@@ -90,24 +78,3 @@ jobs:
           path: ${{ runner.temp }}/ios-output/*.ipa
           if-no-files-found: error
           retention-days: 30
-
-  publish-ios-release:
-    name: Publish iOS self-sign release
-    if: startsWith(github.ref, 'refs/tags/ios-v')
-    needs: build-unsigned-device
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download unsigned IPA
-        uses: actions/download-artifact@v4
-        with:
-          pattern: MediaDownloader-iOS-*-unsigned
-          merge-multiple: true
-          path: release-assets
-
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release-assets/*.ipa --repo "$GITHUB_REPOSITORY" --generate-notes --title "MediaDownloader iOS ${GITHUB_REF_NAME#ios-v}"
