@@ -10,6 +10,10 @@ from media_downloader.core.models import Platform
         ("复制打开抖音 https://v.douyin.com/AbCd123/", Platform.DOUYIN),
         ("Watch https://www.tiktok.com/@creator/video/123", Platform.TIKTOK),
         ("Watch https://vm.tiktok.com/ZTest/", Platform.TIKTOK),
+        (
+            "https://www.douyin.com/root/search/test?modal_id=7667973004903269546",
+            Platform.DOUYIN,
+        ),
     ],
 )
 def test_detect_platform(share_text, expected):

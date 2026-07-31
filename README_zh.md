@@ -49,6 +49,15 @@
   </tr>
 </table>
 
+<table width="100%">
+  <tr>
+    <th align="center">Linux 命令行</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/linux-cli-preview.png" alt="MediaDownloader Linux 命令行预览" width="900"></td>
+  </tr>
+</table>
+
 ## ✨ 功能亮点
 
 * 🎨 **现代化 UI 设计**：全新引入 Windows 11 Fluent 风格的暗黑模式极简界面，并**新增了跨语言无缝切换 (中/英)**。
@@ -71,6 +80,31 @@
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
+
+## 🤖 自主 AI 代理 Skill
+
+仓库内置了兼容 AgentSkills 标准的 [Media Downloader Skill](skills/media-downloader/SKILL.md)，可供 OpenClaw 等自主 AI 代理直接调用。
+
+安装到 OpenClaw 工作区：
+
+```bash
+openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader
+```
+
+标准一句话提示词：
+
+```text
+请使用 $media-downloader 下载这个抖音或 TikTok 搜索结果或分享链接：<URL>
+```
+
+搜索并下载提示词：
+
+```text
+请使用 $media-downloader 搜索符合“<关键词>”的公开抖音或 TikTok 视频，告诉我选中了哪个结果，然后下载。
+```
+
+对于不支持自动发现 Skill 的代理，可直接说：`读取 skills/media-downloader/SKILL.md，并使用其完整脚本下载这个搜索结果或分享链接：<URL>`。
+
 ---
 
 ## 🚀 使用方法
@@ -87,11 +121,11 @@ curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-
 media-downloader "分享文本或链接" [保存目录]
 ```
 
-CLI 会根据链接域名自动识别抖音或 TikTok；只有需要手动覆盖时才使用 `--platform douyin` 或 `--platform tiktok`。
+CLI 会根据链接域名自动识别抖音或 TikTok；带 `modal_id` 的抖音搜索结果链接会自动转换为直接作品链接，不再要求必须提供手机分享文案。只有需要手动覆盖时才使用 `--platform douyin` 或 `--platform tiktok`。
 
 ## 项目结构
 
-各平台应用位于 `apps/`，可安装的 Python 包位于 `python/`，Apple 共享 Swift 代码位于 `apple/`，构建入口位于 `scripts/`。详细说明见 [`docs/architecture.md`](docs/architecture.md)。
+各平台应用位于 `apps/`，可安装的 Python 包位于 `python/`，Apple 共享 Swift 代码位于 `apple/`，自主 AI 代理 Skill 位于 `skills/`，构建入口位于 `scripts/`。详细说明见 [`docs/architecture.md`](docs/architecture.md)。
 
 执行 `./scripts/build-apple.sh all` 可按 `1.7.0` 版本同时构建 iOS 与 macOS 无签名产物；将 `all` 改为 `ios` 或 `macos` 可单独构建。
 

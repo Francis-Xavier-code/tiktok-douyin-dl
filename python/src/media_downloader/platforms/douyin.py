@@ -20,6 +20,7 @@ if getattr(sys, 'frozen', False):
 import re
 import time
 import urllib.request
+import urllib.parse
 import ssl
 import json
 from datetime import datetime
@@ -174,23 +175,48 @@ def perform_self_update(download_url):
             except Exception:
                 pass
 
-def extract_urls_from_text(text: str) -> list:
-    """提取文本中的所有抖音链接"""
-    url_pattern = re.compile(r'https?://[a-zA-Z0-9][-a-zA-Z0-9\\._]*\bdouyin\.com\b[-a-zA-Z0-9@:%_\+.~#?&//=]*')
-    return url_pattern.findall(text)
-
 def extract_aweme_id(url_or_id: str) -> str:
-    """提取作品 ID (支持纯数字 ID 或完整的 URL)"""
+    """提取作品 ID，支持作品 URL、搜索结果 URL 或纯数字 ID。"""
     url_or_id = url_or_id.strip()
     if url_or_id.isdigit():
         return url_or_id
-    match = re.search(r'video/(\d+)', url_or_id)
-    if match:
-        return match.group(1)
-    match_note = re.search(r'note/(\d+)', url_or_id)
-    if match_note:
-        return match_note.group(1)
+
+    parsed = urllib.parse.urlparse(url_or_id)
+    path_match = re.search(r'/(?:video|note)/(\d+)(?:/|$)', parsed.path)
+    if path_match:
+        return path_match.group(1)
+
+    query = urllib.parse.parse_qs(parsed.query)
+    for key in ("modal_id", "aweme_id", "item_id", "item_ids"):
+        for value in query.get(key, []):
+            id_match = re.search(r'\d{10,}', value)
+            if id_match:
+                return id_match.group(0)
     return ""
+
+
+def normalize_douyin_url(url: str) -> str:
+    """将搜索/精选结果 URL 规范化成 www.douyin.com 直接作品 URL。"""
+    parsed = urllib.parse.urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if host == "douyin.com" or host.endswith(".douyin.com"):
+        query_keys = {key.lower() for key in urllib.parse.parse_qs(parsed.query)}
+        if query_keys.intersection({"modal_id", "aweme_id", "item_id", "item_ids"}):
+            aweme_id = extract_aweme_id(url)
+            if aweme_id:
+                return f"https://www.douyin.com/video/{aweme_id}"
+        aweme_id = extract_aweme_id(url)
+        if aweme_id:
+            work_type = "note" if "/note/" in parsed.path else "video"
+            return f"https://www.douyin.com/{work_type}/{aweme_id}"
+    return url
+
+
+def extract_urls_from_text(text: str) -> list:
+    """提取抖音链接，并规范化搜索结果中的作品链接。"""
+    url_pattern = re.compile(r'https?://[a-zA-Z0-9][-a-zA-Z0-9\\._]*\bdouyin\.com\b[-a-zA-Z0-9@:%_\+.~#?&//=]*')
+    return [normalize_douyin_url(url) for url in url_pattern.findall(text)]
+
 
 def get_image_urls_from_dom(page) -> list:
     """如果 JSON 提取失败，从 DOM 结构备份提取图文列表"""

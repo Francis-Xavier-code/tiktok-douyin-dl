@@ -48,6 +48,15 @@ Packaged desktop applications include the required runtime and browser component
   </tr>
 </table>
 
+<table width="100%">
+  <tr>
+    <th align="center">Linux CLI</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/linux-cli-preview.png" alt="MediaDownloader Linux CLI" width="900"></td>
+  </tr>
+</table>
+
 ## ✨ Highlights
 
 * 🎨 **Modern UI Design**: A minimalist Windows 11 Fluent-style dark interface with **seamless language switching (Chinese/English)**.
@@ -71,6 +80,30 @@ Run the following command in your terminal to download the latest binaries and c
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
 
+## 🤖 Autonomous AI Agent Skill
+
+This repository includes an [AgentSkills-compatible Media Downloader skill](skills/media-downloader/SKILL.md) for OpenClaw and other autonomous AI agents.
+
+Install it in an OpenClaw workspace:
+
+```bash
+openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader
+```
+
+Standard one-line agent prompt:
+
+```text
+Use $media-downloader to download this Douyin or TikTok result or share link: <URL>
+```
+
+Search-and-download prompt:
+
+```text
+Use $media-downloader to find a public Douyin or TikTok video matching "<keywords>", show me the selected result, and download it.
+```
+
+For agents without skill discovery: `Read skills/media-downloader/SKILL.md and use its bundled script to download this result or share link: <URL>`.
+
 ---
 
 ## 🚀 Usage
@@ -89,11 +122,11 @@ Paste Douyin/TikTok share text or a link into the download screen and start the 
 media-downloader "Share text or link" [output_directory]
 ```
 
-The CLI automatically detects Douyin or TikTok from the link domain. Use `--platform douyin` or `--platform tiktok` only when a manual override is needed.
+The CLI automatically detects Douyin or TikTok from the link domain. Douyin search-result URLs containing `modal_id` are converted to direct work URLs automatically, so mobile share text is not required. Use `--platform douyin` or `--platform tiktok` only when a manual override is needed.
 
 ## Project layout
 
-Application shells live in `apps/`, the installable Python package in `python/`, shared Swift code in `apple/`, and reproducible build entry points in `scripts/`. See [`docs/architecture.md`](docs/architecture.md) for details.
+Application shells live in `apps/`, the installable Python package in `python/`, shared Swift code in `apple/`, the autonomous-agent skill in `skills/`, and reproducible build entry points in `scripts/`. See [`docs/architecture.md`](docs/architecture.md) for details.
 
 Build both unsigned Apple artifacts at version `1.7.0` with `./scripts/build-apple.sh all`. Use `ios` or `macos` instead of `all` to build one platform.
 

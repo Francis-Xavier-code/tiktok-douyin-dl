@@ -1,0 +1,4 @@
+interface:
+  display_name: "Media Downloader"
+  short_description: "Download from Douyin or TikTok result and share links"
+  default_prompt: "Use $media-downloader to download media from this Douyin or TikTok result or share link."
