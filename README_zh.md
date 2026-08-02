@@ -83,7 +83,14 @@
 ### 💻 Windows/Mac/ios 用户 (图形界面推荐)
 前往[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载最新的安装包
 
+### 🍺 macOS 用户 (Homebrew)
 
+```bash
+brew tap Francis-Xavier-code/tap
+brew install --cask tiktok-douyin-dl
+```
+
+该 cask 内置 ad-hoc 签名构建，安装时会自动清除 Gatekeeper 隔离属性，首次打开无需任何授权弹窗。发布说明见 [docs/brew.md](docs/brew.md)。
 
 ### 🐧 Linux 用户 (CLI 命令行)
 在终端运行以下命令，即可自动拉取最新二进制包并软链接至 `~/.local/bin`：

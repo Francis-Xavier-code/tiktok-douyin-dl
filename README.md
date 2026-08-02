@@ -83,6 +83,15 @@ Packaged desktop applications include the required runtime and browser component
 
 Visit the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) to download the latest installer.
 
+### 🍺 macOS Users (Homebrew)
+
+```bash
+brew tap Francis-Xavier-code/tap
+brew install --cask tiktok-douyin-dl
+```
+
+The cask ships an ad-hoc signed build and removes the Gatekeeper quarantine attribute automatically, so the app opens without any approval prompt. See [docs/brew.md](docs/brew.md) for details.
+
 ### 🐧 Linux Users (CLI)
 
 Run the following command in your terminal to download the latest binaries and create symlinks in `~/.local/bin`:
