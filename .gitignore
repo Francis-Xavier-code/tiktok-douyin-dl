@@ -21,6 +21,7 @@ dist/
 xcuserdata/
 *.xcuserstate
 .build/
+.swiftpm/
 
 # Download outputs
 douyin_downloads/

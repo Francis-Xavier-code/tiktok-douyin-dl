@@ -8,6 +8,14 @@ VERSION="${APPLE_VERSION:-1.7.0}"
 BUILD_NUMBER="${APPLE_BUILD_NUMBER:-1}"
 OUTPUT_ROOT="${APPLE_OUTPUT_DIR:-$REPO_ROOT/dist/apple}"
 
+# Signing & notarization (all optional):
+#   APPLE_SIGNING_IDENTITY        codesign identity, e.g. "Developer ID Application: Your Name (TEAMID)"
+#                                 run `security find-identity -v -p codesigning` to list yours
+#   APPLE_ID                      Apple ID email used with notarytool
+#   APPLE_APP_SPECIFIC_PASSWORD   App-specific password (https://appleid.apple.com -> App-specific passwords)
+#   APPLE_TEAM_ID                 Team ID (https://developer.apple.com -> Membership details)
+IDENTITY="${APPLE_SIGNING_IDENTITY:-}"
+
 if ! xcodebuild -version >/dev/null 2>&1; then
   if [[ -d /Applications/Xcode.app/Contents/Developer ]]; then
     export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
@@ -30,7 +38,7 @@ build_macos() {
   local derived_data="$output_dir/DerivedData"
   local project="$REPO_ROOT/apps/macos/MediaDownloader.xcodeproj"
   local app_path="$derived_data/Build/Products/Release/MediaDownloader.app"
-  local dmg_path="$output_dir/MediaDownloader-macOS-${VERSION}-unsigned.dmg"
+  local dmg_name dmg_path
 
   echo "Building macOS $VERSION (build $BUILD_NUMBER)..."
   mkdir -p "$output_dir"
@@ -50,6 +58,25 @@ build_macos() {
     echo "MediaDownloader.app was not produced at $app_path" >&2
     exit 1
   fi
+
+  # --- codesign --------------------------------------------------------------
+  if [[ -n "$IDENTITY" ]]; then
+    echo "Signing MediaDownloader.app with: $IDENTITY"
+    codesign --force --sign "$IDENTITY" --options runtime "$app_path"
+  else
+    echo "No APPLE_SIGNING_IDENTITY set; ad-hoc signing the app (free, no cert needed)."
+    echo "NOTE: ad-hoc signed apps run fine but are NOT Gatekeeper-trusted; the generated"
+    echo "      cask removes the quarantine attribute so users still get a clean first launch."
+    codesign --force --sign - "$app_path"
+  fi
+  codesign --verify --deep --strict --verbose=2 "$app_path"
+
+  if [[ -n "$IDENTITY" ]]; then
+    dmg_name="MediaDownloader-macOS-${VERSION}.dmg"
+  else
+    dmg_name="MediaDownloader-macOS-${VERSION}-unsigned.dmg"
+  fi
+  dmg_path="$output_dir/$dmg_name"
 
   (
     local packaging_dir staging_dir mount_dir rw_dmg volume_icon
@@ -92,6 +119,25 @@ build_macos() {
       -ov \
       -o "$dmg_path"
   )
+
+  # --- notarization + stapling (only when signing) ---------------------------
+  if [[ -n "$IDENTITY" ]]; then
+    if [[ -n "${APPLE_ID:-}" && -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" && -n "${APPLE_TEAM_ID:-}" ]]; then
+      echo "Submitting $dmg_name to Apple notary service..."
+      xcrun notarytool submit "$dmg_path" \
+        --apple-id "$APPLE_ID" \
+        --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+        --team-id "$APPLE_TEAM_ID" \
+        --wait
+      echo "Stapling notarization ticket..."
+      xcrun stapler staple "$dmg_path"
+      xcrun stapler validate "$dmg_path"
+    else
+      echo "Signed DMG built but notarization SKIPPED." >&2
+      echo "Set APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID to notarize." >&2
+    fi
+  fi
+
   echo "$dmg_path"
 }
 
