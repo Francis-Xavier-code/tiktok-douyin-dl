@@ -1,0 +1,177 @@
+name: Build & Publish Release
+
+# 触发：推送 v* 标签（如 v1.8.0）。所有平台的产物都在 GitHub runner 上构建，
+# 无需本地 Xcode。macOS runner 自带 Xcode，可产出无签名 DMG / IPA。
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  GITHUB_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Windows x64：安装包 + CLI zip
+  # ---------------------------------------------------------------------------
+  build-windows:
+    name: Build Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Select release version
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Build Windows applications
+        shell: powershell
+        run: ./scripts/build-windows.ps1
+      - name: Package Windows release assets
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          Copy-Item "dist\MediaDownloader-Windows-x64-Setup-$env:APP_VERSION.exe" release-assets\
+          Compress-Archive `
+            -Path dist\media-downloader.exe `
+            -DestinationPath "release-assets\MediaDownloader-Windows-x64-CLI-$env:APP_VERSION.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: release-assets/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Linux x86_64：CLI tar.gz
+  # ---------------------------------------------------------------------------
+  build-linux:
+    name: Build Linux x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Select release version
+        shell: bash
+        run: echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Build Linux CLI binaries
+        run: ./scripts/build-linux.sh
+      - name: Package Linux release assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          tar -C dist -czf "release-assets/MediaDownloader-Linux-x86_64-$APP_VERSION.tar.gz" media-downloader
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: release-assets/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # macOS DMG + iOS IPA（无签名）：macOS runner 自带 Xcode
+  # ---------------------------------------------------------------------------
+  build-apple:
+    name: Build macOS DMG & iOS IPA
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select release version
+        shell: bash
+        run: |
+          echo "APPLE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          echo "APPLE_BUILD_NUMBER=1" >> "$GITHUB_ENV"
+          echo "APPLE_OUTPUT_DIR=$PWD/dist/apple" >> "$GITHUB_ENV"
+      - name: Build macOS DMG (ad-hoc signed)
+        run: ./scripts/build-apple.sh macos
+      - name: Build iOS unsigned IPA
+        run: ./scripts/build-apple.sh ios
+      - name: Package Apple release assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          find dist/apple -name 'MediaDownloader-macOS-*.dmg' -exec cp {} release-assets/ \;
+          find dist/apple -name 'MediaDownloader-iOS-*-unsigned.ipa' -exec cp {} release-assets/ \;
+          ls -la release-assets/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-apple
+          path: release-assets/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # 汇总所有产物并创建/更新 Release
+  # ---------------------------------------------------------------------------
+  publish-release:
+    name: Publish GitHub Release
+    needs:
+      - build-windows
+      - build-linux
+      - build-apple
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout (for release notes + cask)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download all release assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-assets
+      - name: List downloaded assets
+        run: ls -la release-assets/
+      - name: Update Homebrew cask sha256 (macOS DMG)
+        shell: bash
+        run: |
+          set -euo pipefail
+          DMG=$(ls release-assets/MediaDownloader-macOS-*-unsigned.dmg 2>/dev/null || true)
+          if [[ -n "$DMG" ]]; then
+            SHA=$(shasum -a 256 "$DMG" | awk '{print $1}')
+            CASK=Casks/tiktok-douyin-dl.rb
+            if [[ -f "$CASK" ]]; then
+              sed -i.bak -E "s/^[[:space:]]*sha256 \"[a-f0-9]+\"/  sha256 \"$SHA\"/" "$CASK"
+              rm -f "$CASK.bak"
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add "$CASK"
+              if ! git diff --cached --quiet -- "$CASK"; then
+                git commit -m "release: bump cask sha256 for ${GITHUB_REF_NAME}"
+                git push origin HEAD:main
+              fi
+            fi
+          else
+            echo "::warning::No macOS DMG found; skipping cask sha update"
+          fi
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          notes_file="docs/releases/${TAG}.md"
+          if [[ ! -f "$notes_file" ]]; then
+            notes_file="docs/releases/v1.7.0.md"
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" \
+              --title "MediaDownloader $TAG" \
+              --notes-file "$notes_file" \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" release-assets/* \
+              --verify-tag \
+              --title "MediaDownloader $TAG" \
+              --notes-file "$notes_file" \
+              --repo "$GITHUB_REPOSITORY"
+          fi

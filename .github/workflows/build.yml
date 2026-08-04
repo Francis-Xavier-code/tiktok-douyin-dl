@@ -1,9 +1,11 @@
-name: Release Windows and Linux
+name: Release Windows and Linux (DEPRECATED)
 
+# 此 workflow 已被 .github/workflows/release.yml 取代（后者在 GitHub runner 上
+# 统一构建 Windows / Linux / macOS DMG / iOS IPA 并发布到同一个 Release）。
+# 保留此文件仅作参考，已移除自动触发，避免对同一 v* tag 重复构建。
+# 如需单独重建 Windows/Linux，可手动 workflow_dispatch 触发。
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: read

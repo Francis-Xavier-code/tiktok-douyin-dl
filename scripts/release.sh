@@ -1,260 +1,97 @@
 #!/usr/bin/env bash
+# =============================================================================
+# release.sh — 本地发布触发器（不再本地构建任何二进制）
+#
+# 所有平台的产物（Windows / Linux / macOS DMG / iOS IPA）现在都由 GitHub
+# Actions 在推送 v* 标签时远程构建，见 .github/workflows/release.yml。
+# 本脚本只做三件事：
+#   1. 从 Python 包读取版本号，校验 tag 未存在；
+#   2. 刷新 version-policy.json / download-policy.json 的 updated_at 并提交；
+#   3. 打 tag + push，触发 CI 完成全部构建与 Release 上传。
+#
+# 用法：
+#   ./scripts/release.sh            # 正常发布（CI 构建所有平台）
+#   SKIP_POLICY_BUMP=1 ./scripts/release.sh   # 不刷新策略 updated_at
+# =============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python3}"
-VERSION="$(PYTHONPATH="$REPO_ROOT/python/src" "$PYTHON_BIN" -c 'import media_downloader; print(media_downloader.__version__)')"
+VERSION="$("$PYTHON_BIN" -c 'import media_downloader; print(media_downloader.__version__)' 2>/dev/null || "$PYTHON_BIN" -c 'import sys; sys.path.insert(0, "'"$REPO_ROOT/python/src"'"); import media_downloader; print(media_downloader.__version__)')"
 TAG="v$VERSION"
 REPO="Francis-Xavier-code/tiktok-douyin-dl"
 
-# ---------------------------------------------------------------------------
-# 1. Linux CLI binaries (set SKIP_LINUX=1 to publish only the macOS DMG)
-# ---------------------------------------------------------------------------
-if [[ "${SKIP_LINUX:-0}" == "1" ]]; then
-  echo "==> SKIP_LINUX=1: skipping Linux CLI build"
-else
-  echo "==> Building Linux CLI ($VERSION)"
-  "$SCRIPT_DIR/build-linux.sh"
-fi
+echo "==> Release version: $VERSION (tag $TAG)"
 
 # ---------------------------------------------------------------------------
-# 2. macOS DMG
-#    Signed + notarized automatically when APPLE_* env vars are set, e.g.:
-#      export APPLE_SIGNING_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-#      export APPLE_ID="you@example.com"
-#      export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
-#      export APPLE_TEAM_ID="TEAMID"
-# ---------------------------------------------------------------------------
-echo "==> Building macOS app ($VERSION)"
-DMG_PATH="$(APPLE_VERSION="$VERSION" "$SCRIPT_DIR/build-apple.sh" macos | tail -1)"
-if [[ -z "$DMG_PATH" || ! -f "$DMG_PATH" ]]; then
-  echo "macOS build failed: no DMG produced" >&2
-  exit 1
-fi
-echo "==> macOS DMG: $DMG_PATH"
-
-# ---------------------------------------------------------------------------
-# 3. Regenerate the Homebrew cask
-#    - ad-hoc / unsigned DMG: cask removes Gatekeeper quarantine via postflight
-#      (custom-tap only; official homebrew-cask requires Apple signing)
-#    - Developer ID signed DMG: standard cask, ready for official submission
-# ---------------------------------------------------------------------------
-CASK_FILE="$REPO_ROOT/Casks/tiktok-douyin-dl.rb"
-DMG_NAME="$(basename "$DMG_PATH")"
-mkdir -p "$(dirname "$CASK_FILE")"
-SHA256="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
-
-if [[ "$DMG_NAME" == *"-unsigned.dmg" ]]; then
-  echo "==> DMG is ad-hoc signed (no Apple Developer ID). Generating custom-tap cask (with quarantine bypass)"
-  cat > "$CASK_FILE" <<EOF
-cask "tiktok-douyin-dl" do
-  version "$VERSION"
-  sha256 "$SHA256"
-
-  url "https://github.com/$REPO/releases/download/v#{version}/MediaDownloader-macOS-#{version}-unsigned.dmg"
-  name "MediaDownloader"
-  desc "TikTok & Douyin no-watermark downloader for macOS"
-  homepage "https://github.com/$REPO"
-
-  livecheck do
-    url :url
-    strategy :github_latest
-  end
-
-  postflight do
-    system_command "xattr",
-                   args: ["-dr", "com.apple.quarantine", "#{appdir}/MediaDownloader.app"]
-  end
-
-  app "MediaDownloader.app"
-
-  caveats do
-    <<~EOS
-      This build is ad-hoc signed and NOT notarized by Apple.
-      Distributed through the custom tap only (official homebrew-cask
-      requires Apple Developer ID signing). The Gatekeeper quarantine
-      attribute is removed automatically after install, so the app
-      opens without approval prompts.
-    EOS
-  end
-
-  zap trash: [
-    "~/Documents/MediaDownloader",
-  ]
-end
-EOF
-  echo "    (official homebrew-cask will reject unsigned apps; use your own tap)"
-else
-  echo "==> DMG is Developer ID signed + notarized. Generating standard cask"
-  cat > "$CASK_FILE" <<EOF
-cask "tiktok-douyin-dl" do
-  version "$VERSION"
-  sha256 "$SHA256"
-
-  url "https://github.com/$REPO/releases/download/v#{version}/MediaDownloader-macOS-#{version}.dmg"
-  name "MediaDownloader"
-  desc "TikTok & Douyin no-watermark downloader for macOS"
-  homepage "https://github.com/$REPO"
-
-  livecheck do
-    url :url
-    strategy :github_latest
-  end
-
-  app "MediaDownloader.app"
-
-  zap trash: [
-    "~/Documents/MediaDownloader",
-  ]
-end
-EOF
-fi
-echo "==> Updated $CASK_FILE (sha256 $SHA256)"
-
-git -C "$REPO_ROOT" add "$CASK_FILE"
-if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$CASK_FILE"; then
-  git -C "$REPO_ROOT" commit -m "release: update Homebrew cask for $VERSION"
-  echo "==> Committed cask update"
-fi
-
-# ---------------------------------------------------------------------------
-# 4b. Refresh version-policy.json (bump updated_at) and ship it as a release asset.
-#     Lets maintainers retire old clients without re-shipping every binary.
-#     See docs/version-policy.md.
-# ---------------------------------------------------------------------------
-POLICY_FILE="$REPO_ROOT/version-policy.json"
-if [[ -f "$POLICY_FILE" ]]; then
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "$POLICY_FILE" <<'PY'
-import json, sys, datetime
-path = sys.argv[1]
-try:
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
-    data["updated_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    print("==> Bumped version-policy.json updated_at")
-except Exception as e:
-    print(f"==> WARNING: could not update version-policy.json: {e}", file=sys.stderr)
-PY
-    git -C "$REPO_ROOT" add "$POLICY_FILE"
-    if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$POLICY_FILE"; then
-      git -C "$REPO_ROOT" commit -m "release: bump version-policy.json updated_at for $VERSION"
-      echo "==> Committed version-policy.json update"
-    fi
-  else
-    echo "==> WARNING: python3 not found; skipping version-policy.json bump" >&2
-  fi
-else
-  echo "==> WARNING: version-policy.json not found; skipping" >&2
-fi
-
-# ---------------------------------------------------------------------------
-# 4c. Refresh download-policy.json (bump updated_at) and ship it as a release asset.
-#     Controls whether the download feature itself is enabled (maintenance /
-#     version quarantine). See docs/download-policy.md.
-# ---------------------------------------------------------------------------
-DOWNLOAD_POLICY_FILE="$REPO_ROOT/download-policy.json"
-if [[ -f "$DOWNLOAD_POLICY_FILE" ]]; then
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "$DOWNLOAD_POLICY_FILE" <<'PY'
-import json, sys, datetime
-path = sys.argv[1]
-try:
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
-    data["updated_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    print("==> Bumped download-policy.json updated_at")
-except Exception as e:
-    print(f"==> WARNING: could not update download-policy.json: {e}", file=sys.stderr)
-PY
-    git -C "$REPO_ROOT" add "$DOWNLOAD_POLICY_FILE"
-    if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$DOWNLOAD_POLICY_FILE"; then
-      git -C "$REPO_ROOT" commit -m "release: bump download-policy.json updated_at for $VERSION"
-      echo "==> Committed download-policy.json update"
-    fi
-  else
-    echo "==> WARNING: python3 not found; skipping download-policy.json bump" >&2
-  fi
-else
-  echo "==> WARNING: download-policy.json not found; skipping" >&2
-fi
-
-# ---------------------------------------------------------------------------
-# 4. Publish the GitHub release
-#    - existing tag/release are updated in place (assets added with --clobber)
-#    - the tag push also triggers the CI workflow (.github/workflows/build.yml),
-#      which builds & uploads the Windows and Linux assets into the same release.
-#    - macOS DMG is built locally above and uploaded here.
-#    - NOTE: the Linux/macOS CLI binary is NOT uploaded from this local box:
-#      `build-linux.sh` only works on Linux, and CI produces
-#      `MediaDownloader-Linux-x86_64-<ver>.tar.gz` (see build.yml).
+# 0. 前置检查：gh 可用、tag 未存在
 # ---------------------------------------------------------------------------
 if ! command -v gh >/dev/null 2>&1; then
-  echo "GitHub CLI (gh) is required to publish $TAG." >&2
+  echo "GitHub CLI (gh) 是必须的。" >&2
   exit 1
 fi
 
-echo "==> Pushing branch (cask update) to origin"
+if git -C "$REPO_ROOT" rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+  echo "::error:: tag $TAG 已存在。请先 bump 版本号（python/src/media_downloader/__init__.py）。" >&2
+  exit 1
+fi
+
+if ! git -C "$REPO_ROOT" diff --quiet --exit-code; then
+  echo "::error:: 工作区有未提交改动，请先 commit 再发布。" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# 1. 刷新策略文件 updated_at（release.sh 本地负责，CI 不再动这两个文件）
+# ---------------------------------------------------------------------------
+bump_policy() {
+  local file="$1" name="$2"
+  [[ -f "$file" ]] || { echo "==> 跳过 $name（未找到）"; return; }
+  if command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    "$PYTHON_BIN" - "$file" <<'PY'
+import json, sys, datetime
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    data["updated_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print(f"==> Bumped {path} updated_at")
+except Exception as e:
+    print(f"==> WARNING: 无法更新 {path}: {e}", file=sys.stderr)
+PY
+    git -C "$REPO_ROOT" add "$file"
+    if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$file"; then
+      git -C "$REPO_ROOT" commit -m "release: bump $name updated_at for $VERSION"
+      echo "==> Committed $name update"
+    fi
+  else
+    echo "==> WARNING: 未找到 $PYTHON_BIN；跳过 $name bump" >&2
+  fi
+}
+
+if [[ "${SKIP_POLICY_BUMP:-0}" != "1" ]]; then
+  bump_policy "$REPO_ROOT/version-policy.json" "version-policy.json"
+  bump_policy "$REPO_ROOT/download-policy.json" "download-policy.json"
+else
+  echo "==> SKIP_POLICY_BUMP=1: 跳过策略 updated_at 刷新"
+fi
+
+# ---------------------------------------------------------------------------
+# 2. 推送 main（策略更新），然后打 tag 触发 CI 构建
+# ---------------------------------------------------------------------------
+echo "==> Pushing branch to origin"
 git -C "$REPO_ROOT" push origin HEAD
 
-if git -C "$REPO_ROOT" rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
-  echo "==> Tag $TAG already exists; skipping tag creation"
-else
-  git -C "$REPO_ROOT" tag "$TAG"
-fi
+echo "==> Creating tag $TAG"
+git -C "$REPO_ROOT" tag "$TAG"
 git -C "$REPO_ROOT" push origin "$TAG"
 
-ASSETS=("$DMG_PATH" "$POLICY_FILE" "$DOWNLOAD_POLICY_FILE")
-# NOTE: Windows/Linux assets are uploaded by the CI workflow (build.yml) when the
-# tag is pushed. Do NOT add dist/* CLI binaries here — build-linux.sh only runs on
-# Linux and the local macOS box cannot produce them.
-# Build release notes from CHANGELOG.md (the matching [version] section).
-# Falls back to --generate-notes if CHANGELOG.md is missing or the section is empty.
-CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
-RELEASE_NOTES_FILE="$(mktemp -t release-notes.XXXXXX.md)"
-if [[ -f "$CHANGELOG_FILE" ]]; then
-  # Extract the "## [X.Y.Z]" section up to the next "## [" heading or a
-  # link-reference definition ("[x.y.z]: url"), whichever comes first.
-  awk -v ver="$VERSION" '
-    /^## \[/ {
-      if (found) { exit }
-      if ($0 ~ "^## \\[" ver "(\\]| )") { found = 1; next }
-      next
-    }
-    found && /^\[.*\]:/ { exit }
-    found { print }
-  ' "$CHANGELOG_FILE" > "$RELEASE_NOTES_FILE"
-fi
-if [[ ! -s "$RELEASE_NOTES_FILE" ]]; then
-  echo "==> No CHANGELOG entry for $VERSION; GitHub will generate notes."
-  rm -f "$RELEASE_NOTES_FILE"
-  RELEASE_NOTES_FILE=""
-fi
-
-if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-  gh release upload "$TAG" "${ASSETS[@]}" --clobber --repo "$REPO"
-  if [[ -n "$RELEASE_NOTES_FILE" ]]; then
-    gh release edit "$TAG" --repo "$REPO" --notes-file "$RELEASE_NOTES_FILE"
-  fi
-else
-  if [[ -n "$RELEASE_NOTES_FILE" ]]; then
-    gh release create "$TAG" "${ASSETS[@]}" \
-      --repo "$REPO" \
-      --notes-file "$RELEASE_NOTES_FILE" \
-      --title "$TAG"
-  else
-    gh release create "$TAG" "${ASSETS[@]}" \
-      --repo "$REPO" \
-      --generate-notes \
-      --title "$TAG"
-  fi
-fi
-rm -f "$RELEASE_NOTES_FILE"
-echo "==> Published $TAG"
+echo ""
+echo "==> 已触发远程构建：.github/workflows/release.yml"
+echo "    CI 会自动产出 Windows / Linux / macOS DMG / iOS IPA 并上传到 Release $TAG。"
+echo "    可在 https://github.com/$REPO/actions 查看进度。"
+echo "    完成后请确认 Release 资产齐全，并检查 Casks/tiktok-douyin-dl.rb 的 sha256 已被 CI 更新。"
