@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "updated_at": "2026-08-04T00:00:00Z",
+  "issue_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues",
+  "download": {
+    "enabled": true,
+    "message": "下载功能已开放。",
+    "min_version": "0.0.0",
+    "platforms": {}
+  }
+}

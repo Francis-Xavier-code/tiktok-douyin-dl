@@ -48,6 +48,12 @@ def _cli_common(disclaimer: str, english: bool) -> dict:
             "policy_min_version": "Minimum supported version: {min_version}.",
             "policy_update_link": "Download the latest version: {url}",
             "policy_update_required": "Your version is out of date. Please update to the latest release.",
+            "policy_issue_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues",
+            "policy_issue_hint": "If this looks wrong, please file an issue: {url}",
+            "download_blocked_header": "Download is currently unavailable.",
+            "download_policy_unreachable": "Could not reach the download policy server (all sources failed). Downloads are disabled until connectivity is restored.",
+            "download_policy_disabled": "Downloads are temporarily disabled by the maintainer. Please check the project page for status.",
+            "download_policy_min_version": "Downloads require version {min_version} or newer.",
         }
     return {
             "browser_install_success": "Chromium 浏览器已就绪。",
@@ -83,6 +89,12 @@ def _cli_common(disclaimer: str, english: bool) -> dict:
             "policy_min_version": "最低支持版本：{min_version}。",
             "policy_update_link": "下载最新版本：{url}",
             "policy_update_required": "你的版本已过时，请升级到最新版本。",
+            "policy_issue_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues",
+            "policy_issue_hint": "若认为有误，请前往反馈：{url}",
+            "download_blocked_header": "下载功能当前不可用。",
+            "download_policy_unreachable": "无法连接到下载策略服务（所有源均失败）。在恢复连接前已暂停下载功能。",
+            "download_policy_disabled": "维护者已临时关闭下载功能，请关注项目主页了解状态。",
+            "download_policy_min_version": "下载功能需要 {min_version} 及以上版本。",
     }
 
 

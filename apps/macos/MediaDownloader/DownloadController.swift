@@ -73,6 +73,11 @@ final class DownloadController {
 
         Task {
             defer { isDownloading = false }
+            let gate = await DownloadPolicyService.evaluate()
+            if case let .block(_, message, _) = gate {
+                self.status = message
+                return
+            }
             do {
                 let files = try await MediaDownloadService.downloadDirectMedia(from: sourceURL)
                 status = "已保存 \(files.count) 个文件到“文稿/MediaDownloader”。"

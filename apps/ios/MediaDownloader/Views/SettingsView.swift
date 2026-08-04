@@ -199,7 +199,7 @@ struct SettingsView: View {
     private var versionDescription: String {
         let version = Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "1.7.0"
+        ) as? String ?? "1.8.0"
         let build = Bundle.main.object(
             forInfoDictionaryKey: "CFBundleVersion"
         ) as? String ?? "1"

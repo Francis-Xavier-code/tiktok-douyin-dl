@@ -46,13 +46,44 @@ struct VersionPolicyService {
                     continue
                 }
                 if let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    writeCache(dict)
                     return dict
                 }
             } catch {
                 continue
             }
         }
-        return nil
+        return readCache()
+    }
+
+    // MARK: Local cache (so a hard block still applies offline)
+
+    private static var cacheURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
+            .appendingPathComponent("tiktok-douyin-dl")
+            .appendingPathComponent("version-policy.json")
+    }
+
+    private static func writeCache(_ policy: [String: Any]) {
+        guard let url = cacheURL else { return }
+        do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            let data = try JSONSerialization.data(withJSONObject: policy)
+            try data.write(to: url)
+        } catch {
+            // Non-fatal: cache is a best-effort enhancement.
+        }
+    }
+
+    private static func readCache() -> [String: Any]? {
+        guard let url = cacheURL else { return nil }
+        do {
+            let data = try Data(contentsOf: url)
+            return try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        } catch {
+            return nil
+        }
     }
 
     static func evaluate() async -> PolicyStatus {

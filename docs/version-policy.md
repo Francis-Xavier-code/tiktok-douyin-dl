@@ -8,6 +8,7 @@
 - 已经发布出去且不含本机制的旧版本**无法被远程杀掉**——本机制只对"包含版本检查的未来构建"生效。
 - 加载策略失败时一律**放行**（fail-open），绝不影响正常使用。
 - 拉取带镜像/CDN 兜底与短超时；网络不可达只会被忽略。
+- **本地缓存**：每次成功拉取都会把策略持久化到 `~/.cache/tiktok-douyin-dl/version-policy.json`（Windows 为 `%LOCALAPPDATA%/tiktok-douyin-dl/version-policy.json`，iOS/macOS 为 caches 目录）。**离线时**若本地已有缓存，则沿用缓存评估——这样设置 `hard_block: true` 的旧版在断网状态下仍会被挡住。仅当「从未成功拉取过任何策略」时才放行（首次离线不误杀）。
 
 ## 字段说明
 

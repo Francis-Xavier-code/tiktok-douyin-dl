@@ -18,6 +18,7 @@ Client platforms: cli, windows, macos, ios.
 from __future__ import annotations
 
 import json
+import os
 from typing import Optional
 
 from media_downloader.core.network import http_get_bytes
@@ -38,9 +39,38 @@ _POLICY_URLS = [
 
 _TIMEOUT = 6
 
+# Local cache: a successful pull is persisted so that a hard block still applies
+# when the network is unavailable at launch (e.g. an EOL build with no connectivity
+# must not silently fall back to allow). A build that has NEVER fetched a policy
+# still fails open. See docs/version-policy.md.
+_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "tiktok-douyin-dl")
+_CACHE_PATH = os.path.join(_CACHE_DIR, "version-policy.json")
+
 
 def _t(key: str, **kwargs) -> str:
     return translate(f"cli.common.{key}", **kwargs)
+
+
+def _cache_path() -> str:
+    return _CACHE_PATH
+
+
+def _write_cache(policy: dict) -> None:
+    try:
+        os.makedirs(_CACHE_DIR, exist_ok=True)
+        with open(_CACHE_PATH, "w", encoding="utf-8") as fh:
+            json.dump(policy, fh, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _read_cache() -> Optional[dict]:
+    try:
+        with open(_CACHE_PATH, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
 
 
 def parse_version(v_str: str):
@@ -53,17 +83,30 @@ def parse_version(v_str: str):
 
 
 def fetch_policy() -> Optional[dict]:
-    """Fetch and parse version-policy.json. Returns None on any failure."""
+    """Fetch and parse version-policy.json. Returns None on any failure.
+    On success the policy is persisted to the local cache."""
     for url in _POLICY_URLS:
         try:
             raw = http_get_bytes(url, timeout=_TIMEOUT, verify=True,
                                  headers={"User-Agent": "Mozilla/5.0 version-policy"})
             data = json.loads(raw.decode("utf-8"))
             if isinstance(data, dict):
+                _write_cache(data)
                 return data
         except Exception:
             continue
     return None
+
+
+def fetch_policy_cached() -> Optional[dict]:
+    """Network-first; on failure fall back to the last successful cache.
+
+    Fail-open only when BOTH the network and the cache are unavailable.
+    """
+    live = fetch_policy()
+    if live is not None:
+        return live
+    return _read_cache()
 
 
 class PolicyDecision:
@@ -117,7 +160,8 @@ def evaluate(policy: Optional[dict], current_version: str = VERSION,
 
 
 def check_version_policy(silent: bool = True) -> PolicyDecision:
-    """Fetch policy, evaluate for this client, and surface the result.
+    """Fetch policy (with cache fallback), evaluate for this client, and surface
+    the result.
 
     * BLOCK  -> print the message, open update_url, and exit(1).
     * NAG    -> print a non-fatal upgrade reminder (unless ``silent``).
@@ -125,7 +169,7 @@ def check_version_policy(silent: bool = True) -> PolicyDecision:
 
     Returns the decision so callers can react programmatically too.
     """
-    decision = evaluate(fetch_policy(), VERSION, PLATFORM)
+    decision = evaluate(fetch_policy_cached(), VERSION, PLATFORM)
 
     if decision.status == PolicyDecision.BLOCK:
         print("\n" + _t("policy_block_header"))

@@ -13,7 +13,7 @@ From the repository root:
 The unsigned release disk image is written to:
 
 ```text
-dist/apple/macos/MediaDownloader-macOS-1.7.0-unsigned.dmg
+dist/apple/macos/MediaDownloader-macOS-1.8.0-unsigned.dmg
 ```
 
 The DMG contains `MediaDownloader.app` and an `Applications` shortcut. The menu bar icon opens a compact quick-download panel that watches the clipboard while it is visible, identifies Douyin and TikTok links, and starts a download with one click. The panel also keeps the current download status, main window, download folder, refresh, and quit actions close at hand.

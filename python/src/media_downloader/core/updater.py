@@ -2,7 +2,7 @@
 
 Public surface:
   * ``VERSION`` / ``GITHUB_USER`` / ``GITHUB_REPO`` -- single source of truth
-  * ``parse_version`` -- "1.7.0" -> (1, 7, 0)
+  * ``parse_version`` -- "1.8.0" -> (1, 8, 0)
   * ``check_for_updates(silent)`` -- prints a prompt when a newer release exists
   * ``perform_self_update(download_url, expected_sha256=None)`` -- replaces the
     running executable **after** verifying its SHA-256 when a digest is supplied
@@ -20,7 +20,7 @@ from media_downloader.core.network import http_get_bytes, http_json
 from media_downloader.i18n import translate
 
 # --- release identity (single source of truth) ---
-VERSION = "1.7.0"
+VERSION = "1.8.0"
 GITHUB_USER = "Francis-Xavier-code"
 GITHUB_REPO = "tiktok-douyin-dl"
 

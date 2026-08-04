@@ -22,6 +22,7 @@ from media_downloader.core.disclaimer import DISCLAIMER, DISCLAIMER_EN
 from media_downloader.core.network import http_get_bytes, http_json
 from media_downloader.core.updater import VERSION, check_for_updates
 from media_downloader.core.version_policy import check_version_policy
+from media_downloader.core.download_policy import check_download_allowed
 from media_downloader.i18n import get_locale, translate
 
 # Apply PyInstaller / browser-env fixes up front.
@@ -412,6 +413,11 @@ def process_single(url, browser, output_base, index, total):
 
 def download_urls(raw_input: str, output_dir: str):
     """批量下载抖音链接"""
+    # Remote download-policy gate: block before any network/parse work.
+    decision = check_download_allowed(silent=False)
+    if decision.is_block:
+        return False
+
     urls = extract_urls_from_text(raw_input)
     if not urls:
         # 尝试将输入直接视为单个作品 ID

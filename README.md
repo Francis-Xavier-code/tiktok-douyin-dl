@@ -150,7 +150,7 @@ The CLI automatically detects Douyin or TikTok from the link domain. Douyin sear
 
 Application shells live in `apps/`, the installable Python package in `python/`, shared Swift code in `apple/`, the autonomous-agent skill in `skills/`, and reproducible build entry points in `scripts/`. See [`docs/architecture.md`](docs/architecture.md) for details.
 
-Build both unsigned Apple artifacts at version `1.7.0` with `./scripts/build-apple.sh all`. Use `ios` or `macos` instead of `all` to build one platform.
+Build both unsigned Apple artifacts at version `1.8.0` with `./scripts/build-apple.sh all`. Use `ios` or `macos` instead of `all` to build one platform.
 
 ## ⚖️ Disclaimer
 

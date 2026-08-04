@@ -769,7 +769,7 @@ class App(tk.Tk):
             import auto_updater
             version = auto_updater.CURRENT_VERSION
         except ImportError:
-            version = "v1.7.0"
+            version = "v1.8.0"
             
         import webbrowser
         about_win = tk.Toplevel(self)
@@ -920,6 +920,26 @@ class App(tk.Tk):
 
         # 开始下载
         try:
+            # 下载前远程策略检查（直连 + 9 个镜像依次兜底；全挂则默认禁止下载）
+            try:
+                import auto_updater
+                result = auto_updater.check_download_policy()
+            except Exception:
+                result = "unreachable"
+            if result != "allow":
+                issue_url = "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues"
+                tips = {
+                    "disabled": "维护者已临时关闭下载功能，请关注项目主页了解恢复时间。",
+                    "version": "当前版本过低，下载功能已限制，请升级到最新版本。",
+                    "unreachable": "无法连接下载策略服务（所有镜像均不可用），已暂停下载。\n如确认网络正常，请前往仓库反馈。",
+                }
+                messagebox.showerror(
+                    "下载功能不可用",
+                    tips.get(result, "下载功能当前不可用。") + f"\n\n反馈/提 issue：{issue_url}",
+                    parent=self,
+                )
+                return
+
             platform = self._current_platform()
             raw_text = self._links_text.get("1.0", "end-1c")
             output_dir = self._output_dir_var.get().strip()

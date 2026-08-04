@@ -19,11 +19,11 @@ MediaDownloader.xcodeproj is a native SwiftUI client for iOS 17 and later.
 
 The target supports both iPhone and iPad (targeted device families 1 and 2). The artifact produced by the existing GitHub Actions workflow is a Simulator build and cannot be installed on a physical iPhone or iPad.
 
-To create the repository's unsigned iOS 1.7.0 IPA from the command line, run this from the repository root:
+To create the repository's unsigned iOS 1.8.0 IPA from the command line, run this from the repository root:
 
     ./scripts/build-apple.sh ios
 
-The artifact is written to `dist/apple/ios/MediaDownloader-iOS-1.7.0-unsigned.ipa`.
+The artifact is written to `dist/apple/ios/MediaDownloader-iOS-1.8.0-unsigned.ipa`.
 
 ## Installable distribution
 
@@ -57,15 +57,15 @@ The project's default public iOS artifact is an unsigned device IPA. It contains
 From the repository's `apps/ios` directory, run:
 
     cd apps/ios
-    IOS_VERSION=1.7.0 IOS_BUILD_NUMBER=1 bash scripts/build-unsigned-ipa.sh
+    IOS_VERSION=1.8.0 IOS_BUILD_NUMBER=1 bash scripts/build-unsigned-ipa.sh
 
 The output is:
 
-    apps/ios/dist/MediaDownloader-iOS-1.7.0-unsigned.ipa
+    apps/ios/dist/MediaDownloader-iOS-1.8.0-unsigned.ipa
 
 To copy it back from Windows PowerShell:
 
-    scp cbzw025@REMOTE_MAC_IP:/path/to/tiktok-douyin-dl/apps/ios/dist/MediaDownloader-iOS-1.7.0-unsigned.ipa C:\Users\YOUR_NAME\Downloads\
+    scp cbzw025@REMOTE_MAC_IP:/path/to/tiktok-douyin-dl/apps/ios/dist/MediaDownloader-iOS-1.8.0-unsigned.ipa C:\Users\YOUR_NAME\Downloads\
 
 Replace **REMOTE_MAC_IP** and **YOUR_NAME** with the actual values. Add **-P PORT** after **scp** if the remote Mac uses a non-default SSH port.
 
@@ -73,8 +73,8 @@ Replace **REMOTE_MAC_IP** and **YOUR_NAME** with the actual values. Add **-P POR
 
 GitHub Actions also produces the unsigned device IPA. Push an iOS-specific tag to create a GitHub Release automatically:
 
-    git tag ios-v1.7.0
-    git push origin ios-v1.7.0
+    git tag ios-v1.8.0
+    git push origin ios-v1.8.0
 
 The in-app updater only considers stable tags beginning with **ios-v**, so desktop releases do not appear as iOS updates.
 

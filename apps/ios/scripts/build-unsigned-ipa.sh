@@ -6,7 +6,7 @@ IOS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT="$IOS_DIR/MediaDownloader.xcodeproj"
 OUTPUT_DIR="${1:-$IOS_DIR/dist}"
 DERIVED_DATA="$OUTPUT_DIR/DerivedData"
-VERSION="${IOS_VERSION:-1.7.0}"
+VERSION="${IOS_VERSION:-1.8.0}"
 BUILD_NUMBER="${IOS_BUILD_NUMBER:-1}"
 
 if ! xcodebuild -version >/dev/null 2>&1 && [[ -d /Applications/Xcode.app/Contents/Developer ]]; then

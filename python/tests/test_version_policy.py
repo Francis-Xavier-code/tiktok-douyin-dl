@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from media_downloader.core.version_policy import (
@@ -113,3 +115,54 @@ def test_fetch_policy_returns_none_on_unreachable(monkeypatch):
     # Re-point URLs to something that will hit the mocked helper regardless.
     monkeypatch.setattr(vp, "_POLICY_URLS", ["https://unreachable.invalid/policy.json"])
     assert fetch_policy() is None
+
+
+# --- local cache (offline hard-block still applies) -------------------------
+
+def test_offline_without_cache_still_allows(monkeypatch, tmp_path):
+    """First launch, offline, no cache -> fail-open (ALLOW), never false-block."""
+    import media_downloader.core.version_policy as vp
+
+    monkeypatch.setattr(vp, "http_get_bytes", lambda *a, **k: (_ for _ in ()).throw(OSError("offline")))
+    monkeypatch.setattr(vp, "_CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(vp, "_CACHE_PATH", str(tmp_path / "version-policy.json"))
+    monkeypatch.setattr(vp, "_POLICY_URLS", ["https://unreachable.invalid/policy.json"])
+    assert vp.fetch_policy_cached() is None
+
+
+def test_offline_with_cache_uses_cached_block(monkeypatch, tmp_path):
+    """Offline but a prior successful cache exists -> stale hard block still applies."""
+    import media_downloader.core.version_policy as vp
+
+    cache = tmp_path / "version-policy.json"
+    cache.write_text(
+        json.dumps({"platforms": {"cli": {"min_version": "9.9.9", "hard_block": True}}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(vp, "http_get_bytes", lambda *a, **k: (_ for _ in ()).throw(OSError("offline")))
+    monkeypatch.setattr(vp, "_CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(vp, "_CACHE_PATH", str(cache))
+    monkeypatch.setattr(vp, "_POLICY_URLS", ["https://unreachable.invalid/policy.json"])
+
+    policy = vp.fetch_policy_cached()
+    assert isinstance(policy, dict)
+    d = evaluate(policy, current_version="1.8.0", platform="cli")
+    assert d.status == PolicyDecision.BLOCK
+
+
+def test_successful_fetch_writes_cache(monkeypatch, tmp_path):
+    """A successful live fetch persists the policy to the cache for later offline use."""
+    import media_downloader.core.version_policy as vp
+
+    monkeypatch.setattr(vp, "_CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(vp, "_CACHE_PATH", str(tmp_path / "version-policy.json"))
+    monkeypatch.setattr(
+        vp, "http_get_bytes",
+        lambda *a, **k: json.dumps({"platforms": {"cli": {"min_version": "0.0.0"}}}).encode(),
+    )
+    monkeypatch.setattr(vp, "_POLICY_URLS", ["https://example.com/policy.json"])
+
+    result = vp.fetch_policy_cached()
+    assert isinstance(result, dict)
+    assert (tmp_path / "version-policy.json").exists()
+

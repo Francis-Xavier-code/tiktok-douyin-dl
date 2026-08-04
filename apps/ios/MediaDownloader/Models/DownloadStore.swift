@@ -8,6 +8,13 @@ final class DownloadStore {
     private(set) var isDownloading = false
 
     func downloadDirectMedia(from text: String, platform: DownloadPlatform) async throws {
+        // Remote download-policy gate: block before any network/parse work.
+        let gate = await DownloadPolicyService.evaluate()
+        if case let .block(_, message, _) = gate {
+            throw NSError(domain: "DownloadPolicy", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: message])
+        }
+
         let urls = ShareTextParser.urls(in: text)
         guard !urls.isEmpty else {
             throw MediaDownloadError.noURLFound

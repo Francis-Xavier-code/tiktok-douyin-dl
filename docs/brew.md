@@ -28,7 +28,7 @@
 
 ```bash
 ./scripts/build-apple.sh macos
-# 产物: dist/apple/macos/MediaDownloader-macOS-1.7.0-unsigned.dmg
+# 产物: dist/apple/macos/MediaDownloader-macOS-1.8.0-unsigned.dmg
 # 自动完成 ad-hoc 签名（免费），App 可正常安装运行
 ```
 
@@ -89,7 +89,7 @@ export APPLE_TEAM_ID="TEAMID"
 ./scripts/release.sh
 ```
 
-4. 产物变为 `MediaDownloader-macOS-1.7.0.dmg`（已签名 + 公证 + staple），
+4. 产物变为 `MediaDownloader-macOS-1.8.0.dmg`（已签名 + 公证 + staple），
    `release.sh` 会自动把 cask 重写为**标准版**（无 postflight 清理，Gatekeeper 直接信任）
 5. Fork [Homebrew/homebrew-cask](https://github.com/Homebrew/homebrew-cask)，把生成的 cask 放进 `Casks/`，
    `brew audit --cask --new tiktok-douyin-dl` 通过后提交 PR

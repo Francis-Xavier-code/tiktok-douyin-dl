@@ -9,7 +9,7 @@ import tempfile
 import subprocess
 import tkinter.messagebox as messagebox
 
-CURRENT_VERSION = "v1.7.0"
+CURRENT_VERSION = "v1.8.0"
 
 # Remote version-policy enforcement (fail-open). Lets the maintainer retire old
 # builds without re-shipping every binary. See version-policy.json / docs.
@@ -20,27 +20,58 @@ _POLICY_URLS = [
 ]
 _POLICY_TIMEOUT = 6
 
+# Local cache: a successful pull is persisted so a hard block still applies when
+# the network is down. A build that has NEVER fetched a policy fails open.
+_CACHE_DIR = os.path.join(os.getenv("LOCALAPPDATA") or os.path.expanduser("~/.cache"), "tiktok-douyin-dl")
+_CACHE_PATH = os.path.join(_CACHE_DIR, "version-policy.json")
+
+
+def _write_cache(policy):
+    try:
+        os.makedirs(_CACHE_DIR, exist_ok=True)
+        with open(_CACHE_PATH, "w", encoding="utf-8") as fh:
+            json.dump(policy, fh, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _read_cache():
+    try:
+        with open(_CACHE_PATH, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
 
 def _parse_version(v):
     nums = re.findall(r"\d+", str(v))
     return tuple(int(x) for x in nums) if nums else (0,)
 
 
-def fetch_version_policy():
-    """Return the policy dict, or None on any failure (fail-open)."""
+def fetch_version_policy(use_cache=True):
+    """Return the policy dict, or None on any failure (fail-open).
+    On a network failure, falls back to the last successful local cache so an
+    offline EOL build can still be hard-blocked."""
     for url in _POLICY_URLS:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=_POLICY_TIMEOUT) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                data = json.loads(resp.read().decode("utf-8"))
+                if isinstance(data, dict):
+                    _write_cache(data)
+                    return data
         except Exception:
             continue
+    if use_cache:
+        return _read_cache()
     return None
 
 
 def enforce_version_policy(platform, current_version):
     """Check the remote policy. Hard-block exits the process; soft shows a warning.
-    Any failure is ignored (fail-open) so the app always runs."""
+    Any failure (incl. offline with no prior cache) is ignored (fail-open) so the
+    app always runs the first time."""
     try:
         policy = fetch_version_policy()
         if not isinstance(policy, dict):
@@ -69,6 +100,53 @@ def enforce_version_policy(platform, current_version):
             )
     except Exception:
         pass
+
+def check_download_policy() -> str:
+    """Pre-download gate. Returns one of: 'allow', 'disabled', 'version', 'unreachable'.
+
+    Tries direct GitHub first, then 9 domestic mirrors in order; the first
+    source that returns valid JSON wins. If EVERY source fails, returns
+    'unreachable' (fail-closed): the caller must block the download.
+    """
+    sources = [
+        "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://ghproxy.net/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://raw.gitmirror.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://kgithub.com/Francis-Xavier-code/tiktok-douyin-dl/raw/main/download-policy.json",
+        "https://mirror.ghproxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://github.moeyy.xyz/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://ghproxy.1888866.xyz/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://gh.api.99988866.xyz/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://fastly.jsdelivr.net/gh/Francis-Xavier-code/tiktok-douyin-dl@main/download-policy.json",
+    ]
+    policy = None
+    for url in sources:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            if isinstance(data, dict):
+                policy = data
+                break
+        except Exception:
+            continue
+
+    if policy is None:
+        return "unreachable"
+
+    download = policy.get("download")
+    if not isinstance(download, dict):
+        return "unreachable"
+
+    enabled = download.get("enabled", True)
+    min_version = download.get("min_version", "0.0.0")
+    if not enabled:
+        return "disabled"
+    if _parse_version(CURRENT_VERSION) < _parse_version(min_version):
+        return "version"
+    return "allow"
+
 
 def check_for_updates(root, silent=True):
     def _run():

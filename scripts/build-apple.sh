@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET="${1:-all}"
-VERSION="${APPLE_VERSION:-1.7.0}"
+VERSION="${APPLE_VERSION:-1.8.0}"
 BUILD_NUMBER="${APPLE_BUILD_NUMBER:-1}"
 OUTPUT_ROOT="${APPLE_OUTPUT_DIR:-$REPO_ROOT/dist/apple}"
 

@@ -5,7 +5,7 @@ $PythonProject = Join-Path $RepoRoot "python"
 $GuiEntry = Join-Path $RepoRoot "apps\windows\gui\gui_downloader.py"
 $Icon = Join-Path $RepoRoot "assets\app.ico"
 $BrowserCache = Join-Path $RepoRoot "ms-playwright"
-$Version = if ([string]::IsNullOrWhiteSpace($env:APP_VERSION)) { "1.7.0" } else { $env:APP_VERSION }
+$Version = if ([string]::IsNullOrWhiteSpace($env:APP_VERSION)) { "1.8.0" } else { $env:APP_VERSION }
 
 python -m pip install --upgrade pip
 python -m pip install -e "$PythonProject[windows]" pyinstaller
