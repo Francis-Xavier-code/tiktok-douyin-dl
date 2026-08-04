@@ -9,6 +9,8 @@ A fast, cross-platform tool suite for downloading TikTok and Douyin videos and p
 
 Packaged desktop applications include the required runtime and browser components. The iOS client parses supported share pages and downloads media directly on the device without relying on a Python service or the Docker WebUI.
 
+📝 **[Changelog](CHANGELOG.md)** — full release notes for every version.
+
 ---
 
 🌐 **[English]** | **[简体中文](README_zh.md)**

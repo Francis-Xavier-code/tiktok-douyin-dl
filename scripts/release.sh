@@ -176,12 +176,46 @@ ASSETS=("$DMG_PATH" "$POLICY_FILE")
 if [[ "${SKIP_LINUX:-0}" != "1" ]]; then
   ASSETS+=("$REPO_ROOT/dist/douyin-dl" "$REPO_ROOT/dist/tiktok-dl")
 fi
+# Build release notes from CHANGELOG.md (the matching [version] section).
+# Falls back to --generate-notes if CHANGELOG.md is missing or the section is empty.
+CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
+RELEASE_NOTES_FILE="$(mktemp -t release-notes.XXXXXX.md)"
+if [[ -f "$CHANGELOG_FILE" ]]; then
+  # Extract the "## [X.Y.Z]" section up to the next "## [" heading or a
+  # link-reference definition ("[x.y.z]: url"), whichever comes first.
+  awk -v ver="$VERSION" '
+    /^## \[/ {
+      if (found) { exit }
+      if ($0 ~ "^## \\[" ver "(\\]| )") { found = 1; next }
+      next
+    }
+    found && /^\[.*\]:/ { exit }
+    found { print }
+  ' "$CHANGELOG_FILE" > "$RELEASE_NOTES_FILE"
+fi
+if [[ ! -s "$RELEASE_NOTES_FILE" ]]; then
+  echo "==> No CHANGELOG entry for $VERSION; GitHub will generate notes."
+  rm -f "$RELEASE_NOTES_FILE"
+  RELEASE_NOTES_FILE=""
+fi
+
 if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
   gh release upload "$TAG" "${ASSETS[@]}" --clobber --repo "$REPO"
+  if [[ -n "$RELEASE_NOTES_FILE" ]]; then
+    gh release edit "$TAG" --repo "$REPO" --notes-file "$RELEASE_NOTES_FILE"
+  fi
 else
-  gh release create "$TAG" "${ASSETS[@]}" \
-    --repo "$REPO" \
-    --generate-notes \
-    --title "$TAG"
+  if [[ -n "$RELEASE_NOTES_FILE" ]]; then
+    gh release create "$TAG" "${ASSETS[@]}" \
+      --repo "$REPO" \
+      --notes-file "$RELEASE_NOTES_FILE" \
+      --title "$TAG"
+  else
+    gh release create "$TAG" "${ASSETS[@]}" \
+      --repo "$REPO" \
+      --generate-notes \
+      --title "$TAG"
+  fi
 fi
+rm -f "$RELEASE_NOTES_FILE"
 echo "==> Published $TAG"
