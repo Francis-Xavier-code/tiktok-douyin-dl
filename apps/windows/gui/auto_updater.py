@@ -199,9 +199,14 @@ def check_for_updates(root, silent=True):
             msg = f"发现新版本 {latest_version}！\n\n您当前版本为 {CURRENT_VERSION}。{release_notes}\n\n是否立即下载并覆盖更新？\n(国内网络将自动启用加速节点下载)"
             def _show_prompt():
                 if messagebox.askyesno("软件更新", msg, parent=root):
-                    # 拼接固定的下载链接，并使用国内 ghproxy 加速下载
-                    raw_dl_url = f"https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/download/{latest_version}/MediaDownloader_Windows_Setup.zip"
-                    proxy_dl_url = f"https://ghp.ci/{raw_dl_url}"
+                    # 真实 Release 资产名：MediaDownloader-Windows-x64-Setup-<ver>.exe
+                    # 直接用 ghproxy 加速下载，下载后静默运行安装包完成覆盖更新。
+                    raw_dl_url = (
+                        f"https://github.com/Francis-Xavier-code/tiktok-douyin-dl"
+                        f"/releases/download/{latest_version}/"
+                        f"MediaDownloader-Windows-x64-Setup-{latest_version.lstrip('v')}.exe"
+                    )
+                    proxy_dl_url = f"https://ghproxy.net/{raw_dl_url}"
                     _start_download_and_update(root, proxy_dl_url)
             root.after(0, _show_prompt)
         else:
@@ -213,40 +218,38 @@ def check_for_updates(root, silent=True):
 def _start_download_and_update(root, download_url):
     import tkinter as tk
     from tkinter import ttk
-    import zipfile
-    
+
     progress_win = tk.Toplevel(root)
     progress_win.title("软件更新中")
     progress_win.geometry("350x150")
     progress_win.resizable(False, False)
     progress_win.transient(root)
     progress_win.grab_set()
-    
+
     tk.Label(progress_win, text="正在下载最新安装包，请耐心等待...", font=("微软雅黑", 10)).pack(pady=15)
     progress_bar = ttk.Progressbar(progress_win, length=280, mode='determinate')
     progress_bar.pack(pady=5)
     lbl_progress = tk.Label(progress_win, text="0 MB / 0 MB", font=("微软雅黑", 9))
     lbl_progress.pack(pady=5)
-    
+
     def _download():
         try:
             temp_dir = tempfile.gettempdir()
-            zip_path = os.path.join(temp_dir, "MediaDownloader_Update.zip")
-            setup_path = os.path.join(temp_dir, "MediaDownloader_Setup.exe")
+            # 直接下载安装包 exe（与 Release 资产同名），不再走 zip 解压。
+            setup_path = os.path.join(temp_dir, "MediaDownloader_Update.exe")
 
-            # 尝试多个下载节点
-            # download_url points to the repository release asset, optionally through a mirror.
-            raw_url = download_url.replace("https://ghp.ci/", "")
+            # 尝试多个下载节点（download_url 已可带镜像前缀，这里再补几个兜底）。
+            raw_url = download_url.replace("https://ghproxy.net/", "").replace("https://gh-proxy.com/", "")
             urls_to_try = [
-                f"https://gh-proxy.com/{raw_url}",
                 download_url,
+                f"https://gh-proxy.com/{raw_url}",
                 f"https://ghproxy.net/{raw_url}",
-                raw_url
+                raw_url,
             ]
-            
+
             success = False
             last_err = None
-            
+
             for d_url in urls_to_try:
                 try:
                     req = urllib.request.Request(d_url, headers={"User-Agent": "Mozilla/5.0"})
@@ -254,7 +257,7 @@ def _start_download_and_update(root, download_url):
                         total_size = int(resp.getheader('Content-Length', 0))
                         downloaded = 0
                         chunk_size = 8192
-                        with open(zip_path, 'wb') as f:
+                        with open(setup_path, 'wb') as f:
                             while True:
                                 chunk = resp.read(chunk_size)
                                 if not chunk:
@@ -272,29 +275,24 @@ def _start_download_and_update(root, download_url):
                 except Exception as e:
                     last_err = e
                     continue
-                    
+
             if not success:
                 raise Exception(f"所有下载节点均失败，最后错误: {last_err}")
-            
-            root.after(0, lambda: lbl_progress.config(text="正在解压..."))
-            # 解压 ZIP 文件
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                zip_ref.extractall(temp_dir)
-            
-            root.after(0, progress_win.destroy)
-            
-            # 准备静默安装 bat 脚本
+
+            root.after(0, lambda: lbl_progress.config(text="即将启动安装程序..."))
+
+            # 准备静默安装 bat 脚本：先等主程序退出，再静默运行新安装包覆盖。
             bat_path = os.path.join(temp_dir, "update_app.bat")
             with open(bat_path, "w", encoding="utf-8") as f:
                 f.write("@echo off\n")
-                f.write("timeout /t 2 /nobreak >nul\n") # 等待主程序关闭
-                f.write(f'start "" "{setup_path}" /SILENT\n') # 启动静默安装
-            
+                f.write("timeout /t 2 /nobreak >nul\n")  # 等待主程序关闭
+                f.write(f'start "" "{setup_path}" /SILENT\n')  # 启动静默安装
+
             def _apply():
-                messagebox.showinfo("更新准备完毕", "更新包已下载并解压完毕！点击确定后软件将重启以完成更新。", parent=root)
+                messagebox.showinfo("更新准备完毕", "更新包已下载完毕！点击确定后软件将重启以完成更新。", parent=root)
                 subprocess.Popen(bat_path, shell=True)
                 sys.exit(0)
-            
+
             root.after(0, _apply)
 
         except Exception as e:

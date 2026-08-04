@@ -189,7 +189,12 @@ fi
 # ---------------------------------------------------------------------------
 # 4. Publish the GitHub release
 #    - existing tag/release are updated in place (assets added with --clobber)
-#    - the tag push also triggers the CI workflow which adds Windows/Linux assets
+#    - the tag push also triggers the CI workflow (.github/workflows/build.yml),
+#      which builds & uploads the Windows and Linux assets into the same release.
+#    - macOS DMG is built locally above and uploaded here.
+#    - NOTE: the Linux/macOS CLI binary is NOT uploaded from this local box:
+#      `build-linux.sh` only works on Linux, and CI produces
+#      `MediaDownloader-Linux-x86_64-<ver>.tar.gz` (see build.yml).
 # ---------------------------------------------------------------------------
 if ! command -v gh >/dev/null 2>&1; then
   echo "GitHub CLI (gh) is required to publish $TAG." >&2
@@ -207,9 +212,9 @@ fi
 git -C "$REPO_ROOT" push origin "$TAG"
 
 ASSETS=("$DMG_PATH" "$POLICY_FILE" "$DOWNLOAD_POLICY_FILE")
-if [[ "${SKIP_LINUX:-0}" != "1" ]]; then
-  ASSETS+=("$REPO_ROOT/dist/douyin-dl" "$REPO_ROOT/dist/tiktok-dl")
-fi
+# NOTE: Windows/Linux assets are uploaded by the CI workflow (build.yml) when the
+# tag is pushed. Do NOT add dist/* CLI binaries here — build-linux.sh only runs on
+# Linux and the local macOS box cannot produce them.
 # Build release notes from CHANGELOG.md (the matching [version] section).
 # Falls back to --generate-notes if CHANGELOG.md is missing or the section is empty.
 CHANGELOG_FILE="$REPO_ROOT/CHANGELOG.md"
