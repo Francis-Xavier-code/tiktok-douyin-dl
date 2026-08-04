@@ -11,6 +11,11 @@ final class DownloadController {
     private(set) var clipboardText = ""
     private(set) var clipboardURL: URL?
 
+    /// Remote version-policy outcome, refreshed once at startup. Fail-open:
+    /// defaults to `.allow`, so a missing/blocked policy never stops the app.
+    private(set) var policyStatus: PolicyStatus = .allow
+    private var policyChecked = false
+
     private var pasteboardChangeCount = -1
 
     var canDownload: Bool {
@@ -91,6 +96,12 @@ final class DownloadController {
         } catch {
             status = "无法打开下载目录：\(error.localizedDescription)"
         }
+    }
+
+    func refreshPolicy() async {
+        guard !policyChecked else { return }
+        policyChecked = true
+        policyStatus = await VersionPolicyService.evaluate()
     }
 
     private static func platform(for url: URL) -> DownloadPlatform? {

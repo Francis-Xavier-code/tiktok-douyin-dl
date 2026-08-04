@@ -7,6 +7,30 @@ struct MenuBarView: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
+        Group {
+            switch controller.policyStatus {
+            case .allow:
+                mainContent
+            case .nag(let message, let url):
+                VStack(spacing: 0) {
+                    PolicyBanner(message: message, url: url)
+                    mainContent
+                }
+            case .block(let message, let url):
+                PolicyBlockView(message: message, url: url)
+            }
+        }
+        .frame(width: 360)
+        .background(.ultraThinMaterial)
+        .task {
+            while !Task.isCancelled {
+                controller.refreshClipboard()
+                try? await Task.sleep(nanoseconds: 750_000_000)
+            }
+        }
+    }
+
+    private var mainContent: some View {
         VStack(spacing: 0) {
             header
 
@@ -22,15 +46,8 @@ struct MenuBarView: View {
 
             footer
         }
-        .frame(width: 360)
-        .background(.ultraThinMaterial)
-        .task {
-            while !Task.isCancelled {
-                controller.refreshClipboard()
-                try? await Task.sleep(nanoseconds: 750_000_000)
-            }
-        }
     }
+
 
     private var header: some View {
         HStack(spacing: 11) {

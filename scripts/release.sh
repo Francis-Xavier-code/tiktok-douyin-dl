@@ -119,6 +119,40 @@ if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$CASK_FILE"; then
 fi
 
 # ---------------------------------------------------------------------------
+# 4b. Refresh version-policy.json (bump updated_at) and ship it as a release asset.
+#     Lets maintainers retire old clients without re-shipping every binary.
+#     See docs/version-policy.md.
+# ---------------------------------------------------------------------------
+POLICY_FILE="$REPO_ROOT/version-policy.json"
+if [[ -f "$POLICY_FILE" ]]; then
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$POLICY_FILE" <<'PY'
+import json, sys, datetime
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    data["updated_at"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print("==> Bumped version-policy.json updated_at")
+except Exception as e:
+    print(f"==> WARNING: could not update version-policy.json: {e}", file=sys.stderr)
+PY
+    git -C "$REPO_ROOT" add "$POLICY_FILE"
+    if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$POLICY_FILE"; then
+      git -C "$REPO_ROOT" commit -m "release: bump version-policy.json updated_at for $VERSION"
+      echo "==> Committed version-policy.json update"
+    fi
+  else
+    echo "==> WARNING: python3 not found; skipping version-policy.json bump" >&2
+  fi
+else
+  echo "==> WARNING: version-policy.json not found; skipping" >&2
+fi
+
+# ---------------------------------------------------------------------------
 # 4. Publish the GitHub release
 #    - existing tag/release are updated in place (assets added with --clobber)
 #    - the tag push also triggers the CI workflow which adds Windows/Linux assets
@@ -138,7 +172,7 @@ else
 fi
 git -C "$REPO_ROOT" push origin "$TAG"
 
-ASSETS=("$DMG_PATH")
+ASSETS=("$DMG_PATH" "$POLICY_FILE")
 if [[ "${SKIP_LINUX:-0}" != "1" ]]; then
   ASSETS+=("$REPO_ROOT/dist/douyin-dl" "$REPO_ROOT/dist/tiktok-dl")
 fi

@@ -40,6 +40,7 @@ scratch/
 *.js
 !apps/ios/MediaDownloader/Assets.xcassets/**/Contents.json
 !apps/macos/MediaDownloader/Assets.xcassets/**/Contents.json
+!version-policy.json
 
 scratch/tiktok_data.json
 

@@ -4,11 +4,71 @@ import threading
 import urllib.request
 import urllib.error
 import json
+import re
 import tempfile
 import subprocess
 import tkinter.messagebox as messagebox
 
 CURRENT_VERSION = "v1.7.0"
+
+# Remote version-policy enforcement (fail-open). Lets the maintainer retire old
+# builds without re-shipping every binary. See version-policy.json / docs.
+_POLICY_URLS = [
+    "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+    "https://gh-proxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+    "https://ghproxy.net/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+]
+_POLICY_TIMEOUT = 6
+
+
+def _parse_version(v):
+    nums = re.findall(r"\d+", str(v))
+    return tuple(int(x) for x in nums) if nums else (0,)
+
+
+def fetch_version_policy():
+    """Return the policy dict, or None on any failure (fail-open)."""
+    for url in _POLICY_URLS:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=_POLICY_TIMEOUT) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception:
+            continue
+    return None
+
+
+def enforce_version_policy(platform, current_version):
+    """Check the remote policy. Hard-block exits the process; soft shows a warning.
+    Any failure is ignored (fail-open) so the app always runs."""
+    try:
+        policy = fetch_version_policy()
+        if not isinstance(policy, dict):
+            return
+        platforms = policy.get("platforms") or {}
+        entry = platforms.get(platform)
+        if not isinstance(entry, dict):
+            return
+        min_version = entry.get("min_version") or "0.0.0"
+        hard_block = bool(entry.get("hard_block", False))
+        if _parse_version(current_version) >= _parse_version(min_version):
+            return
+        message = (policy.get("message") or "当前版本已过时，请升级到最新版本。").strip()
+        update_url = policy.get("update_url") or \
+            "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest"
+        if hard_block:
+            messagebox.showerror(
+                "版本已停止支持",
+                f"{message}\n\n最低支持版本：{min_version}\n请前往更新：\n{update_url}",
+            )
+            sys.exit(1)
+        else:
+            messagebox.showwarning(
+                "建议升级",
+                f"{message}\n\n最低支持版本：{min_version}\n更新地址：\n{update_url}",
+            )
+    except Exception:
+        pass
 
 def check_for_updates(root, silent=True):
     def _run():

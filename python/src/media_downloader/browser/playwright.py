@@ -11,28 +11,11 @@ Usage:
 import sys
 import os
 
-# 修复 PyInstaller 打包环境的 LD_LIBRARY_PATH 问题
-if getattr(sys, 'frozen', False):
-    for key in ['LD_LIBRARY_PATH', 'LIBPATH', 'DYLD_LIBRARY_PATH']:
-        orig_key = key + '_ORIG'
-        if orig_key in os.environ:
-            os.environ[key] = os.environ[orig_key]
-        else:
-            os.environ.pop(key, None)
+# 修复 PyInstaller 打包环境的 LD_LIBRARY_PATH 问题 + 浏览器缓存/镜像环境变量
+from media_downloader.core.launch import apply_frozen_env_fixes, configure_browser_env
 
-# 设置浏览器缓存路径
-os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.expanduser('~/.cache/ms-playwright')
-
-# 设置国内镜像
-os.environ['PLAYWRIGHT_DOWNLOAD_HOST'] = 'https://playwright-zh.oss-cn-hangzhou.aliyuncs.com'
-os.environ['npm_config_registry'] = 'https://registry.npmmirror.com'
-
-# 禁用 SSL 验证（防止自签名证书问题）
-import ssl
-try:
-    ssl._create_default_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
+apply_frozen_env_fixes()
+configure_browser_env(mirror="https://playwright-zh.oss-cn-hangzhou.aliyuncs.com")
 
 import urllib.request
 import zipfile

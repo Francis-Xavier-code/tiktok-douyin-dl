@@ -5,81 +5,27 @@ Usage:
   tiktok-dl <Link/Sharing Text> [Output Directory]
 """
 
-import sys
-import os
-
-# 修复 PyInstaller 打包环境中子进程（如 Playwright 启动的浏览器）因为 LD_LIBRARY_PATH 污染而崩溃的问题
-if getattr(sys, 'frozen', False):
-    for key in ['LD_LIBRARY_PATH', 'LIBPATH', 'DYLD_LIBRARY_PATH']:
-        orig_key = key + '_ORIG'
-        if orig_key in os.environ:
-            os.environ[key] = os.environ[orig_key]
-        else:
-            os.environ.pop(key, None)
-
+import json
 import re
 import time
-import urllib.request
-import ssl
-import json
-from datetime import datetime
-try:
-    from playwright.sync_api import sync_playwright
-except ImportError:
-    def sync_playwright():
-        raise RuntimeError("Playwright is required; install the media-downloader package dependencies first.")
+import urllib.parse
+
 from media_downloader.core.downloader import format_size
 from media_downloader.core.filenames import next_media_filename
+from media_downloader.core.launch import (
+    apply_frozen_env_fixes,
+    configure_browser_env,
+    ensure_browser_installed,
+)
+from media_downloader.core.disclaimer import DISCLAIMER, DISCLAIMER_EN
+from media_downloader.core.network import http_get_bytes
+from media_downloader.core.updater import VERSION, check_for_updates
+from media_downloader.core.version_policy import check_version_policy
 from media_downloader.i18n import get_locale, translate
 
-# 禁用全局 SSL 证书验证，防止本地 CA 证书缺失导致网络请求失败
-try:
-    ssl._create_default_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-
-# 尝试导入 Pillow
-try:
-    from PIL import Image as PILImage
-except ImportError:
-    PILImage = None
-
-# 版本控制与 GitHub 自动更新配置
-VERSION = "1.7.0"
-GITHUB_USER = "Francis-Xavier-code"
-GITHUB_REPO = "tiktok-douyin-dl"
-
-# 强制设置浏览器路径为用户的全局缓存目录，防止打包后寻找 tmp 目录而崩溃（仅在未预设时设置）
-if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
-    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = os.path.expanduser('~/.cache/ms-playwright')
-
-# ============================================================================
-# 国内镜像加速：Playwright 浏览器下载（绕过 GFW）
-# 通过设置 PLAYWRIGHT_DOWNLOAD_HOST 让 playwright install 从国内镜像下载浏览器
-# ============================================================================
-if 'PLAYWRIGHT_DOWNLOAD_HOST' not in os.environ:
-    _default_mirror_tt = 'https://playwright-zh.oss-cn-hangzhou.aliyuncs.com'
-    try:
-        import urllib.request as _ur_test_tt
-        for _m_tt in [
-            'https://playwright-zh.oss-cn-hangzhou.aliyuncs.com',
-            'https://cdn.npmmirror.com/binaries/playwright',
-            'https://gh-proxy.com/https://playwright.azureedge.net',
-        ]:
-            try:
-                _r_tt = _ur_test_tt.Request(_m_tt, method='HEAD')
-                _resp_tt = _ur_test_tt.urlopen(_r_tt, timeout=4)
-                if 200 <= _resp_tt.status < 500:
-                    _default_mirror_tt = _m_tt
-                    break
-            except Exception:
-                continue
-    except Exception:
-        pass
-    os.environ['PLAYWRIGHT_DOWNLOAD_HOST'] = _default_mirror_tt
-
-if 'npm_config_registry' not in os.environ:
-    os.environ['npm_config_registry'] = 'https://registry.npmmirror.com'
+# Apply PyInstaller / browser-env fixes up front.
+apply_frozen_env_fixes()
+configure_browser_env()
 
 # Compatibility value for callers that inspect the selected locale. User-facing
 # strings are resolved by the JSON catalogs through t().
@@ -87,133 +33,27 @@ LANG = get_locale()
 
 # User-facing text is maintained by media_downloader.i18n.
 
+
 def t(key, **kwargs):
     platform_key = f"cli.tiktok.{key}"
     localized = translate(platform_key, locale=LANG, **kwargs)
     return localized if localized != platform_key else translate(f"cli.common.{key}", locale=LANG, **kwargs)
 
-def parse_version(v_str):
-    """解析版本字符串为数字元组，便于进行大小比较"""
-    try:
-        return tuple(int(x) for x in re.findall(r'\d+', v_str))
-    except Exception:
-        return (0,)
-
-def check_for_updates(silent=False):
-    """检查 GitHub 上的最新版本并提示自动更新"""
-    if "YOUR_GITHUB_" in GITHUB_USER or "YOUR_GITHUB_" in GITHUB_REPO:
-        return  # 若未配置 GitHub 仓库，则跳过检查
-
-    latest_version = None
-    changelog = ""
-    download_url = ""
-    tag_name = ""
-
-    # 1. 首先尝试通过 GitHub API 获取最新版本
-    api_url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
-    api_success = False
-    try:
-        req = urllib.request.Request(
-            api_url,
-            headers={"User-Agent": "Mozilla/5.0 tiktok-dl-updater"}
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            tag_name = data.get("tag_name", "").strip()
-            latest_version = tag_name.lstrip('v')
-            changelog = data.get("body", "").strip()
-            assets = data.get("assets", [])
-            for asset in assets:
-                if asset.get("name") == "tiktok-dl":
-                    download_url = asset.get("browser_download_url")
-                    break
-            api_success = True
-    except Exception:
-        api_success = False
-
-    # 2. 如果 API 请求失败，降级到网页重定向检查方法
-    if not api_success:
-        try:
-            web_url = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
-            req = urllib.request.Request(
-                web_url,
-                headers={"User-Agent": "Mozilla/5.0 tiktok-dl-updater"}
-            )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                final_url = resp.geturl()
-                if "/releases/tag/" in final_url:
-                    tag_name = final_url.split("/releases/tag/")[-1].split("?")[0].split("#")[0].strip("/")
-                    latest_version = tag_name.lstrip('v')
-                    download_url = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/download/{tag_name}/tiktok-dl"
-                    changelog = t("update_changelog_unavailable")
-        except Exception as e:
-            if not silent:
-                print(t("update_failed", err=e))
-            return
-
-    # 3. 统一进行版本对比与更新提示
-    if latest_version and parse_version(latest_version) > parse_version(VERSION):
-        print(t("update_found", latest_version=latest_version, version=VERSION))
-        
-        if changelog:
-            print(t("changelog_title"))
-            print("─" * 50)
-            print(changelog)
-            print("─" * 50)
-        
-        if download_url:
-            if getattr(sys, 'frozen', False):
-                if not silent:
-                    confirm = input(t("update_confirm")).strip().lower()
-                    if confirm in ['y', 'yes']:
-                        perform_self_update(download_url)
-                else:
-                    print(t("update_hint", cmd="tiktok-dl"))
-            else:
-                if not silent:
-                    print(t("source_mode_update_skipped"))
-
-def perform_self_update(download_url):
-    """下载最新版本的可执行文件并原地替换自身"""
-    temp_exe = ""
-    try:
-        current_exe = os.path.abspath(sys.argv[0])
-        temp_exe = current_exe + ".tmp"
-        
-        print(t("update_downloading"))
-        req = urllib.request.Request(
-            download_url,
-            headers={"User-Agent": "Mozilla/5.0 tiktok-dl-updater"}
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = resp.read()
-            with open(temp_exe, "wb") as f:
-                f.write(data)
-        
-        os.chmod(temp_exe, 0o755)
-        os.replace(temp_exe, current_exe)
-        print(t("update_success"))
-        sys.exit(0)
-    except Exception as e:
-        print(t("update_failed_install", error=e))
-        if temp_exe and os.path.exists(temp_exe):
-            try:
-                os.remove(temp_exe)
-            except Exception:
-                pass
 
 def extract_urls_from_text(text: str) -> list:
     """提取文本中的所有 TikTok 链接"""
-    url_pattern = re.compile(r'https?://[a-zA-Z0-9][-a-zA-Z0-9\\._]*\btiktok\.com\b[-a-zA-Z0-9@:%_\+.~#?&//=]*')
+    url_pattern = re.compile(r'https?://[a-zA-Z0-9][-a-zA-Z0-9\\._]*\btiktok\.com\b[-a-zA-Z0-9@:%_+.~#?&//=]*')
     return url_pattern.findall(text)
+
 
 def get_next_filename(output_dir, extension):
     return next_media_filename(output_dir, extension)
 
+
 def process_single(url, browser, output_base, index, total):
     """处理并下载单个 TikTok 链接"""
     print(f"\n[{index}/{total}] {t('parsing')}")
-    
+
     # 用 Playwright 加载页面并等待 JSON
     page = None
     try:
@@ -246,8 +86,8 @@ def process_single(url, browser, output_base, index, total):
         except Exception:
             pass  # CDP 不可用时静默跳过
         page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        page.wait_for_timeout(6000) # 等待完整渲染与状态注水
-        
+        page.wait_for_timeout(6000)  # 等待完整渲染与状态注水
+
         rehyd_script = page.query_selector("script#__UNIVERSAL_DATA_FOR_REHYDRATION__")
         if not rehyd_script:
             # 备用：如果直接有 video src
@@ -256,6 +96,7 @@ def process_single(url, browser, output_base, index, total):
                 src = video_el.get_attribute("src")
                 if src and not src.startswith("blob:"):
                     # 下载该非 blob 地址
+                    import os
                     filepath = os.path.join(output_base, f"tiktok_{int(time.time())}.mp4")
                     resp = page.request.get(src, headers={"Referer": "https://www.tiktok.com/"})
                     if resp.status == 200:
@@ -268,10 +109,10 @@ def process_single(url, browser, output_base, index, total):
                     context.close()
                     return True
             raise Exception("No JSON script __UNIVERSAL_DATA_FOR_REHYDRATION__ or direct video src found.")
-            
+
         json_content = rehyd_script.inner_text()
         data = json.loads(json_content)
-        
+
         # 尝试提取 itemStruct 节点
         item = data.get("__DEFAULT_SCOPE__", {}).get("webapp.video-detail", {}).get("itemInfo", {}).get("itemStruct", {})
         if not item:
@@ -280,41 +121,36 @@ def process_single(url, browser, output_base, index, total):
                 if isinstance(v, dict) and "itemInfo" in v:
                     item = v.get("itemInfo", {}).get("itemStruct", {})
                     break
-        
+
         if not item:
             raise Exception("Failed to locate itemStruct in JSON data.")
-            
+
         desc = item.get("desc", "tiktok_media").strip()
         # 清洗文件名安全字符，去掉换行，并限制长度防止过长
-        desc_clean = re.sub(r'[\\/*?:"<>|]', "", desc).replace("\n", " ").replace("\r", " ")
-        desc_clean = desc_clean.strip()[:20] or "tiktok_media"
+        desc_clean = re.sub(r'[\\/*?:"<>|]', "", desc).replace("\n", " ").replace("\r", " ").strip()[:20] or "tiktok_media"
         aweme_id = item.get("id")
         if not aweme_id:
             aweme_id = str(int(time.time()))
-            
+
         # 获取作者信息用于归档 (不再创建子文件夹)
         author_info = item.get("author", {})
         author_name = author_info.get("nickname") or author_info.get("uniqueId") or "Unknown_Author"
         author_clean = re.sub(r'[\\/*?:"<>|]', "", str(author_name)).replace("\n", " ").replace("\r", " ").strip()[:30]
-            
+
         video_info = item.get("video", {})
         play_addr = video_info.get("playAddr")
-        
+
         # 区分是视频还是图文
         images = item.get("imagePostInfo", {}).get("images", [])
-        
+
         if images:
             # 图文相册下载
             title_log = t("image_found", title=desc_clean, id=aweme_id, count=len(images))
             print(title_log)
-            
+
+            import os
             os.makedirs(output_base, exist_ok=True)
-            
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://www.tiktok.com/"
-            }
-            
+
             for i, img in enumerate(images, 1):
                 urls_to_try = []
                 if "displayAddr" in img and isinstance(img["displayAddr"], dict) and "urlList" in img["displayAddr"]:
@@ -325,62 +161,63 @@ def process_single(url, browser, output_base, index, total):
                     urls_to_try.extend(img["imageURL"]["urlList"])
                 if "thumbnail" in img and "urlList" in img["thumbnail"]:
                     urls_to_try.extend(img["thumbnail"]["urlList"])
-                    
+
                 if not urls_to_try:
                     continue
-                    
+
                 img_filename = get_next_filename(output_base, "jpg")
                 img_path = os.path.join(output_base, img_filename)
-                
+
                 # 预占位防止循环内重名
                 with open(img_path, "wb") as f:
                     pass
-                
+
                 success_img = False
                 for img_url in urls_to_try:
                     try:
                         resp = page.request.get(img_url, headers={"Referer": "https://www.tiktok.com/"})
                         if resp.status != 200:
                             resp = page.request.get(img_url)
-                            
+
                         if resp.status == 200:
                             img_data = resp.body()
                             with open(img_path, "wb") as f:
                                 f.write(img_data)
                         else:
                             raise Exception(f"HTTP {resp.status}")
-                        
+
                         # 使用 Pillow 分析尺寸
                         resolution = "N/A"
-                        if PILImage:
-                            try:
-                                with PILImage.open(img_path) as p_img:
-                                    resolution = f"{p_img.width}x{p_img.height}"
-                            except Exception:
-                                pass
+                        try:
+                            from PIL import Image as PILImage
+                            with PILImage.open(img_path) as p_img:
+                                resolution = f"{p_img.width}x{p_img.height}"
+                        except Exception:
+                            pass
                         print(t("download_success", filename=img_filename, size=format_size(len(img_data)), resolution=resolution))
                         success_img = True
                         break
-                    except Exception as e:
+                    except Exception:
                         continue
-                        
+
                 if not success_img:
                     print(t("download_failed", err="All fallback URLs returned 403 or failed."))
-                    
+
         elif play_addr:
             # 视频下载
             title_log = t("video_found", title=desc_clean, id=aweme_id)
             print(title_log)
-            
+
             # 确定文件名和保存路径
+            import os
             os.makedirs(output_base, exist_ok=True)
             filename = get_next_filename(output_base, "mp4")
             filepath = os.path.join(output_base, filename)
-            
+
             # 预占位
             with open(filepath, "wb") as f:
                 pass
-            
+
             # 使用 Playwright page.request 下载直接的 playAddr（不需要水印提取，原始 CDN 无水印）
             resp = page.request.get(play_addr, headers={"Referer": "https://www.tiktok.com/"})
             if resp.status == 200:
@@ -389,12 +226,12 @@ def process_single(url, browser, output_base, index, total):
                     f.write(video_data)
             else:
                 raise Exception(f"HTTP {resp.status}")
-            
+
             resolution = video_info.get("definition", "N/A")
             print(t("download_success", filename=filename, size=format_size(len(video_data)), resolution=resolution))
         else:
             raise Exception("Neither playAddr nor images found in JSON state.")
-            
+
         context.close()
         return True
     except Exception as e:
@@ -406,149 +243,6 @@ def process_single(url, browser, output_base, index, total):
                 pass
         return False
 
-def _manual_install_chromium_tt(mirror: str = "https://playwright-zh.oss-cn-hangzhou.aliyuncs.com"):
-    """备用策略：手动从镜像下载 Chromium 浏览器 zip 并解压到正确位置。"""
-    import urllib.request
-    import zipfile
-
-    expected_exec_path = None
-    browser_cache_dir = os.environ.get(
-        'PLAYWRIGHT_BROWSERS_PATH',
-        os.path.expanduser('~/.cache/ms-playwright')
-    )
-    try:
-        from playwright.sync_api import sync_playwright as _sp3
-        with _sp3() as pw:
-            expected_exec_path = pw.chromium.executable_path
-    except Exception:
-        pass
-
-    if not expected_exec_path:
-        print("  ✗ 无法确定浏览器安装路径，请手动执行：")
-        print("     set PLAYWRIGHT_DOWNLOAD_HOST=https://playwright-zh.oss-cn-hangzhou.aliyuncs.com")
-        print("     python -m playwright install chromium")
-        return False
-
-    target_dir = os.path.dirname(os.path.dirname(expected_exec_path))
-    revision = ''
-    for part in expected_exec_path.split(os.sep):
-        if part.startswith('chromium-'):
-            revision = part.replace('chromium-', '')
-            break
-
-    zip_filename = 'chromium-win64.zip'
-    target_exe = expected_exec_path
-
-    if os.path.exists(target_exe):
-        print("  ✓ 浏览器已安装，无需下载")
-        return True
-
-    mirrors = [
-        mirror,
-        'https://playwright-zh.oss-cn-hangzhou.aliyuncs.com',
-        'https://cdn.npmmirror.com/binaries/playwright',
-        'https://ghproxy.com/https://playwright.azureedge.net',
-        'https://playwright.azureedge.net',
-    ]
-
-    print(f"  [备用策略] 期望的浏览器路径: {target_exe}")
-    print(f"  [备用策略] 预计下载: {zip_filename}")
-    print(f"  [备用策略] 请确保网络连接正常，大小约 100MB...")
-
-    for idx, m in enumerate(mirrors, 1):
-        url = f"{m.rstrip('/')}/builds/chromium/{revision}/{zip_filename}"
-        print(f"  [{idx}/{len(mirrors)}] 尝试下载: {url[:70]}...")
-
-        try:
-            def _report_progress_tt(block_num, block_size, total_size):
-                if total_size > 0:
-                    percent = int(block_num * block_size * 100 / total_size)
-                    if percent % 5 == 0:
-                        mb_done = block_num * block_size / (1024 * 1024)
-                        mb_total = total_size / (1024 * 1024)
-                        print(f"    下载中: {percent}% ({mb_done:.1f}/{mb_total:.1f} MB)", end='\r')
-
-            req = urllib.request.Request(
-                url,
-                headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept': '*/*',
-                }
-            )
-            zip_path, _ = urllib.request.urlretrieve(url=req, reporthook=_report_progress_tt)
-            print(f"\n    ✓ 下载完成")
-
-            print(f"    正在解压到: {target_dir}")
-            os.makedirs(target_dir, exist_ok=True)
-            with zipfile.ZipFile(zip_path, 'r') as zf:
-                zf.extractall(target_dir)
-
-            try:
-                os.remove(zip_path)
-            except Exception:
-                pass
-
-            if os.path.exists(target_exe):
-                print(f"    ✓ 浏览器已成功安装")
-                return True
-            else:
-                print(f"    ✗ 解压完成但未找到 chrome.exe，尝试其他方式...")
-
-        except Exception as ex:
-            print(f"    ✗ 失败: {ex}")
-            continue
-
-    print(f"\n  ✗ 所有自动下载方式均失败，请手动执行：")
-    print(f"    set PLAYWRIGHT_DOWNLOAD_HOST=https://playwright-zh.oss-cn-hangzhou.aliyuncs.com")
-    print(f"    python -m playwright install chromium")
-    print(f"    或手动下载: https://playwright-zh.oss-cn-hangzhou.aliyuncs.com/builds/chromium/{revision}/chromium-win64.zip")
-    print(f"    解压到: {target_dir}")
-    return False
-
-
-def ensure_browser_installed(playwright_inst):
-    """检查并自动安装缺失的 Playwright 浏览器（使用国内镜像源）"""
-    if 'PLAYWRIGHT_DOWNLOAD_HOST' not in os.environ:
-        os.environ['PLAYWRIGHT_DOWNLOAD_HOST'] = 'https://playwright-zh.oss-cn-hangzhou.aliyuncs.com'
-    mirror = os.environ.get('PLAYWRIGHT_DOWNLOAD_HOST', '')
-    try:
-        browser = playwright_inst.chromium.launch(headless=True)
-        browser.close()
-    except Exception as e:
-        err_msg = str(e)
-        if "Executable doesn't exist" in err_msg or "looks like Playwright was just installed" in err_msg or "executable doesn't exist" in err_msg.lower():
-            print(t("browser_not_found"))
-            print(f"  [镜像] 使用下载源: {mirror}")
-            print("  浏览器大小约 100MB，请耐心等待...")
-
-            import sys as _sys_tt
-            import subprocess
-            from playwright._impl._driver import compute_driver_executable, get_driver_env
-            
-            driver_executable, driver_cli = compute_driver_executable()
-            env = get_driver_env()
-
-            try:
-                creationflags = 0
-                import os
-                if os.name == 'nt':
-                    creationflags = subprocess.CREATE_NO_WINDOW
-                
-                subprocess.run(
-                    [driver_executable, driver_cli, "install", "chromium"],
-                    env=env,
-                    check=True,
-                    creationflags=creationflags
-                )
-                print(t("browser_install_success"))
-            except subprocess.CalledProcessError as exit_err:
-                print(f"  [策略 1 失败] 错误码: {exit_err.returncode}，正在尝试备用方式下载...")
-                _manual_install_chromium_tt(mirror)
-            except Exception as inner_e:
-                print(f"  [策略 1 失败] 错误: {inner_e}")
-                _manual_install_chromium_tt(mirror)
-        else:
-            raise e
 
 def download_urls(raw_input: str, output_dir: str):
     """批量下载 TikTok 链接"""
@@ -570,10 +264,12 @@ def download_urls(raw_input: str, output_dir: str):
 
     if not output_dir:
         output_dir = "tiktok_downloads"
+    import os
     os.makedirs(output_dir, exist_ok=True)
 
+    from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        ensure_browser_installed(p)
+        ensure_browser_installed(p, t=t)
         browser = p.chromium.launch(headless=True)
         success = 0
         fail = 0
@@ -588,6 +284,7 @@ def download_urls(raw_input: str, output_dir: str):
     print(t("save_dir_info", path=os.path.abspath(output_dir)))
     return True
 
+
 def download_tiktok_links(links, output_dir):
     """供 WebUI 调用的批量下载接口"""
     if isinstance(links, list):
@@ -596,51 +293,16 @@ def download_tiktok_links(links, output_dir):
         raw_input = str(links)
     return download_urls(raw_input, output_dir)
 
-DISCLAIMER = """================================================================================
-                                【 免 责 声 明 】
-================================================================================
- 1. 本工具（以下简称“本软件”）仅限用于个人学习研究、学术交流及网页技术备份
-    测试，严禁用于任何商业用途、非法抓取或网络攻击。
- 2. 本软件所下载的所有音视频、图文等媒体资源，其知识产权及著作权归原作者/
-    版权所有者或相关平台所有。用户下载后应于24小时内删除，且不得在未经原作者
-    授权的情况下进行二次传播、修改、上传或用于任何盈利性活动。
- 3. 用户在使用本软件时，必须遵守当地法律法规、目的平台用户协议及相关服务条款。
-    因使用本软件导致的一切直接或间接法律纠纷、版权诉讼、经济赔偿，或因频繁请求
-    导致的平台账号限制、IP风控封禁等后果，均由使用者自行承担全部责任。
- 4. 本软件按“原样”（AS IS）提供，不附带任何明示或暗示的保证，包括但不限于
-    对特定用途的适用性。作者在任何情况下均不对因使用或无法使用本软件而产生的
-    任何直接、间接、偶然、特殊或惩罚性损害（包括法律处罚）承担任何赔偿责任。
- 5. 任何复制、运行、分发或以任何方式使用本软件的行为，即视为您已完全阅读、
-    理解并无条件接受本声明的所有条款。如果您不同意本声明的任何内容，请立即
-    停止使用并卸载本软件。
-================================================================================"""
-
-DISCLAIMER_EN = """================================================================================
-                                【 DISCLAIMER 】
-================================================================================
- 1. This tool (hereinafter referred to as "the software") is strictly for personal 
-    learning, research, academic exchanges, and technical backup tests. Commercial 
-    use, malicious scraping, or network attacks are strictly prohibited.
- 2. All media resources (videos, images, etc.) downloaded belong to the original 
-    creators/copyright owners. Users must delete them within 24 hours and must not 
-    redistribute, modify, upload, or use them for profit without authorization.
- 3. Users must comply with local laws and platform Terms of Service. The user assumes 
-    full responsibility for any legal disputes, copyright lawsuits, financial damages, 
-    account restrictions, or IP bans caused by using this software.
- 4. This software is provided "AS IS" without warranties of any kind. Under no 
-    circumstances shall the author be liable for any direct, indirect, incidental, 
-    or special damages arising from the use or inability to use this software.
- 5. Running, distributing, or using this software constitutes unconditional acceptance 
-    of this disclaimer. If you disagree with any terms, please stop using and uninstall 
-    this software immediately.
-================================================================================"""
 
 def main():
+    import sys
+    import os
     if len(sys.argv) >= 2:
         # Command line parameter mode
         print(t("legal_warning"))
-            
+
         check_for_updates(silent=True)
+        check_version_policy(silent=True)  # fail-open; exits(1) only on hard block
         raw_input = sys.argv[1]
         output_dir = sys.argv[2] if len(sys.argv) > 2 else "tiktok_downloads"
         download_urls(raw_input, output_dir)
@@ -648,7 +310,7 @@ def main():
         # Interactive mode
         print(t("disclaimer_title"))
         print(t("disclaimer_text"))
-            
+
         try:
             agree = input(t("disclaimer_agree")).strip().lower()
             if agree not in ['y', 'yes']:
@@ -660,6 +322,7 @@ def main():
 
         print(t("title_banner"))
         check_for_updates(silent=False)
+        check_version_policy(silent=False)  # nag or hard-block old builds
 
         try:
             while True:
@@ -676,6 +339,7 @@ def main():
                 download_urls(raw_input, output_dir)
         except (KeyboardInterrupt, EOFError):
             print("\n" + t("exited_safely"))
+
 
 if __name__ == "__main__":
     main()

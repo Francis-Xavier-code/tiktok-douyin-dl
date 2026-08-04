@@ -37,11 +37,9 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 from playwright.sync_api import sync_playwright
 from media_downloader.i18n import translate
 
-# 禁用全局 SSL 证书验证，防止本地 CA 证书缺失导致网络请求失败
-try:
-    ssl._create_default_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
+# NOTE: We no longer disable certificate verification process-wide. If a host's
+# root CA is genuinely missing in the frozen runtime, opt out per request via the
+# ssl context in the relevant network helper instead of weakening every connection.
 
 # 强制设置浏览器路径为用户的全局缓存目录，防止打包后寻找 tmp 目录而崩溃（仅在未预设时设置）
 if 'PLAYWRIGHT_BROWSERS_PATH' not in os.environ:
@@ -587,6 +585,16 @@ class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
+
+        # 版本策略远程停用检查（硬阻挡会直接退出，软提示后续弹窗；任何失败均放行）
+        try:
+            import auto_updater
+            auto_updater.enforce_version_policy("windows", auto_updater.CURRENT_VERSION)
+        except SystemExit:
+            raise
+        except Exception:
+            pass
+
         self.title(_t("app_title"))
         self.minsize(900, 680)
         self.geometry("1000x720")

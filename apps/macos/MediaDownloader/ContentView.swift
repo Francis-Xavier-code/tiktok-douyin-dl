@@ -4,6 +4,23 @@ struct ContentView: View {
     @Bindable var controller: DownloadController
 
     var body: some View {
+        Group {
+            switch controller.policyStatus {
+            case .allow:
+                mainContent
+            case .nag(let message, let url):
+                VStack(spacing: 0) {
+                    PolicyBanner(message: message, url: url)
+                    mainContent
+                }
+            case .block(let message, let url):
+                PolicyBlockView(message: message, url: url)
+            }
+        }
+        .frame(minWidth: 600, minHeight: 320)
+    }
+
+    private var mainContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("MediaDownloader")
                 .font(.largeTitle.bold())

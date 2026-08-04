@@ -17,6 +17,7 @@ def _cli_common(disclaimer: str, english: bool) -> dict:
         return {
             "browser_install_success": "Chromium is ready.",
             "browser_not_found": "Playwright Chromium was not found; installing it now.",
+            "browser_install_failed": "Chromium installation failed (exit code {code}).",
             "changelog_title": "Release notes",
             "disclaimer_agree": "Type y to accept and continue: ",
             "disclaimer_declined": "You did not accept the disclaimer.",
@@ -41,11 +42,18 @@ def _cli_common(disclaimer: str, english: bool) -> dict:
             "update_found": "Version {latest_version} is available (current: {version}).",
             "update_hint": "Run the installer again to update {cmd}.",
             "update_success": "Update installed.",
+            "policy_release_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
+            "policy_block_header": "This version is no longer supported.",
+            "policy_nag_header": "A newer version is recommended.",
+            "policy_min_version": "Minimum supported version: {min_version}.",
+            "policy_update_link": "Download the latest version: {url}",
+            "policy_update_required": "Your version is out of date. Please update to the latest release.",
         }
     return {
-        "browser_install_success": "Chromium 浏览器已就绪。",
-        "browser_not_found": "未找到 Playwright Chromium，正在安装。",
-        "changelog_title": "更新说明",
+            "browser_install_success": "Chromium 浏览器已就绪。",
+            "browser_not_found": "未找到 Playwright Chromium，正在安装。",
+            "browser_install_failed": "Chromium 安装失败（退出代码 {code}）。",
+            "changelog_title": "更新说明",
         "disclaimer_agree": "输入 y 表示同意并继续：",
         "disclaimer_declined": "你未同意免责声明。",
         "disclaimer_text": disclaimer,
@@ -69,6 +77,12 @@ def _cli_common(disclaimer: str, english: bool) -> dict:
         "update_found": "发现版本 {latest_version}（当前版本：{version}）。",
         "update_hint": "请重新运行安装器更新 {cmd}。",
         "update_success": "更新安装完成。",
+            "policy_release_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
+            "policy_block_header": "当前版本已停止支持。",
+            "policy_nag_header": "建议使用更新的版本。",
+            "policy_min_version": "最低支持版本：{min_version}。",
+            "policy_update_link": "下载最新版本：{url}",
+            "policy_update_required": "你的版本已过时，请升级到最新版本。",
     }
 
 

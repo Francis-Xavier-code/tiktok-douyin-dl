@@ -7,6 +7,7 @@ struct MediaDownloaderApp: App {
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView(controller: controller)
+                .task { Task { await controller.refreshPolicy() } }
         }
         .windowResizability(.contentSize)
         .commands {
@@ -15,6 +16,7 @@ struct MediaDownloaderApp: App {
 
         MenuBarExtra {
             MenuBarView(controller: controller)
+                .task { Task { await controller.refreshPolicy() } }
         } label: {
             Label(
                 "MediaDownloader",
