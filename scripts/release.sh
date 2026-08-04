@@ -20,12 +20,14 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python3}"
 
 # 读取版本号（优先当前 PYTHONPATH，否则临时把 src 加进去）。
-VERSION="$("$PYTHON_BIN" -c 'import media_downloader, sys; print(media_downloader.__version__)' 2>/dev/null)"
+# 注意：命令替换内的 python 可能失败，必须加 `|| true` 豁免 set -e，
+# 否则第一次 import 失败会直接终止脚本，走不到下面的 fallback / 错误提示。
+VERSION="$($PYTHON_BIN -c 'import media_downloader, sys; print(media_downloader.__version__)' 2>/dev/null)" || true
 if [[ -z "$VERSION" ]]; then
-  VERSION="$("$PYTHON_BIN" -c 'import sys; sys.path.insert(0, "'"$REPO_ROOT/python/src"'"); import media_downloader; print(media_downloader.__version__)')"
+  VERSION="$($PYTHON_BIN -c 'import sys; sys.path.insert(0, "'"$REPO_ROOT/python/src"'"); import media_downloader; print(media_downloader.__version__)' 2>/dev/null)" || true
 fi
 if [[ -z "$VERSION" ]]; then
-  echo "::error:: 无法读取版本号（media_downloader.__version__）。" >&2
+  echo "::error:: 无法读取版本号（media_downloader.__version__）。请确认本机可 import media_downloader。" >&2
   exit 1
 fi
 TAG="v$VERSION"
