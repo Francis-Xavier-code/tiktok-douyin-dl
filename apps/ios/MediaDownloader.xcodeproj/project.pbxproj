@@ -5,7 +5,7 @@
 	objectVersion = 56;
 	objects = {
 
-/* Begin PBXBuildFile section */
+		/* Begin PBXBuildFile section */
 		A00100010000000000000001 /* MediaDownloaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000001 /* MediaDownloaderApp.swift */; };
 		A00100010000000000000002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000002 /* Models.swift */; };
 		A00100010000000000000003 /* MediaDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000003 /* MediaDownloadService.swift */; };
@@ -20,9 +20,11 @@
 		A00100010000000000000012 /* DownloadPostProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000013 /* DownloadPostProcessingService.swift */; };
 		A00100010000000000000013 /* ShareTextParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000014 /* ShareTextParser.swift */; };
 		A00100010000000000000014 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000015 /* DownloadStore.swift */; };
-/* End PBXBuildFile section */
+		A00100010000000000000015 /* VersionPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000016 /* VersionPolicyService.swift */; };
+		A00100010000000000000016 /* DownloadPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000017 /* DownloadPolicyService.swift */; };
+		/* End PBXBuildFile section */
 
-/* Begin PBXFileReference section */
+		/* Begin PBXFileReference section */
 		A00200010000000000000001 /* MediaDownloaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaDownloaderApp.swift; sourceTree = "<group>"; };
 		A00200010000000000000002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A00200010000000000000003 /* MediaDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaDownloadService.swift; sourceTree = "<group>"; };
@@ -38,18 +40,20 @@
 		A00200010000000000000013 /* DownloadPostProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadPostProcessingService.swift; sourceTree = "<group>"; };
 		A00200010000000000000014 /* ShareTextParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareTextParser.swift; sourceTree = "<group>"; };
 		A00200010000000000000015 /* DownloadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadStore.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		A00200010000000000000016 /* VersionPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionPolicyService.swift; sourceTree = "<group>"; };
+		A00200010000000000000017 /* DownloadPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadPolicyService.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
-/* Begin PBXFrameworksBuildPhase section */
+		/* Begin PBXFrameworksBuildPhase section */
 		A00300010000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = ();
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXFrameworksBuildPhase section */
+		/* End PBXFrameworksBuildPhase section */
 
-/* Begin PBXGroup section */
+		/* Begin PBXGroup section */
 		A00400010000000000000001 = {
 			isa = PBXGroup;
 			children = (
@@ -83,6 +87,8 @@
 			children = (
 				A00200010000000000000011 /* AppUpdateService.swift */,
 				A00200010000000000000013 /* DownloadPostProcessingService.swift */,
+				A00200010000000000000016 /* VersionPolicyService.swift */,
+				A00200010000000000000017 /* DownloadPolicyService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -116,9 +122,9 @@
 			path = ../../apple/Sources/MediaDownloaderCore;
 			sourceTree = "<group>";
 		};
-/* End PBXGroup section */
+		/* End PBXGroup section */
 
-/* Begin PBXNativeTarget section */
+		/* Begin PBXNativeTarget section */
 		A00500010000000000000001 /* MediaDownloader */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A00600010000000000000002 /* Build configuration list for PBXNativeTarget "MediaDownloader" */;
@@ -134,9 +140,9 @@
 			productReference = A00200010000000000000007 /* MediaDownloader.app */;
 			productType = "com.apple.product-type.application";
 		};
-/* End PBXNativeTarget section */
+		/* End PBXNativeTarget section */
 
-/* Begin PBXProject section */
+		/* Begin PBXProject section */
 		A00900010000000000000001 /* Project object */ = {
 			isa = PBXProject;
 			attributes = { LastUpgradeCheck = 1600; TargetAttributes = { A00500010000000000000001 = { CreatedOnToolsVersion = 16.0; }; }; };
@@ -151,9 +157,9 @@
 			projectRoot = "";
 			targets = (A00500010000000000000001 /* MediaDownloader */,);
 		};
-/* End PBXProject section */
+		/* End PBXProject section */
 
-/* Begin PBXResourcesBuildPhase section */
+		/* Begin PBXResourcesBuildPhase section */
 		A00800010000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -163,9 +169,9 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
+		/* End PBXResourcesBuildPhase section */
 
-/* Begin PBXSourcesBuildPhase section */
+		/* Begin PBXSourcesBuildPhase section */
 		A00700010000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -182,12 +188,14 @@
 				A00100010000000000000012 /* DownloadPostProcessingService.swift in Sources */,
 				A00100010000000000000013 /* ShareTextParser.swift in Sources */,
 				A00100010000000000000014 /* DownloadStore.swift in Sources */,
+				A00100010000000000000015 /* VersionPolicyService.swift in Sources */,
+				A00100010000000000000016 /* DownloadPolicyService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXSourcesBuildPhase section */
+		/* End PBXSourcesBuildPhase section */
 
-/* Begin XCBuildConfiguration section */
+		/* Begin XCBuildConfiguration section */
 		A01000010000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -268,9 +276,9 @@
 			};
 			name = Release;
 		};
-/* End XCBuildConfiguration section */
+		/* End XCBuildConfiguration section */
 
-/* Begin XCConfigurationList section */
+		/* Begin XCConfigurationList section */
 		A00600010000000000000001 /* Build configuration list for PBXProject "MediaDownloader" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (A01000010000000000000001 /* Debug */, A01000010000000000000002 /* Release */,);
@@ -283,7 +291,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-/* End XCConfigurationList section */
+		/* End XCConfigurationList section */
 	};
 	rootObject = A00900010000000000000001 /* Project object */;
 }
