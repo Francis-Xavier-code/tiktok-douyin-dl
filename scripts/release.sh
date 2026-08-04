@@ -18,7 +18,16 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python3}"
-VERSION="$("$PYTHON_BIN" -c 'import media_downloader; print(media_downloader.__version__)' 2>/dev/null || "$PYTHON_BIN" -c 'import sys; sys.path.insert(0, "'"$REPO_ROOT/python/src"'"); import media_downloader; print(media_downloader.__version__)')"
+
+# 读取版本号（优先当前 PYTHONPATH，否则临时把 src 加进去）。
+VERSION="$("$PYTHON_BIN" -c 'import media_downloader, sys; print(media_downloader.__version__)' 2>/dev/null)"
+if [[ -z "$VERSION" ]]; then
+  VERSION="$("$PYTHON_BIN" -c 'import sys; sys.path.insert(0, "'"$REPO_ROOT/python/src"'"); import media_downloader; print(media_downloader.__version__)')"
+fi
+if [[ -z "$VERSION" ]]; then
+  echo "::error:: 无法读取版本号（media_downloader.__version__）。" >&2
+  exit 1
+fi
 TAG="v$VERSION"
 REPO="Francis-Xavier-code/tiktok-douyin-dl"
 
@@ -92,6 +101,6 @@ git -C "$REPO_ROOT" push origin "$TAG"
 
 echo ""
 echo "==> 已触发远程构建：.github/workflows/release.yml"
-echo "    CI 会自动产出 Windows / Linux / macOS DMG / iOS IPA 并上传到 Release $TAG。"
+echo "    CI 会自动产出 Windows / Linux / macOS DMG / iOS IPA 并上传到 Release ${TAG:-v$VERSION}。"
 echo "    可在 https://github.com/$REPO/actions 查看进度。"
 echo "    完成后请确认 Release 资产齐全，并检查 Casks/tiktok-douyin-dl.rb 的 sha256 已被 CI 更新。"
