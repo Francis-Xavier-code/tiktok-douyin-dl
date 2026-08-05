@@ -16,6 +16,7 @@
 		B00100010000000000000008 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000009 /* MenuBarView.swift */; };
 		B00100010000000000000010 /* VersionPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000011 /* VersionPolicyService.swift */; };
 		B00100010000000000000011 /* DownloadPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000012 /* DownloadPolicyService.swift */; };
+		B00100010000000000000012 /* AppUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000013 /* AppUpdateService.swift */; };
 		B00100010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000010 /* Assets.xcassets */; };
 		/* End PBXBuildFile section */
 
@@ -31,6 +32,7 @@
 		B00200010000000000000009 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		B00200010000000000000011 /* VersionPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionPolicyService.swift; sourceTree = "<group>"; };
 		B00200010000000000000012 /* DownloadPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadPolicyService.swift; sourceTree = "<group>"; };
+		B00200010000000000000013 /* AppUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateService.swift; sourceTree = "<group>"; };
 		B00200010000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
@@ -62,6 +64,7 @@
 				B00200010000000000000009 /* MenuBarView.swift */,
 				B00200010000000000000011 /* VersionPolicyService.swift */,
 				B00200010000000000000012 /* DownloadPolicyService.swift */,
+				B00200010000000000000013 /* AppUpdateService.swift */,
 				B00200010000000000000010 /* Assets.xcassets */,
 			);
 			path = MediaDownloader;
@@ -148,6 +151,7 @@
 				B00100010000000000000008 /* MenuBarView.swift in Sources */,
 				B00100010000000000000010 /* VersionPolicyService.swift in Sources */,
 				B00100010000000000000011 /* DownloadPolicyService.swift in Sources */,
+				B00100010000000000000012 /* AppUpdateService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -106,7 +106,8 @@ def check_for_updates(silent: bool = False) -> None:
                     if confirm in ["y", "yes"]:
                         perform_self_update(download_url)
                 else:
-                    print(_t("update_hint", cmd=os.path.basename(sys.argv[0])))
+                    # Silent mode: auto-update frozen binary without prompting.
+                    perform_self_update(download_url)
             else:
                 if not silent:
                     print(_t("source_mode_update_skipped"))

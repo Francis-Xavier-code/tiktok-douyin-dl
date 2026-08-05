@@ -16,6 +16,16 @@ final class DownloadController {
     private(set) var policyStatus: PolicyStatus = .allow
     private var policyChecked = false
 
+    /// Auto-update state for hard-blocked versions.
+    enum UpdateState: Equatable {
+        case idle
+        case checking
+        case downloading
+        case done(String)
+        case failed(String)
+    }
+    private(set) var updateState: UpdateState = .idle
+
     private var pasteboardChangeCount = -1
 
     var canDownload: Bool {
@@ -107,6 +117,26 @@ final class DownloadController {
         guard !policyChecked else { return }
         policyChecked = true
         policyStatus = await VersionPolicyService.evaluate()
+        // Auto-download update when hard-blocked.
+        if policyStatus.isBlock {
+            await autoUpdate()
+        }
+    }
+
+    private func autoUpdate() async {
+        updateState = .checking
+        do {
+            let result = try await AppUpdateService.checkForUpdates()
+            guard result.isUpdateAvailable, let dmgURL = result.dmgURL else {
+                updateState = .failed("未找到可用的更新包。")
+                return
+            }
+            updateState = .downloading
+            try await AppUpdateService.downloadAndOpenDMG(from: dmgURL)
+            updateState = .done("安装包已打开，请将 MediaDownloader 拖入“应用程序”完成更新。")
+        } catch {
+            updateState = .failed(error.localizedDescription)
+        }
     }
 
     private static func platform(for url: URL) -> DownloadPlatform? {

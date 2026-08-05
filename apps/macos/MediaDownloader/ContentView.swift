@@ -14,7 +14,7 @@ struct ContentView: View {
                     mainContent
                 }
             case .block(let message, let url):
-                PolicyBlockView(message: message, url: url)
+                PolicyBlockView(message: message, url: url, updateState: controller.updateState)
             }
         }
         .frame(minWidth: 600, minHeight: 320)

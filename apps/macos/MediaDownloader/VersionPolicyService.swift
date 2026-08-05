@@ -154,9 +154,11 @@ struct PolicyBanner: View {
 }
 
 /// Full replacement shown when the version is hard-blocked.
+/// Supports auto-update progress display.
 struct PolicyBlockView: View {
     let message: String
     let url: URL?
+    var updateState: DownloadController.UpdateState = .idle
 
     var body: some View {
         VStack(spacing: 18) {
@@ -169,9 +171,37 @@ struct PolicyBlockView: View {
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 320)
-            if let url {
-                Link("前往下载最新版本", destination: url)
-                    .font(.headline)
+
+            // Auto-update progress.
+            switch updateState {
+            case .idle:
+                EmptyView()
+            case .checking:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("正在检查更新…")
+                        .foregroundStyle(.secondary)
+                }
+            case .downloading:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("正在下载更新包…")
+                        .foregroundStyle(.secondary)
+                }
+            case .done(let msg):
+                Label(msg, systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.callout)
+            case .failed(let msg):
+                VStack(spacing: 8) {
+                    Label(msg, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.callout)
+                    if let url {
+                        Link("手动前往下载", destination: url)
+                            .font(.headline)
+                    }
+                }
             }
         }
         .padding(32)

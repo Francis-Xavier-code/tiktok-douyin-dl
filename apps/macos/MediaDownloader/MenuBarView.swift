@@ -17,7 +17,7 @@ struct MenuBarView: View {
                     mainContent
                 }
             case .block(let message, let url):
-                PolicyBlockView(message: message, url: url)
+                PolicyBlockView(message: message, url: url, updateState: controller.updateState)
             }
         }
         .frame(width: 360)
