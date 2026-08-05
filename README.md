@@ -21,7 +21,7 @@ Packaged desktop applications include the required runtime and browser component
 
 ---
 
-🌐 **[English]** | **[简体中文](README_zh.md)**
+<a href="README.md"><img src="https://img.shields.io/badge/English-blue?style=flat-square" alt="English"></a> <a href="README_zh.md"><img src="https://img.shields.io/badge/简体中文-red?style=flat-square" alt="简体中文"></a>
 
 ---
 

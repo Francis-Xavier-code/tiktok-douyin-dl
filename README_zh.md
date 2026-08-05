@@ -21,7 +21,7 @@
 
 ---
 
-🌐 **[English](README.md)** | **[简体中文]**
+<a href="README.md"><img src="https://img.shields.io/badge/English-blue?style=flat-square" alt="English"></a> <a href="README_zh.md"><img src="https://img.shields.io/badge/简体中文-red?style=flat-square" alt="简体中文"></a>
 
 ---
 
