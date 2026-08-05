@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 from media_downloader.core.downloader import download
 from media_downloader.core.models import DownloadRequest, Platform
 
-
 _URL_PATTERN = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
 
 

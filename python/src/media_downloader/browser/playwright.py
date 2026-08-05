@@ -8,8 +8,8 @@ Usage:
   python -m media_downloader.browser.playwright
   或双击运行 apps/windows/installer/install_browser.bat（Windows）
 """
-import sys
 import os
+import sys
 
 # 修复 PyInstaller 打包环境的 LD_LIBRARY_PATH 问题 + 浏览器缓存/镜像环境变量
 from media_downloader.core.launch import apply_frozen_env_fixes, configure_browser_env

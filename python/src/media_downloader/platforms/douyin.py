@@ -11,6 +11,7 @@ import time
 import urllib.parse
 from datetime import datetime
 
+from media_downloader.core.download_policy import check_download_allowed
 from media_downloader.core.downloader import format_size
 from media_downloader.core.filenames import next_media_filename
 from media_downloader.core.launch import (
@@ -18,11 +19,9 @@ from media_downloader.core.launch import (
     configure_browser_env,
     ensure_browser_installed,
 )
-from media_downloader.core.disclaimer import DISCLAIMER, DISCLAIMER_EN
 from media_downloader.core.network import http_get_bytes, http_json
-from media_downloader.core.updater import VERSION, check_for_updates
+from media_downloader.core.updater import check_for_updates
 from media_downloader.core.version_policy import check_version_policy
-from media_downloader.core.download_policy import check_download_allowed
 from media_downloader.i18n import get_locale, translate
 
 # Apply PyInstaller / browser-env fixes up front.
