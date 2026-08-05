@@ -99,7 +99,7 @@ enum AppUpdateService {
         let currentVersion = Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
         ) as? String ?? "1.8.1"
-        let latestVersion = String(release.tagName.dropFirst("v"))
+        let latestVersion = release.tagName.hasPrefix("v") ? String(release.tagName.dropFirst(1)) : release.tagName
 
         // Find the unsigned DMG asset.
         let dmgURL = release.assets.first(where: { $0.name.contains("macOS") && $0.name.hasSuffix(".dmg") })?.browserDownloadURL
