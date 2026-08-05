@@ -70,6 +70,15 @@ Packaged desktop applications include the required runtime and browser component
   </tr>
 </table>
 
+<table width="100%">
+  <tr>
+    <th align="center">Version Update Prompt</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/update-prompt-preview.png" alt="Version update prompt when an older build is detected" width="900"></td>
+  </tr>
+</table>
+
 ## ✨ Highlights
 
 * 🎨 **Modern UI Design**: A minimalist Windows 11 Fluent-style dark interface with **seamless language switching (Chinese/English)**.

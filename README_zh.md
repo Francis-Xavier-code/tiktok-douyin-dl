@@ -71,6 +71,15 @@
   </tr>
 </table>
 
+<table width="100%">
+  <tr>
+    <th align="center">版本过低更新提示</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/update-prompt-preview.png" alt="检测到旧版本时的更新提示界面" width="900"></td>
+  </tr>
+</table>
+
 ## ✨ 功能亮点
 
 * 🎨 **现代化 UI 设计**：全新引入 Windows 11 Fluent 风格的暗黑模式极简界面，并**新增了跨语言无缝切换 (中/英)**。
