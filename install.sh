@@ -48,7 +48,9 @@ echo "{\"lang\": \"$USER_LANG\"}" > "$INSTALL_DIR/config.json"
 install_binary() {
     local name=$1
     local local_file="dist/$name"
-    
+    local version="${RELEASE_TAG#v}"
+    local archive_name="MediaDownloader-Linux-x86_64-${version}.tar.gz"
+
     if [ -f "$local_file" ]; then
         if [ "$USER_LANG" = "zh" ]; then
             echo -e "📦 检测到本地已编译好的二进制文件，正在安装 $name ..."
@@ -62,25 +64,39 @@ install_binary() {
             exit 1
         fi
 
-        DOWNLOAD_URL="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$name"
+        DOWNLOAD_URL="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$archive_name"
 
         if [ "$USER_LANG" = "zh" ]; then
-            echo -e "⚡ 正在从 GitHub $RELEASE_TAG 下载 $name ..."
+            echo -e "⚡ 正在从 GitHub $RELEASE_TAG 下载 $archive_name ..."
         else
-            echo -e "⚡ Downloading $name from GitHub release $RELEASE_TAG ..."
+            echo -e "⚡ Downloading $archive_name from GitHub release $RELEASE_TAG ..."
         fi
 
-        if ! curl -fL --retry 3 --retry-delay 2 -# "$DOWNLOAD_URL" -o "$INSTALL_DIR/$name"; then
-            rm -f "$INSTALL_DIR/$name"
+        local tmp_archive
+        tmp_archive="$(mktemp)"
+        if ! curl -fL --retry 3 --retry-delay 2 -# "$DOWNLOAD_URL" -o "$tmp_archive"; then
+            rm -f "$tmp_archive"
             if [ "$USER_LANG" = "zh" ]; then
-                echo -e "${RED}❌ 错误: 无法从 $RELEASE_TAG 下载 $name。${NC}"
+                echo -e "${RED}❌ 错误: 无法从 $RELEASE_TAG 下载 $archive_name。${NC}"
             else
-                echo -e "${RED}❌ Error: Failed to download $name from $RELEASE_TAG.${NC}"
+                echo -e "${RED}❌ Error: Failed to download $archive_name from $RELEASE_TAG.${NC}"
+            fi
+            exit 1
+        fi
+
+        tar -xzf "$tmp_archive" -C "$INSTALL_DIR" "$name"
+        rm -f "$tmp_archive"
+
+        if [ ! -f "$INSTALL_DIR/$name" ]; then
+            if [ "$USER_LANG" = "zh" ]; then
+                echo -e "${RED}❌ 错误: 解压后未找到 $name。${NC}"
+            else
+                echo -e "${RED}❌ Error: $name not found after extraction.${NC}"
             fi
             exit 1
         fi
     fi
-    
+
     chmod +x "$INSTALL_DIR/$name"
 }
 
