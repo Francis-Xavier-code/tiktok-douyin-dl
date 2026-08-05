@@ -769,7 +769,7 @@ class App(tk.Tk):
             import auto_updater
             version = auto_updater.CURRENT_VERSION
         except ImportError:
-            version = "v1.8.0"
+            version = "1.8.1"
             
         import webbrowser
         about_win = tk.Toplevel(self)

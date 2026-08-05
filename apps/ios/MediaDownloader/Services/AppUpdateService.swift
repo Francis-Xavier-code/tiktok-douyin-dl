@@ -19,7 +19,7 @@ enum AppUpdateError: LocalizedError {
         case .invalidResponse:
             return "GitHub 没有返回有效的版本信息。"
         case .noIOSRelease:
-            return "暂未找到 iOS 版本。发布时请使用 ios-v1.8.0 这样的标签。"
+            return "暂未找到 iOS 版本。发布时请使用 ios-v1.8.1 这样的标签。"
         }
     }
 }
@@ -75,7 +75,7 @@ enum AppUpdateService {
     private static func makeResult(for release: GitHubRelease) -> AppUpdateResult {
         let currentVersion = Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "1.8.0"
+        ) as? String ?? "1.8.1"
         let latestVersion = String(release.tagName.dropFirst("ios-v".count))
 
         return AppUpdateResult(
