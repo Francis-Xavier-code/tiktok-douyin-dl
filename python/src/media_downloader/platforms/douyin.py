@@ -491,6 +491,8 @@ def main():
         check_disclaimer_agreement(locale=get_locale())
 
         print(t("title_banner"))
+        from media_downloader.core.updater import VERSION
+        print(f"  v{VERSION}")
         check_for_updates(silent=False)
         check_version_policy(silent=False)  # nag or hard-block old builds
 

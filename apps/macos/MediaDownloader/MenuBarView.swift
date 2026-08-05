@@ -68,8 +68,13 @@ struct MenuBarView: View {
             .shadow(color: .blue.opacity(0.22), radius: 5, y: 2)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("MediaDownloader")
-                    .font(.headline)
+                HStack(spacing: 4) {
+                    Text("MediaDownloader")
+                        .font(.headline)
+                    Text("v\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
                 Text("复制分享链接，一键保存")
                     .font(.caption)
                     .foregroundStyle(.secondary)

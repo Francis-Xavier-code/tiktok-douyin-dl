@@ -31,8 +31,13 @@ struct ContentView: View {
 
     private var mainContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("MediaDownloader")
-                .font(.largeTitle.bold())
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("MediaDownloader")
+                    .font(.largeTitle.bold())
+                Text("v\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                    .font(.callout)
+                    .foregroundStyle(.tertiary)
+            }
 
             TextEditor(text: $controller.shareText)
                 .font(.body)

@@ -75,7 +75,7 @@ enum AppUpdateService {
     private static func makeResult(for release: GitHubRelease) -> AppUpdateResult {
         let currentVersion = Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "1.8.1"
+        ) as? String ?? "1.8.2"
         let latestVersion = String(release.tagName.dropFirst("ios-v".count))
 
         return AppUpdateResult(

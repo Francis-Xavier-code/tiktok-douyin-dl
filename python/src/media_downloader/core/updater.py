@@ -20,7 +20,7 @@ from media_downloader.core.network import http_get_bytes, http_json
 from media_downloader.i18n import translate
 
 # --- release identity (single source of truth) ---
-VERSION = "1.8.1"
+VERSION = "1.8.2"
 GITHUB_USER = "Francis-Xavier-code"
 GITHUB_REPO = "tiktok-douyin-dl"
 

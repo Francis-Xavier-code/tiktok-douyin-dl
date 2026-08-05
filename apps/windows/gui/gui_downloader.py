@@ -595,7 +595,12 @@ class App(tk.Tk):
         except Exception:
             pass
 
-        self.title(_t("app_title"))
+        try:
+            import auto_updater
+            _ver = auto_updater.CURRENT_VERSION
+        except Exception:
+            _ver = ""
+        self.title(f"{_t('app_title')} v{_ver}" if _ver else _t("app_title"))
         self.minsize(900, 680)
         self.geometry("1000x720")
         

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-08-06
+
+### Added
+
+- **全平台版本号显示**：CLI 启动时显示版本号并支持 `--version` / `-V` 参数；Windows 标题栏显示版本号；macOS 主窗口和菜单栏显示版本号。
+- **CLI 免责声明同意弹窗**：交互模式首次运行显示完整免责声明，支持「下次不再提示」并持久化到 `~/.config/tiktok-douyin-dl/config.json`。
+- **iOS 免责声明同意弹窗**：首次启动全屏弹窗，支持「下次不再提示」并持久化到 UserDefaults。
+- **macOS 免责声明同意弹窗**：首次启动 sheet 弹窗，支持「下次不再提示」并持久化到 UserDefaults。
+- **iOS 静默自动更新**：版本被硬阻挡时自动检查 GitHub releases 并提供下载链接。
+
+### Fixed
+
+- **macOS AppUpdateService.swift 类型错误**：`dropFirst("v")` 改为 `dropFirst(1)`，修复 Swift 编译失败。
+
+### Changed
+
+- **全平台版本策略升级**：`version-policy.json` 设置所有平台 `min_version: 1.8.2`，`hard_block: true`。1.8.1 及以下版本启动时将被强制拦截。
+
 ## [1.8.1] - 2026-08-06
 
 ### Added
@@ -48,7 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Linux/Windows CLI 新增抖音搜索结果 URL 规范化，支持 `modal_id` 和抖音精选作品链接，不再强制要求手机分享短链。
 - 全平台版本号统一为 `1.7.0`。
 
-[Unreleased]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/compare/v1.8.2...HEAD
+[1.8.2]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.2
 [1.8.1]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.1
 [1.8.0]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.0
 [1.7.0]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.7.0

@@ -30,8 +30,9 @@ def detect_platform(share_text: str) -> Platform:
 
 
 def _parser() -> argparse.ArgumentParser:
+    from media_downloader.core.updater import VERSION
     parser = argparse.ArgumentParser(prog="media-downloader")
-    parser.add_argument("share_text", help="Share text, URL, or a newline-separated URL list")
+    parser.add_argument("share_text", nargs="?", help="Share text, URL, or a newline-separated URL list")
     parser.add_argument("output", nargs="?", default="downloads", help="Output directory")
     parser.add_argument(
         "-p",
@@ -39,12 +40,21 @@ def _parser() -> argparse.ArgumentParser:
         choices=[item.value for item in Platform],
         help="Override automatic platform detection",
     )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"%(prog)s {VERSION}",
+    )
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
     parser = _parser()
     args = parser.parse_args(argv)
+    if not args.share_text:
+        parser.print_help()
+        return
     try:
         platform = Platform(args.platform) if args.platform else detect_platform(args.share_text)
     except ValueError as error:
