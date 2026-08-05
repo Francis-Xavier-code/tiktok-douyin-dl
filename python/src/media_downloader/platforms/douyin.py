@@ -487,17 +487,8 @@ def main():
         download_urls(raw_input, output_dir)
     else:
         # Interactive mode
-        print(t("disclaimer_title"))
-        print(t("disclaimer_text"))
-
-        try:
-            agree = input(t("disclaimer_agree")).strip().lower()
-            if agree not in ['y', 'yes']:
-                print(t("disclaimer_declined"))
-                sys.exit(0)
-        except (KeyboardInterrupt, EOFError):
-            print("\n" + t("exited_safely"))
-            sys.exit(0)
+        from media_downloader.core.disclaimer import check_disclaimer_agreement
+        check_disclaimer_agreement(locale=get_locale())
 
         print(t("title_banner"))
         check_for_updates(silent=False)
