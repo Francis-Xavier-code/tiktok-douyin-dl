@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-08-06
+
+### Added
+
+- **macOS 静默自动更新**：版本被硬阻挡时自动检查 GitHub releases、下载 DMG 并打开 Finder 安装界面。
+- **CLI (Linux) 静默自动更新**：frozen 二进制在 silent 模式下自动下载新版本并替换自身。
+
+### Fixed
+
+- **Windows GUI 下载策略支持 per-platform 覆盖**：`download-policy.json` 中 `download.platforms.windows` 的设置现在能正确生效，而非被忽略。
+- **Windows GUI 下载拦截提示国际化**：错误提示改用 i18n 翻译，切换英文后不再显示中文。
+- **Windows GUI 版本号格式统一**：`CURRENT_VERSION` 去掉 `v` 前缀，与 `download-policy.json` 的 `min_version` 格式一致。
+
+### Changed
+
+- **全平台版本策略升级**：`version-policy.json` 设置所有平台 `min_version: 1.8.1`，`hard_block: true`。1.8.0 及以下版本启动时将被强制拦截，提示升级。
+
 ## [1.8.0] - 2026-08-04
 
 ### Added
@@ -31,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Linux/Windows CLI 新增抖音搜索结果 URL 规范化，支持 `modal_id` 和抖音精选作品链接，不再强制要求手机分享短链。
 - 全平台版本号统一为 `1.7.0`。
 
-[Unreleased]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.1
 [1.8.0]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.0
 [1.7.0]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.7.0
