@@ -2,8 +2,16 @@
   <img src="assets/app.ico" alt="MediaDownloader icon" width="128" height="128">
 </p>
 
-<h1 align="center">🚀 TikTok &amp; Douyin No-Watermark Downloader</h1>
-<p align="center"><strong>Windows · iOS · Mac · Linux</strong></p>
+<h1 align="center">TikTok &amp; Douyin No-Watermark Downloader</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v1.8.2-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/python-3.9+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/swift-5.9+-orange?style=flat-square&logo=swift&logoColor=white" alt="Swift">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/中文-简体中文-red?style=flat-square" alt="中文">
+</p>
 
 A fast, cross-platform tool suite for downloading TikTok and Douyin videos and photo posts without watermarks. The project provides a **modern Windows desktop client**, a **native SwiftUI iOS app**, an **experimental Docker WebUI for NAS**, and an **independent Linux CLI**.
 
