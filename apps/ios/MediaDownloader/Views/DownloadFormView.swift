@@ -40,7 +40,7 @@ struct DownloadFormView: View {
                 }
                 .disabled(shareText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || downloadStore.isDownloading)
             } footer: {
-                Text("免责声明：本软件仅用于个人合规的学习与测试。因使用本软件下载媒体文件所引致的任何版权争议或法律责任，均由使用者本人承担。请尊重原作者的知识产权。")
+                Text("免责声明：本工具仅供个人学习、研究和合法的内容备份使用。请仅下载你拥有权利或已获得授权的内容，遵守所在地法律、平台服务条款及著作权规定。严禁将本工具用于商业侵权、非法抓取、绕过访问控制或网络攻击。使用本工具产生的版权、账号和数据安全风险由使用者自行承担。")
             }
         }
         .navigationTitle("新建下载")
