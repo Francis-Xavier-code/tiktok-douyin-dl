@@ -929,13 +929,14 @@ class App(tk.Tk):
             if result != "allow":
                 issue_url = "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues"
                 tips = {
-                    "disabled": "维护者已临时关闭下载功能，请关注项目主页了解恢复时间。",
-                    "version": "当前版本过低，下载功能已限制，请升级到最新版本。",
-                    "unreachable": "无法连接下载策略服务（所有镜像均不可用），已暂停下载。\n如确认网络正常，请前往仓库反馈。",
+                    "disabled": _t("download_blocked_disabled"),
+                    "version": _t("download_blocked_version"),
+                    "unreachable": _t("download_blocked_unreachable"),
                 }
                 messagebox.showerror(
-                    "下载功能不可用",
-                    tips.get(result, "下载功能当前不可用。") + f"\n\n反馈/提 issue：{issue_url}",
+                    _t("download_blocked_title"),
+                    tips.get(result, _t("download_blocked_unreachable"))
+                    + f"\n\n{_t('download_blocked_issue_hint', url=issue_url)}",
                     parent=self,
                 )
                 return

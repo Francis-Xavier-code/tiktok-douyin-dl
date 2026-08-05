@@ -136,6 +136,11 @@ def _gui(disclaimer: str, english: bool) -> dict:
             "status_downloading": "Downloading...",
             "status_ready": "Ready",
             "update_module_missing": "The updater module is unavailable.",
+            "download_blocked_title": "Downloads unavailable",
+            "download_blocked_disabled": "Downloads are temporarily disabled by the maintainer. Please check the project page for status.",
+            "download_blocked_version": "Your version is too old to download. Please update to the latest version.",
+            "download_blocked_unreachable": "Could not reach the download policy server (all sources failed).\nIf your network is working, please file an issue.",
+            "download_blocked_issue_hint": "Report / file an issue: {url}",
         }
         run = {
             "browser_initializing": "Initializing browser...",
@@ -192,6 +197,11 @@ def _gui(disclaimer: str, english: bool) -> dict:
             "status_downloading": "下载中……",
             "status_ready": "就绪",
             "update_module_missing": "更新模块不可用。",
+            "download_blocked_title": "下载功能不可用",
+            "download_blocked_disabled": "维护者已临时关闭下载功能，请关注项目主页了解恢复时间。",
+            "download_blocked_version": "当前版本过低，下载功能已限制，请升级到最新版本。",
+            "download_blocked_unreachable": "无法连接下载策略服务（所有镜像均不可用），已暂停下载。\n如确认网络正常，请前往仓库反馈。",
+            "download_blocked_issue_hint": "反馈/提 issue：{url}",
         }
         run = {
             "browser_initializing": "正在初始化浏览器……",

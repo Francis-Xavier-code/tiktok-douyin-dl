@@ -9,7 +9,7 @@ import tempfile
 import subprocess
 import tkinter.messagebox as messagebox
 
-CURRENT_VERSION = "v1.8.0"
+CURRENT_VERSION = "1.8.0"
 
 # Remote version-policy enforcement (fail-open). Lets the maintainer retire old
 # builds without re-shipping every binary. See version-policy.json / docs.
@@ -101,12 +101,15 @@ def enforce_version_policy(platform, current_version):
     except Exception:
         pass
 
-def check_download_policy() -> str:
+def check_download_policy(platform: str = "windows") -> str:
     """Pre-download gate. Returns one of: 'allow', 'disabled', 'version', 'unreachable'.
 
     Tries direct GitHub first, then 9 domestic mirrors in order; the first
     source that returns valid JSON wins. If EVERY source fails, returns
     'unreachable' (fail-closed): the caller must block the download.
+
+    Supports per-platform overrides: if download.platforms.<platform> exists,
+    its values take precedence over the global download settings.
     """
     sources = [
         "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
@@ -139,11 +142,19 @@ def check_download_policy() -> str:
     if not isinstance(download, dict):
         return "unreachable"
 
-    enabled = download.get("enabled", True)
-    min_version = download.get("min_version", "0.0.0")
-    if not enabled:
+    # Per-platform override takes precedence if present.
+    platforms = download.get("platforms") or {}
+    entry = platforms.get(platform) if isinstance(platforms, dict) else None
+    if isinstance(entry, dict):
+        eff_enabled = entry.get("enabled", download.get("enabled", True))
+        eff_min = entry.get("min_version", download.get("min_version", "0.0.0"))
+    else:
+        eff_enabled = download.get("enabled", True)
+        eff_min = download.get("min_version", "0.0.0")
+
+    if not eff_enabled:
         return "disabled"
-    if _parse_version(CURRENT_VERSION) < _parse_version(min_version):
+    if _parse_version(CURRENT_VERSION) < _parse_version(eff_min):
         return "version"
     return "allow"
 
@@ -179,7 +190,7 @@ def check_for_updates(root, silent=True):
                 root.after(0, lambda: messagebox.showerror("网络错误", err_msg, parent=root))
             return
             
-        if latest_version != CURRENT_VERSION:
+        if latest_version.lstrip("v") != CURRENT_VERSION:
             release_notes = ""
             try:
                 # 尝试获取更新日志
