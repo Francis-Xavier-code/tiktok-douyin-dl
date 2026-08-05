@@ -50,6 +50,14 @@ install_binary() {
     local local_file="dist/$name"
     local version="${RELEASE_TAG#v}"
     local archive_name="MediaDownloader-Linux-x86_64-${version}.tar.gz"
+    local raw_url="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$archive_name"
+
+    # Mirror URLs: direct GitHub first, then domestic accelerators.
+    local -a MIRROR_URLS=(
+        "$raw_url"
+        "https://gh-proxy.com/$raw_url"
+        "https://ghproxy.net/$raw_url"
+    )
 
     if [ -f "$local_file" ]; then
         if [ "$USER_LANG" = "zh" ]; then
@@ -64,22 +72,32 @@ install_binary() {
             exit 1
         fi
 
-        DOWNLOAD_URL="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$archive_name"
-
-        if [ "$USER_LANG" = "zh" ]; then
-            echo -e "⚡ 正在从 GitHub $RELEASE_TAG 下载 $archive_name ..."
-        else
-            echo -e "⚡ Downloading $archive_name from GitHub release $RELEASE_TAG ..."
-        fi
-
         local tmp_archive
         tmp_archive="$(mktemp)"
-        if ! curl -fL --retry 3 --retry-delay 2 -# "$DOWNLOAD_URL" -o "$tmp_archive"; then
+        local download_ok=false
+
+        for url in "${MIRROR_URLS[@]}"; do
+            if [ "$USER_LANG" = "zh" ]; then
+                echo -e "⚡ 正在尝试下载 $archive_name ..."
+            else
+                echo -e "⚡ Trying to download $archive_name ..."
+            fi
+            echo -e "   ${BLUE}$url${NC}"
+
+            if curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -# "$url" -o "$tmp_archive" 2>/dev/null; then
+                download_ok=true
+                break
+            fi
+        done
+
+        if [ "$download_ok" != "true" ]; then
             rm -f "$tmp_archive"
             if [ "$USER_LANG" = "zh" ]; then
-                echo -e "${RED}❌ 错误: 无法从 $RELEASE_TAG 下载 $archive_name。${NC}"
+                echo -e "${RED}❌ 错误: 所有下载源均失败（$RELEASE_TAG）。${NC}"
+                echo -e "${RED}   请检查网络或开启代理后重试。${NC}"
             else
-                echo -e "${RED}❌ Error: Failed to download $archive_name from $RELEASE_TAG.${NC}"
+                echo -e "${RED}❌ Error: All download sources failed ($RELEASE_TAG).${NC}"
+                echo -e "${RED}   Please check your network or enable a proxy and retry.${NC}"
             fi
             exit 1
         fi
