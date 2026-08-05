@@ -3,8 +3,8 @@
   "updated_at": "2026-08-04T08:51:58Z",
   "issue_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues",
   "download": {
-    "enabled": false,
-    "message": "下载功能临时停止测试。",
+    "enabled": true,
+    "message": "下载功能恢复。",
     "min_version": "1.7.0",
     "platforms": {}
   }
