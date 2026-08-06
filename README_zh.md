@@ -31,7 +31,7 @@
     <th align="center">原生 macOS App</th>
   </tr>
   <tr>
-    <td align="center"><img src="assets/macos-preview.png" alt="MediaDownloader macOS 运行预览" width="900"></td>
+    <td align="center"><img src="assets/image.png" alt="MediaDownloader macOS 运行预览" width="900"></td>
   </tr>
 </table>
 
