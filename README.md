@@ -31,7 +31,7 @@ Packaged desktop applications include the required runtime and browser component
     <th align="center">Native macOS App</th>
   </tr>
   <tr>
-    <td align="center"><img src="assets/macos-preview.png" alt="MediaDownloader running on macOS" width="900"></td>
+    <td align="center"><img src="assets/image.png" alt="MediaDownloader running on macOS" width="900"></td>
   </tr>
 </table>
 
