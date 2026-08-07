@@ -145,7 +145,15 @@ CLI 会根据链接域名自动识别抖音或 TikTok；带 `modal_id` 的抖音
 ## ⚖️ 免责声明
 本软件仅限用于个人学习研究、学术交流及网页技术备份测试，严禁用于任何商业用途、非法抓取或网络攻击。因使用本软件导致的一切版权纠纷或账号风控后果，均由使用者自行承担全部责任。
 
-## Star History
+## ⭐ Star History
+
+如果本项目对你有帮助，请点个 ⭐ 支持我们。若下方的第三方 star-history 图表加载失败（该服务对小仓库不稳定），上面的实时徽章计数始终可以正常显示：
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/forks/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github" alt="GitHub Forks">
+  <img src="https://img.shields.io/github/watchers/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github" alt="GitHub Watchers">
+</p>
 
 <a href="https://www.star-history.com/?repos=Francis-Xavier-code%2Ftiktok-douyin-dl&type=date&legend=top-left">
  <picture>

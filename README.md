@@ -157,7 +157,15 @@ Build both unsigned Apple artifacts at version `2.0.0` with `./scripts/build-app
 
 This software is intended solely for personal study, academic exchange, and technical testing of webpage backups. Commercial use, illegal scraping, and cyberattacks are strictly prohibited. Users assume full responsibility for any copyright disputes or account restrictions resulting from use of this software.
 
-## Star History
+## ⭐ Star History
+
+If this project helps you, please give it a ⭐ — it motivates us to keep improving. If the chart below fails to load (the third-party star-history service is unreliable for small repos), the live badge counts always render:
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars">
+  <img src="https://img.shields.io/github/forks/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github" alt="GitHub Forks">
+  <img src="https://img.shields.io/github/watchers/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github" alt="GitHub Watchers">
+</p>
 
 <a href="https://www.star-history.com/?repos=Francis-Xavier-code%2Ftiktok-douyin-dl&type=date&legend=top-left">
  <picture>
