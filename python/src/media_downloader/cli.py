@@ -56,9 +56,9 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         parser.print_help()
         return
     try:
-        # 启动时静默检查：有新版本时打印本端更新日志（不自动替换，fail-open）
-        from media_downloader.core.updater import notify_update
-        notify_update()
+        # 启动时静默检查新版本：打印本端更新日志，打包版（frozen）自动下载替换自身（fail-open）
+        from media_downloader.core.updater import check_for_updates
+        check_for_updates(silent=True)
     except Exception:
         pass
     try:

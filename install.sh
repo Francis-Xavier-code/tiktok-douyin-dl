@@ -8,7 +8,7 @@ set -e
 # GitHub Repository Configuration
 GITHUB_USER="Francis-Xavier-code"
 GITHUB_REPO="tiktok-douyin-dl"
-RELEASE_TAG="v2.0.0"
+RELEASE_TAG="v2.0.1"
 
 INSTALL_DIR="$HOME/.local/share/tiktok-douyin-dl"
 BIN_DIR="$HOME/.local/bin"

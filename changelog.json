@@ -1,7 +1,16 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-07T18:44:36Z",
+  "updated_at": "2026-08-07T19:04:59Z",
   "versions": [
+    {
+      "version": "2.0.1",
+      "date": "2026-08-08",
+      "entries": {
+        "cli": [
+          "统一入口 `media-downloader` 支持自动更新：启动时静默检测新版本并打印本端更新日志（changelog.json 镜像，fail-open）；打包版（frozen）检测到新版本时自动下载并替换自身二进制（与 `douyin` / `tiktok` 入口行为一致），源码运行仅提示不替换。"
+        ]
+      }
+    },
     {
       "version": "2.0.0",
       "date": "2026-08-08",
