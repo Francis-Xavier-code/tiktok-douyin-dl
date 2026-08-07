@@ -9,7 +9,7 @@
     "platforms": {
       "android": {
         "enabled": true,
-        "min_version": "0.1.2"
+        "min_version": "2.0.0"
       }
     }
   }
