@@ -5,19 +5,30 @@ $PythonProject = Join-Path $RepoRoot "python"
 $GuiEntry = Join-Path $RepoRoot "apps\windows\gui\gui_downloader.py"
 $Icon = Join-Path $RepoRoot "assets\app.ico"
 $BrowserCache = Join-Path $RepoRoot "ms-playwright"
-$Version = if ([string]::IsNullOrWhiteSpace($env:APP_VERSION)) { "1.8.2" } else { $env:APP_VERSION }
+# version.json is the single source of truth (scripts/sync-versions.py); fall
+# back to the last-known value when it is unreadable.
+$VersionFile = Join-Path $RepoRoot "version.json"
+$DefaultVersion = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw | ConvertFrom-Json).main } else { "1.8.2" }
+$Version = if ([string]::IsNullOrWhiteSpace($env:APP_VERSION)) { $DefaultVersion } else { $env:APP_VERSION }
 
 python -m pip install --upgrade pip
 python -m pip install -e "$PythonProject[windows]" pyinstaller
 
 $env:PLAYWRIGHT_BROWSERS_PATH = "$env:USERPROFILE\.cache\ms-playwright"
-python -m playwright install chromium
+# --only-shell: the GUI only ever launches headless, so shipping just the
+# headless shell (instead of the ~1GB full Chromium) keeps the installer small.
+python -m playwright install --only-shell chromium
 if (Test-Path $BrowserCache) {
     Remove-Item $BrowserCache -Recurse -Force
 }
 Copy-Item $env:PLAYWRIGHT_BROWSERS_PATH $BrowserCache -Recurse
 
 $StealthPath = python -c "import pathlib, playwright_stealth; print(pathlib.Path(playwright_stealth.__file__).parent)"
+
+# Ship the Playwright Chromium browser as a sidecar next to the CLI binary so
+# end users never download it on first run. The frozen CLI detects it via
+# media_downloader.core.launch.bundled_browser_path().
+Copy-Item $BrowserCache (Join-Path $RepoRoot "dist\ms-playwright") -Recurse
 python -m PyInstaller `
     --noconfirm `
     --onedir `

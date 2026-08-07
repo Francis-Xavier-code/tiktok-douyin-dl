@@ -39,10 +39,39 @@ def apply_frozen_env_fixes() -> None:
             os.environ.pop(key, None)
 
 
+def bundled_browser_path() -> str | None:
+    """Locate a Playwright browser directory shipped with a frozen build.
+
+    Precedence: inside the PyInstaller bundle (``sys._MEIPASS``), then a
+    sidecar ``ms-playwright`` folder next to the executable. Returns None
+    when running from source or when no bundled browser is present, so the
+    caller falls back to the user cache + auto-install.
+    """
+    if not getattr(sys, "frozen", False):
+        return None
+    candidates = []
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(os.path.join(meipass, "ms-playwright"))
+    candidates.append(
+        os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "ms-playwright")
+    )
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            return candidate
+    return None
+
+
 def configure_browser_env(mirror: str | None = None) -> None:
-    """Set PLAYWRIGHT_BROWSERS_PATH and a domestic download mirror if unset."""
+    """Set PLAYWRIGHT_BROWSERS_PATH and a domestic download mirror if unset.
+
+    A user-provided PLAYWRIGHT_BROWSERS_PATH always wins. Frozen builds that
+    ship a bundled/sidecar browser are pointed at it (no first-run download);
+    otherwise the user cache is used and ensure_browser_installed() will
+    auto-install when missing.
+    """
     if "PLAYWRIGHT_BROWSERS_PATH" not in os.environ:
-        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = PLAYWRIGHT_BROWSERS_PATH
+        os.environ["PLAYWRIGHT_BROWSERS_PATH"] = bundled_browser_path() or PLAYWRIGHT_BROWSERS_PATH
     if mirror and "PLAYWRIGHT_DOWNLOAD_HOST" not in os.environ:
         os.environ["PLAYWRIGHT_DOWNLOAD_HOST"] = mirror
     if "npm_config_registry" not in os.environ:
