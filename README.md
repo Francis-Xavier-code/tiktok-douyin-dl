@@ -92,29 +92,17 @@ Run the following command in your terminal to download the latest CLI (Linux x86
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
 
-## 🤖 Autonomous AI Agent Skill
+## 🤖 One-Sentence AI Prompt
 
-This repository includes an [AgentSkills-compatible Media Downloader skill](skills/media-downloader/SKILL.md) for OpenClaw and other autonomous AI agents.
-
-Install it in an OpenClaw workspace:
-
-```bash
-openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader
-```
-
-Standard one-line agent prompt:
+Copy the sentence below, replace `<link>` with the Douyin/TikTok share link or result URL, and send it to any AI assistant — the AI reads the skill file itself, then downloads the work. **No installation or commands needed.**
 
 ```text
-Use $media-downloader to download this Douyin or TikTok result or share link: <URL>
+Read the Media Downloader skill at https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md, then download this work using it: <link>
 ```
 
-Search-and-download prompt:
+To search instead of pasting a link: `Read the skill at https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md, find a public Douyin or TikTok video matching "<keywords>", show me the result, and download it.`
 
-```text
-Use $media-downloader to find a public Douyin or TikTok video matching "<keywords>", show me the selected result, and download it.
-```
-
-For agents without skill discovery: `Read skills/media-downloader/SKILL.md and use its bundled script to download this result or share link: <URL>`.
+OpenClaw / AgentSkills users can install the skill instead: `openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader` and then use `$media-downloader`.
 
 ---
 

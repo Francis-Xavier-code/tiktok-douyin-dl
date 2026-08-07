@@ -94,27 +94,17 @@
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
 
-## 🤖 自主 AI 代理 Skill
+## 🤖 给 AI 的一句话指令
 
-仓库内置了兼容 AgentSkills 标准的 [Media Downloader Skill](skills/media-downloader/SKILL.md)，可供 OpenClaw 等自主 AI 代理直接调用。
-
-安装到 OpenClaw 工作区：
-
-```bash
-openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader
-```
-
-标准一句话提示词：
+复制下面这句话，把 `<链接>` 换成你要下载的抖音 / TikTok 分享链接或作品链接，直接发给任意 AI 助手即可——AI 会自己读取技能文件并按其中的方法帮你下载。**无需安装，不用敲命令。**
 
 ```text
-请使用 $media-downloader 下载这个抖音或 TikTok 搜索结果或分享链接：<URL>
+请先阅读技能文件 https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md ，然后按其中的方法帮我下载这个作品：<链接>
 ```
 
-搜索并下载提示词：
+想搜索而不是粘贴链接：`请先阅读技能文件 https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md ，搜索符合“<关键词>”的公开抖音或 TikTok 视频，告诉我选中的结果，然后下载。`
 
-```text
-请使用 $media-downloader 搜索符合“<关键词>”的公开抖音或 TikTok 视频，告诉我选中了哪个结果，然后下载。
-```
+OpenClaw / AgentSkills 环境可改为安装：`openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader`，之后直接用 `$media-downloader`。
 
 对于不支持自动发现 Skill 的代理，可直接说：`读取 skills/media-downloader/SKILL.md，并使用其完整脚本下载这个搜索结果或分享链接：<URL>`。
 
