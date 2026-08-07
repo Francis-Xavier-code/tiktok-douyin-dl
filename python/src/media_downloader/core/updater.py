@@ -40,6 +40,85 @@ def _t(key: str, **kwargs) -> str:
     return translate(f"cli.common.{key}", **kwargs)
 
 
+# --- shared machine-readable changelog (changelog.json at repo root) ---------
+# Single file consumed by every client (CLI / Windows GUI / macOS / iOS);
+# generated from CHANGELOG.md by scripts/update-changelog-json.py. Entries are
+# bucketed per platform so each client only shows updates relevant to itself.
+_CHANGELOG_FILE = "changelog.json"
+_CHANGELOG_SOURCES = [
+    f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/{_CHANGELOG_FILE}",
+    f"https://gh-proxy.com/https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/{_CHANGELOG_FILE}",
+    f"https://ghproxy.net/https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/{_CHANGELOG_FILE}",
+    f"https://fastly.jsdelivr.net/gh/{GITHUB_USER}/{GITHUB_REPO}@main/{_CHANGELOG_FILE}",
+]
+
+
+def fetch_changelog(platform: str = "cli", max_versions: int = 3) -> list[dict]:
+    """Fetch the shared changelog.json and return per-platform filtered entries.
+
+    Returns a list of {"version", "date", "entries": [str]} for releases newer
+    than the running VERSION (newest first, capped at max_versions). Fail-open:
+    any network/parse error yields [] so an update prompt never breaks.
+    """
+    try:
+        import json
+        data = None
+        for url in _CHANGELOG_SOURCES:
+            try:
+                data = http_json(url, timeout=5, verify=True,
+                                 headers={"User-Agent": "Mozilla/5.0 updater"})
+                break
+            except Exception:
+                continue
+        if not isinstance(data, dict):
+            return []
+        result = []
+        for v in data.get("versions", []):
+            version = str(v.get("version", "")).lstrip("v")
+            if parse_version(version) <= parse_version(VERSION):
+                break  # versions are newest-first; older releases are irrelevant
+            entries = []
+            bucket = v.get("entries") or {}
+            if isinstance(bucket, dict):
+                for key in (platform, "all"):
+                    for entry in bucket.get(key) or []:
+                        if entry:
+                            entries.append(entry)
+            if entries:
+                result.append({
+                    "version": version,
+                    "date": str(v.get("date", "")),
+                    "entries": entries,
+                })
+            if len(result) >= max_versions:
+                break
+        return result
+    except Exception:
+        return []
+
+
+def _print_changelog(platform: str) -> bool:
+    """Print per-platform changelog entries for newer releases (fail-open).
+
+    Returns True when entries were printed, False otherwise.
+    """
+    notes = fetch_changelog(platform)
+    if not notes:
+        return False
+    print(_t("changelog_title"))
+    print("─" * 50)
+    for item in notes:
+        header = f"[v{item['version']}]"
+        if item.get("date"):
+            header += f" ({item['date']})"
+        print(header)
+        for entry in item["entries"]:
+            for line in entry.splitlines():
+                print(f"  • {line}")
+        print()
+    return True
+
+
 def check_for_updates(silent: bool = False) -> None:
     """Check GitHub for a newer release and prompt to self-update."""
     if "YOUR_GITHUB_" in GITHUB_USER or "YOUR_GITHUB_" in GITHUB_REPO:
@@ -93,7 +172,8 @@ def check_for_updates(silent: bool = False) -> None:
     if latest_version and parse_version(latest_version) > parse_version(VERSION):
         print(_t("update_found", latest_version=latest_version, version=VERSION))
 
-        if changelog:
+        # Prefer the shared per-platform changelog; fall back to the release body.
+        if not _print_changelog("cli") and changelog:
             print(_t("changelog_title"))
             print("─" * 50)
             print(changelog)
