@@ -1,28 +1,29 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-07T17:11:36Z",
+  "updated_at": "2026-08-07T17:33:47Z",
   "versions": [
     {
       "version": "2.0.0",
       "date": "2026-08-08",
       "entries": {
         "all": [
-          "更新日志自动识别显示：新增机器可读的 `changelog.json`（由 `scripts/update-changelog-json.py` 从 CHANGELOG.md 自动生成，`release.sh` 发版时自动刷新）。CLI / Windows GUI / macOS / iOS 检查更新时自动拉取该文件（raw 镜像，国内可达），并按端过滤只显示本端相关的更新内容。",
-          "版本号统一管理：新增 `version.json` 作为所有端版本号的唯一事实来源（`main` / `android.versionName+versionCode` / `apple.buildNumber`），`scripts/sync-versions.py` 一键同步到全部硬编码位置（Python 包、pyproject、updater、Windows GUI、install.sh、Homebrew cask、两个 Xcode project、Swift fallback、Android gradle），`release.sh` 发版前自动同步。"
+          "更新日志自动识别显示：新增机器可读的 `changelog.json`（由 `scripts/update-changelog-json.py` 从 CHANGELOG.md 自动生成，`release.sh` 发版时自动刷新）。CLI / Windows GUI / macOS / iOS / Android 检查更新时自动拉取该文件（直连 + 国内镜像兜底），并按端过滤只显示本端相关的更新内容。",
+          "版本号统一管理：新增 `version.json` 作为所有端版本号的唯一事实来源（`main` / `android.versionName+versionCode` / `apple.buildNumber`），`scripts/sync-versions.py` 一键同步到全部硬编码位置（Python 包、pyproject、updater、Windows GUI、install.sh、Homebrew cask、两个 Xcode project、Swift fallback、Android gradle），`release.sh` 发版前自动同步。",
+          "AI Skill 一句话指令：README 提供复制即用的一句话提示词（内嵌技能文件 URL），AI 自行读取技能文件后即可帮助下载，无需安装或敲命令。"
         ],
         "android": [
-          "客户端完成：支持抖音与 TikTok 解析/下载（WebView 兜底）、远程策略 Ed25519 验签（fail-closed）、自动更新检查与按端过滤的更新日志；版本号与主版本线对齐（2.0.0），Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`。"
+          "客户端完成：支持抖音与 TikTok 解析/下载（WebView 兜底）、远程策略 Ed25519 验签（fail-closed）、自动更新检查与按端过滤的更新日志（含国内镜像兜底）；版本号与主版本线对齐（2.0.0），Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`。"
         ],
         "cli": [
           "内置无头浏览器：Windows / Linux / macOS CLI 产物现在随包附带 Playwright headless Chromium（`ms-playwright/` 侧车目录，仅 headless shell，~200MB），首次运行不再需要联网下载浏览器；没有侧车时回退到原有自动下载。Windows GUI 安装包同步改用 `--only-shell`，安装包体积大幅缩小。",
           "macOS CLI 打包：新增 `scripts/build-macos-cli.sh`（PyInstaller 单文件），按 Apple 芯片（arm64）与 Intel（x86_64）双架构产出 `MediaDownloader-macOS-{arch}-CLI-{version}.zip`；CI 每次 Release 自动构建上传。`install.sh` 一键安装脚本现同时支持 Linux 与 macOS，并在 macOS 上自动解除 quarantine 属性。",
-          "更新提示显示本端更新日志；Agent skill 支持 macOS 安装，并修复安装时下载不存在的裸二进制资产的错误。"
+          "更新提示显示本端更新日志：打包版 `media-downloader` 启动时静默检查新版本并打印本端更新日志（不自动替换）；Agent skill 支持 macOS 安装，并修复安装时下载不存在的裸二进制资产的错误。"
         ],
         "ios": [
           "修复更新检测：改为读取共享 changelog.json 获取最新版本与更新日志（原来查找不存在的 `ios-v*` 标签，永远检测不到更新）。"
         ],
         "macos": [
-          "更新时显示本端更新日志。"
+          "检查更新：主窗口与菜单栏新增「检查更新」，弹窗显示新版本与按端过滤的更新日志（可一键打开更新包/前往发布页）；被版本策略硬阻挡时自动下载 DMG 更新。"
         ],
         "windows": [
           "GUI 自动识别平台：粘贴/输入链接后自动识别抖音或 TikTok 并切换平台下拉框（可手动覆盖）；同时包含两种平台的链接会报错提示分开下载。",
