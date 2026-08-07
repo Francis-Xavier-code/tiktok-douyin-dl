@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DouyinDownload" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 核心品牌色：抖音红 -->
+        <item name="colorPrimary">#FE2C55</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+
+        <!-- 悬浮导航栏风格：使用半透明背景 -->
+        <item name="colorSurface">#F2FFFFFF</item> <!-- 约 95% 不透明度的白色 -->
+        <item name="colorSecondaryContainer">#E0E0E0</item>
+        <item name="colorOnSecondaryContainer">#FE2C55</item>
+
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <color name="ic_launcher_background">#FE2C55</color>
+</resources>

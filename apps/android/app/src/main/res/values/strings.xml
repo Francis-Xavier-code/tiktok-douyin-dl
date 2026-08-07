@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">douyin-download</string>
+    <string name="input_hint">粘贴抖音分享文本或链接…</string>
+    <string name="btn_download">解析并下载</string>
+    <string name="status_idle">就绪</string>
+    <string name="status_busy">处理中…</string>
+    <string name="nav_download">下载</string>
+    <string name="nav_settings">设置</string>
+</resources>
