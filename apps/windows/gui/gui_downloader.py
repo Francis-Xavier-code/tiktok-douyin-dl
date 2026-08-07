@@ -833,14 +833,14 @@ class App(tk.Tk):
         import webbrowser
         about_win = tk.Toplevel(self)
         about_win.title(_t("about_title"))
-        about_win.geometry("400x380")
+        about_win.geometry("400x520")
         about_win.resizable(False, False)
         about_win.transient(self)
         about_win.grab_set()
 
         self.update_idletasks()
         x = self.winfo_rootx() + (self.winfo_width() - 400) // 2
-        y = self.winfo_rooty() + (self.winfo_height() - 380) // 2
+        y = self.winfo_rooty() + (self.winfo_height() - 520) // 2
         about_win.geometry(f"+{max(0, x)}+{max(0, y)}")
 
         # 顶部图标 + 标题
@@ -872,9 +872,117 @@ class App(tk.Tk):
         repo_link = _link("🔗 " + _t("project_home"))
         repo_link.bind("<Button-1>",
                        lambda e: webbrowser.open("https://github.com/Francis-Xavier-code/tiktok-douyin-dl"))
-        author_link = _link("👤 " + _t("author"))
-        author_link.bind("<Button-1>",
-                         lambda e: webbrowser.open("https://github.com/Xynrin"))
+
+        # ---------- 贡献者（带头像，点击打开个人主页） ----------
+        ttk.Label(about_win, text=_t("contributors_label"),
+                  foreground="#8b949e", font=("Segoe UI", 9)).pack(pady=(8, 2))
+        contrib_frame = ttk.Frame(about_win)
+        contrib_frame.pack(pady=(0, 4))
+        loading_lbl = ttk.Label(contrib_frame, text=_t("contributors_loading"),
+                                foreground="#8b949e", font=("Segoe UI", 9))
+        loading_lbl.pack()
+
+        import queue as _q
+        contrib_queue = _q.Queue()
+        _photos = []  # 保持 PhotoImage 引用，防止被垃圾回收
+
+        def _render(items):
+            loading_lbl.destroy()
+            for i, (login, url, pil_img) in enumerate(items):
+                if pil_img is not None:
+                    try:
+                        from PIL import ImageTk
+                        photo = ImageTk.PhotoImage(pil_img)
+                        _photos.append(photo)
+                        cell = tk.Label(
+                            contrib_frame, image=photo, text=f"@{login}",
+                            compound="top", fg="#58a6ff", bg="#26292e",
+                            font=("Segoe UI", 8), cursor="hand2", padx=4, pady=3,
+                        )
+                    except Exception:
+                        cell = tk.Label(
+                            contrib_frame, text=f"@{login}",
+                            fg="#58a6ff", bg="#26292e",
+                            font=("Segoe UI", 9), cursor="hand2", padx=6, pady=4,
+                        )
+                else:
+                    cell = tk.Label(
+                        contrib_frame, text=f"@{login}",
+                        fg="#58a6ff", bg="#26292e",
+                        font=("Segoe UI", 9), cursor="hand2", padx=6, pady=4,
+                    )
+                cell.grid(row=i // 4, column=i % 4, padx=5, pady=4)
+                cell.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+
+        def _load():
+            items = []
+            try:
+                import io
+                import json as _json
+                import urllib.request as _urllib
+                from concurrent.futures import ThreadPoolExecutor
+                # 不用 api.github.com（匿名 REST API 有 60 次/小时限制）。
+                # 这里直接取贡献者页面本身在用的页面数据接口（github.com 页面级，
+                # 无 REST 速率上限），与 graphs/contributors 页面展示一致。
+                url = ("https://github.com/Francis-Xavier-code/tiktok-douyin-dl/"
+                       "graphs/contributors-data")
+                req = _urllib.Request(url, headers={
+                    "User-Agent": "Mozilla/5.0 (MediaDownloader-GUI)",
+                    "Accept": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                })
+                with _urllib.urlopen(req, timeout=6) as resp:
+                    raw = resp.read()
+                parsed = _json.loads(raw)
+                contribs = []
+                for entry in parsed:
+                    author = entry.get("author") or {}
+                    login = author.get("login", "")
+                    if not login:
+                        continue
+                    path = author.get("path", "") or ("/" + login)
+                    profile_url = "https://github.com" + path
+                    avatar = author.get("avatar", "").replace("s=60", "s=40")
+                    contribs.append((login, profile_url, avatar))
+
+                def _fetch_avatar(login, profile_url, avatar_url):
+                    try:
+                        req = _urllib.Request(avatar_url, headers={
+                            "User-Agent": "Mozilla/5.0 (MediaDownloader-GUI)"})
+                        raw = _urllib.urlopen(req, timeout=4).read()
+                        from PIL import Image
+                        img = Image.open(io.BytesIO(raw)).convert("RGB")
+                        img = img.resize((40, 40), Image.LANCZOS)
+                        return (login, profile_url, img)
+                    except Exception:
+                        return (login, profile_url, None)
+
+                with ThreadPoolExecutor(max_workers=8) as pool:  # 并行拉头像，快很多
+                    items = list(pool.map(lambda c: _fetch_avatar(*c), contribs[:8]))
+            except Exception:
+                pass
+            contrib_queue.put(items)
+
+        def _poll(attempts=0):
+            try:
+                items = contrib_queue.get_nowait()
+            except Exception:
+                if attempts < 80:  # 最多约 8 秒
+                    about_win.after(100, lambda: _poll(attempts + 1))
+                else:
+                    loading_lbl.config(text=_t("contributors_fallback"), cursor="hand2")
+                    loading_lbl.bind("<Button-1>", lambda e: webbrowser.open(
+                        "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/graphs/contributors"))
+                return
+            if items:
+                _render(items)
+            else:
+                loading_lbl.config(text=_t("contributors_fallback"), cursor="hand2")
+                loading_lbl.bind("<Button-1>", lambda e: webbrowser.open(
+                    "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/graphs/contributors"))
+
+        about_win.after(100, _poll)
+        threading.Thread(target=_load, daemon=True).start()
 
         def _do_update():
             about_win.destroy()
