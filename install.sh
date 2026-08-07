@@ -1,6 +1,6 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
-# TikTok & Douyin Downloader - Linux One-Click Installer
+# TikTok & Douyin Downloader - Linux / macOS One-Click Installer
 # -----------------------------------------------------------------------------
 
 set -e
@@ -49,7 +49,17 @@ install_binary() {
     local name=$1
     local local_file="dist/$name"
     local version="${RELEASE_TAG#v}"
-    local archive_name="MediaDownloader-Linux-x86_64-${version}.tar.gz"
+    local os_type archive_name
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # macOS CLI is packaged per-architecture: arm64 (Apple Silicon) or x86_64 (Intel)
+        os_type="macos"
+        local arch
+        arch="$(uname -m)"
+        archive_name="MediaDownloader-macOS-${arch}-CLI-${version}.zip"
+    else
+        os_type="linux"
+        archive_name="MediaDownloader-Linux-x86_64-${version}.tar.gz"
+    fi
     local raw_url="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$archive_name"
 
     # Mirror URLs: direct GitHub first, then domestic accelerators.
@@ -66,6 +76,10 @@ install_binary() {
             echo -e "📦 Local pre-compiled binary found, installing $name ..."
         fi
         cp "$local_file" "$INSTALL_DIR/"
+        # Also ship a locally-built browser sidecar when present.
+        if [ -d "dist/ms-playwright" ]; then
+            cp -r "dist/ms-playwright" "$INSTALL_DIR/"
+        fi
     else
         if [ "$GITHUB_USER" = "YOUR_GITHUB_USERNAME" ] || [ "$GITHUB_REPO" = "YOUR_GITHUB_REPO" ]; then
             echo -e "${RED}❌ Error: GITHUB_USER / GITHUB_REPO not configured in install.sh.${NC}"
@@ -102,7 +116,12 @@ install_binary() {
             exit 1
         fi
 
-        tar -xzf "$tmp_archive" -C "$INSTALL_DIR" "$name"
+        if [ "$os_type" = "macos" ]; then
+            unzip -q -o "$tmp_archive" -d "$INSTALL_DIR"
+        else
+            # Extract everything: the binary plus the bundled ms-playwright sidecar
+            tar -xzf "$tmp_archive" -C "$INSTALL_DIR"
+        fi
         rm -f "$tmp_archive"
 
         if [ ! -f "$INSTALL_DIR/$name" ]; then
@@ -116,6 +135,11 @@ install_binary() {
     fi
 
     chmod +x "$INSTALL_DIR/$name"
+
+    # macOS: drop the quarantine attribute so Gatekeeper doesn't kill the binary
+    if [ "$os_type" = "macos" ]; then
+        xattr -dr com.apple.quarantine "$INSTALL_DIR/$name" 2>/dev/null || true
+    fi
 }
 
 # Install the unified auto-detecting CLI
