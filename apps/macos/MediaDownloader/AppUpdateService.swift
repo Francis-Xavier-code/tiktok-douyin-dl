@@ -169,7 +169,8 @@ enum AppUpdateService {
             currentVersion: currentVersion,
             latestVersion: latestVersion,
             releaseURL: release.htmlURL,
-            dmgURL: dmgURL
+            dmgURL: dmgURL,
+            changelog: ""
         )
     }
 
