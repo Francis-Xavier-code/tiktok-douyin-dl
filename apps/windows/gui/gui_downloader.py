@@ -203,6 +203,27 @@ def extract_unique_urls(platform_module, raw_text: str) -> list:
     return unique
 
 
+def detect_platform_from_text(raw_text: str):
+    """从文本中的 URL 自动识别平台（与 CLI 同规则，另兼容 iesdouyin 域名）。
+
+    返回 "douyin" / "tiktok"；无支持的链接或同时含两种链接时返回 None。
+    """
+    import re as _re
+    from urllib.parse import urlparse
+    hosts = set()
+    for m in _re.finditer(r'https?://[^\s<>"\']+', raw_text, _re.IGNORECASE):
+        host = (urlparse(m.group(0)).hostname or "").lower()
+        if host == "douyin.com" or host.endswith(".douyin.com"):
+            hosts.add("douyin")
+        elif host == "iesdouyin.com" or host.endswith(".iesdouyin.com"):
+            hosts.add("douyin")
+        elif host == "tiktok.com" or host.endswith(".tiktok.com"):
+            hosts.add("tiktok")
+    if len(hosts) == 1:
+        return hosts.pop()
+    return None
+
+
 # ============================================================================
 # 日志 / stdout 重定向：将 print 输出转为 log_queue 的 (log, level, text) 消息
 # ============================================================================
@@ -616,16 +637,17 @@ class App(tk.Tk):
         self.download_thread = None
         self.log_queue = queue.Queue()
         self.is_downloading = False
+        self._autodetect_job = None  # 平台自动识别 debounce 定时器
 
         # 记录输出目录是否是用户自定义的
         self._output_dir_is_custom = False
 
         # 控件变量
-        self._platform_var = tk.StringVar(value=_t("platform_douyin"))
+        self._detected_platform = None  # "douyin" / "tiktok" / None（自动识别，无手动下拉）
         self._output_dir_var = tk.StringVar(value="")
 
         # 控件引用
-        self._platform_combo = None
+        self._platform_badge = None
         self._links_text = None
         self._output_dir_entry = None
         self._action_btn = None
@@ -649,50 +671,77 @@ class App(tk.Tk):
     # ------------------------------------------------------------------ UI
 
     def _build_ui(self):
-        pad = {"padx": 12, "pady": 4}
+        pad = {"padx": 16, "pady": 6}
+        dark_bg = "#1e1f22"
+        fg = "#e6edf3"
 
-        # 平台选择行
-        row1 = ttk.Frame(self)
-        row1.pack(fill="x", **pad)
-        ttk.Label(row1, text=_t("platform_label"), width=14).pack(side="left")
-        self._platform_combo = ttk.Combobox(
-            row1,
-            textvariable=self._platform_var,
-            values=[_t("platform_douyin"), _t("platform_tiktok")],
-            state="readonly",
-            width=20,
+        # ================= 顶部横幅 =================
+        header = ttk.Frame(self)
+        header.pack(fill="x", padx=16, pady=(14, 4))
+        ttk.Label(header, text="🎬", font=("Segoe UI Emoji", 24)).pack(side="left")
+        title_box = ttk.Frame(header)
+        title_box.pack(side="left", padx=(10, 0))
+        ttk.Label(title_box, text=_t("app_title"),
+                  font=("Segoe UI", 16, "bold")).pack(anchor="w")
+        ttk.Label(title_box, text=_t("app_subtitle"),
+                  foreground="#8b949e", font=("Segoe UI", 9)).pack(anchor="w")
+        try:
+            import auto_updater
+            _ver = auto_updater.CURRENT_VERSION
+        except Exception:
+            _ver = ""
+        if _ver:
+            ttk.Label(header, text=f"v{_ver}",
+                      foreground="#8b949e", font=("Segoe UI", 9)).pack(side="right")
+
+        # ================= 链接输入 =================
+        links_frame = ttk.LabelFrame(self, text=f"  {_t('links_label')}  ")
+        links_frame.pack(fill="both", expand=True, padx=16, pady=(10, 4))
+        self._links_text = tk.Text(
+            links_frame, height=8, wrap="word", font=("Segoe UI", 10),
+            relief="flat", padx=10, pady=8,
+            bg=dark_bg, fg=fg, insertbackground=fg,
+            selectbackground="#3d7eff", selectforeground="#ffffff",
         )
-        self._platform_combo.current(0)
-        self._platform_combo.pack(side="left")
-        self._platform_combo.bind("<<ComboboxSelected>>", self._on_platform_changed)
+        self._links_text.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+        # 粘贴/输入链接后自动识别平台（防抖 500ms）
+        self._links_text.bind("<<Modified>>", self._on_links_modified)
 
-        # 链接输入行
-        row2 = ttk.Frame(self)
-        row2.pack(fill="both", expand=True, **pad)
-        ttk.Label(row2, text=_t("links_label")).pack(anchor="w")
-        self._links_text = tk.Text(row2, height=10, wrap="word")
-        self._links_text.pack(fill="both", expand=True, pady=(4, 0))
-
-        # 保存路径行
+        # ================= 平台徽标 + 输出目录 =================
         row3 = ttk.Frame(self)
-        row3.pack(fill="x", **pad)
-        ttk.Label(row3, text=_t("path_label"), width=14).pack(side="left")
-        self._output_dir_entry = ttk.Entry(row3, textvariable=self._output_dir_var, width=60)
+        row3.pack(fill="x", padx=16, pady=4)
+        ttk.Label(row3, text="🧭", font=("Segoe UI Emoji", 10)).pack(side="left")
+        ttk.Label(row3, text=_t("platform_label"), width=8).pack(side="left", padx=(4, 0))
+        self._platform_badge = tk.Label(
+            row3, text=f"  ⚪ {_t('platform_unknown')}  ",
+            bg="#26292e", fg="#8b949e",
+            font=("Segoe UI", 9, "bold"), padx=8, pady=2,
+        )
+        self._platform_badge.pack(side="left", padx=(0, 12))
+        ttk.Label(row3, text=_t("path_label"), width=8).pack(side="left")
+        self._output_dir_entry = ttk.Entry(row3, textvariable=self._output_dir_var)
         self._output_dir_entry.pack(side="left", fill="x", expand=True)
-        browse_btn = ttk.Button(row3, text=_t("browse_btn"), command=self._on_browse)
+        browse_btn = ttk.Button(row3, text="📁 " + _t("browse_btn"), command=self._on_browse)
         browse_btn.pack(side="left", padx=(8, 0))
 
-        # 按钮行
+        # ================= 按钮行 =================
         row4 = ttk.Frame(self)
-        row4.pack(fill="x", **pad)
-        self._action_btn = ttk.Button(row4, text=_t("start_btn"), command=self._on_action_clicked)
+        row4.pack(fill="x", padx=16, pady=(8, 2))
+        self._action_btn = ttk.Button(
+            row4, text="▶  " + _t("start_btn"), command=self._on_action_clicked,
+            style="Accent.TButton", width=18,
+        )
         self._action_btn.pack(side="left")
-        self._open_dir_btn = ttk.Button(row4, text=_t("open_dir_btn"), command=self._on_open_dir)
+        self._open_dir_btn = ttk.Button(
+            row4, text="📂 " + _t("open_dir_btn"), command=self._on_open_dir
+        )
         self._open_dir_btn.pack(side="left", padx=(8, 0))
-        
-        self._about_btn = ttk.Button(row4, text=_t("about_title"), command=self._show_about)
+
+        self._about_btn = ttk.Button(
+            row4, text="ℹ " + _t("about_title"), command=self._show_about
+        )
         self._about_btn.pack(side="right")
-        
+
         def _toggle_lang():
             cfg = load_config()
             new_lang = "en" if cfg.get("lang", "zh") == "zh" else "zh"
@@ -703,26 +752,33 @@ class App(tk.Tk):
                 import os
                 import sys
                 os.execl(sys.executable, sys.executable, *sys.argv)
-                
-        self._lang_btn = ttk.Button(row4, text=_t("language_button"), command=_toggle_lang)
+
+        self._lang_btn = ttk.Button(row4, text="🌐 " + _t("language_button"), command=_toggle_lang)
         self._lang_btn.pack(side="right", padx=(0, 8))
 
-        # 进度条行
+        # ================= 进度条 =================
         row5 = ttk.Frame(self)
-        row5.pack(fill="x", **pad)
+        row5.pack(fill="x", padx=16, pady=6)
         self._progress_bar = ttk.Progressbar(row5, mode="determinate", maximum=100, value=0)
         self._progress_bar.pack(side="left", fill="x", expand=True)
-        self._progress_label = ttk.Label(row5, text="0/0", width=10, anchor="e")
+        self._progress_label = ttk.Label(row5, text="0/0", width=12, anchor="e")
         self._progress_label.pack(side="left", padx=(8, 0))
 
-        # 日志窗口
-        row6 = ttk.Frame(self)
-        row6.pack(fill="both", expand=True, **pad)
-        self._log_text = scrolledtext.ScrolledText(row6, state="disabled", height=20, wrap="word")
-        self._log_text.tag_configure("info")  # 默认前景
-        self._log_text.tag_configure("warning", foreground="orange")
-        self._log_text.tag_configure("error", foreground="red")
-        self._log_text.pack(fill="both", expand=True)
+        # ================= 日志窗口 =================
+        log_frame = ttk.LabelFrame(self, text=f"  {_t('log_title')}  ")
+        log_frame.pack(fill="both", expand=True, padx=16, pady=(4, 8))
+        self._log_text = scrolledtext.ScrolledText(
+            log_frame, state="disabled", height=14, wrap="word",
+            font=("Consolas", 9), relief="flat",
+            bg=dark_bg, fg="#c9d1d9", insertbackground="#c9d1d9",
+            selectbackground="#3d7eff", selectforeground="#ffffff",
+        )
+        self._log_text.tag_configure("info", foreground="#c9d1d9")
+        self._log_text.tag_configure("success", foreground="#3fb950")
+        self._log_text.tag_configure("warning", foreground="#d29922")
+        self._log_text.tag_configure("error", foreground="#f85149")
+        self._log_text.tag_configure("dim", foreground="#8b949e")
+        self._log_text.pack(fill="both", expand=True, padx=10, pady=(4, 10))
 
         # ------------------- 注册右键菜单 -------------------
         self._context_menu = tk.Menu(self, tearoff=0)
@@ -764,10 +820,8 @@ class App(tk.Tk):
         self._output_dir_is_custom = False
 
     def _current_platform(self) -> str:
-        value = self._platform_var.get()
-        if value == _t("platform_tiktok"):
-            return "tiktok"
-        return "douyin"
+        """当前平台：自动识别结果；尚未识别时默认抖音。"""
+        return self._detected_platform or "douyin"
 
     def _show_about(self):
         try:
@@ -775,34 +829,52 @@ class App(tk.Tk):
             version = auto_updater.CURRENT_VERSION
         except ImportError:
             version = "1.8.1"
-            
+
         import webbrowser
         about_win = tk.Toplevel(self)
         about_win.title(_t("about_title"))
-        about_win.geometry("350x280")
+        about_win.geometry("400x380")
         about_win.resizable(False, False)
         about_win.transient(self)
         about_win.grab_set()
 
-        # 居中
         self.update_idletasks()
-        x = self.winfo_rootx() + (self.winfo_width() - 350) // 2
-        y = self.winfo_rooty() + (self.winfo_height() - 280) // 2
+        x = self.winfo_rootx() + (self.winfo_width() - 400) // 2
+        y = self.winfo_rooty() + (self.winfo_height() - 380) // 2
         about_win.geometry(f"+{max(0, x)}+{max(0, y)}")
 
-        ttk.Label(about_win, text="MediaDownloader", font=("", 16, "bold")).pack(pady=(20, 5))
-        ttk.Label(about_win, text=_t("about_version", version=version)).pack(pady=2)
-        ttk.Label(about_win, text=_t("about_description")).pack(pady=(10, 2))
+        # 顶部图标 + 标题
+        ttk.Label(about_win, text="🎬", font=("Segoe UI Emoji", 26)).pack(pady=(22, 0))
+        ttk.Label(about_win, text="MediaDownloader",
+                  font=("Segoe UI", 16, "bold")).pack(pady=(4, 0))
+        ttk.Label(about_win, text=_t("app_subtitle"),
+                  foreground="#8b949e", font=("Segoe UI", 9)).pack(pady=(0, 6))
 
-        # 仓库链接
-        repo_link = ttk.Label(about_win, text=_t("project_home"), foreground="#58a6ff", cursor="hand2")
-        repo_link.pack(pady=4)
-        repo_link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/Francis-Xavier-code/tiktok-douyin-dl"))
+        # 版本徽标
+        ver_badge = tk.Label(
+            about_win, text=f"  v{version}  ",
+            bg="#26292e", fg="#3d7eff",
+            font=("Segoe UI", 10, "bold"), padx=10, pady=2,
+        )
+        ver_badge.pack(pady=4)
 
-        # 作者链接
-        author_link = ttk.Label(about_win, text=_t("author"), foreground="#58a6ff", cursor="hand2")
-        author_link.pack(pady=4)
-        author_link.bind("<Button-1>", lambda e: webbrowser.open("https://github.com/Xynrin"))
+        ttk.Separator(about_win).pack(fill="x", padx=40, pady=(10, 6))
+        ttk.Label(about_win, text=_t("about_description"),
+                  wraplength=330, justify="center",
+                  foreground="#c9d1d9", font=("Segoe UI", 9)).pack(pady=(4, 8))
+
+        # 链接
+        def _link(text):
+            lbl = ttk.Label(about_win, text=text, foreground="#58a6ff",
+                            cursor="hand2", font=("Segoe UI", 9))
+            lbl.pack(pady=2)
+            return lbl
+        repo_link = _link("🔗 " + _t("project_home"))
+        repo_link.bind("<Button-1>",
+                       lambda e: webbrowser.open("https://github.com/Francis-Xavier-code/tiktok-douyin-dl"))
+        author_link = _link("👤 " + _t("author"))
+        author_link.bind("<Button-1>",
+                         lambda e: webbrowser.open("https://github.com/Xynrin"))
 
         def _do_update():
             about_win.destroy()
@@ -812,26 +884,73 @@ class App(tk.Tk):
             except ImportError:
                 messagebox.showerror(_t("app_title"), _t("update_module_missing"), parent=self)
 
-        ttk.Button(about_win, text=_t("check_update"), command=_do_update).pack(pady=(20, 10))
+        ttk.Button(about_win, text="🔄 " + _t("check_update"),
+                   style="Accent.TButton", width=18,
+                   command=_do_update).pack(pady=(14, 18))
 
     # ------------------------------------------------------------------ 事件处理
 
 
-    def _on_platform_changed(self, _event=None):
-        """切换平台时，若当前输出目录为默认的则跟着切换。"""
+    def _on_links_modified(self, _event=None):
+        """链接输入变化后（防抖）自动识别平台。"""
+        if self._links_text.edit_modified():
+            self._links_text.edit_modified(False)
+        try:
+            if self._autodetect_job:
+                self.after_cancel(self._autodetect_job)
+        except Exception:
+            pass
+        self._autodetect_job = self.after(500, self._auto_detect_platform)
+
+    def _auto_detect_platform(self):
+        """根据链接文本自动切换平台下拉框（用户可随时手动改回）。"""
+        self._autodetect_job = None
+        try:
+            raw = self._links_text.get("1.0", "end-1c").strip()
+            detected = detect_platform_from_text(raw) if raw else None
+            if not detected and raw:
+                # 纯数字作品 ID 视为抖音（与 douyin 模块的 ID 支持一致）
+                if raw.isdigit() and len(raw) >= 15:
+                    detected = "douyin"
+            self._update_platform_badge(detected)
+            if not raw or self.is_downloading or not detected:
+                self._detected_platform = detected
+                return
+            if self._detected_platform == detected:
+                return
+            self._detected_platform = detected
+            self._apply_platform_default_dir()
+            self._status_label.config(
+                text=_t("platform_auto_detected", platform=detected)
+            )
+        except Exception:
+            pass
+
+    def _update_platform_badge(self, detected):
+        """更新平台徽标（只读展示，用户无需手动选择）。"""
+        if detected == "douyin":
+            text, color = f"🎵 {_t('platform_douyin')}", "#ff4d4f"
+        elif detected == "tiktok":
+            text, color = f"🎬 {_t('platform_tiktok')}", "#69e0ff"
+        else:
+            text, color = f"⚪ {_t('platform_unknown')}", "#8b949e"
+        try:
+            self._platform_badge.config(text=f"  {text}  ", fg=color)
+        except Exception:
+            pass
+
+    def _apply_platform_default_dir(self):
+        """平台变化时，若当前输出目录仍为默认值则跟随切换。"""
         try:
             platform = self._current_platform()
             default_path = get_default_output_dir(platform)
             current = self._output_dir_var.get().strip()
-            # 判断当前目录是否为默认目录（douyin_downloads 或 tiktok_downloads）
             is_default = False
             try:
                 if current == "":
                     is_default = True
                 else:
                     norm_cur = os.path.normpath(current)
-                    norm_default = os.path.normpath(default_path)
-                    # 如果当前目录是任一默认形式，则视为默认
                     for p in (
                         get_default_output_dir("douyin"),
                         get_default_output_dir("tiktok"),
@@ -948,6 +1067,36 @@ class App(tk.Tk):
 
             platform = self._current_platform()
             raw_text = self._links_text.get("1.0", "end-1c")
+            if not raw_text.strip():
+                messagebox.showerror(_t("app_title"), _t("empty_links_error"), parent=self)
+                return
+            detected = detect_platform_from_text(raw_text)
+            if detected is None:
+                lower = raw_text.lower()
+                has_douyin = "douyin.com" in lower or "iesdouyin.com" in lower
+                has_tiktok = "tiktok.com" in lower
+                if has_douyin and has_tiktok:
+                    messagebox.showerror(
+                        _t("app_title"),
+                        _t("mixed_platform_error"),
+                        parent=self,
+                    )
+                    return
+                # 纯数字作品 ID 视为抖音（与 douyin 模块的 ID 支持一致）
+                if raw_text.strip().isdigit() and len(raw_text.strip()) >= 15:
+                    detected = "douyin"
+                else:
+                    messagebox.showerror(
+                        _t("app_title"),
+                        _t("no_links_detected"),
+                        parent=self,
+                    )
+                    return
+            if platform != detected:
+                self._detected_platform = detected
+                self._update_platform_badge(detected)
+                self._apply_platform_default_dir()
+                platform = detected
             output_dir = self._output_dir_var.get().strip()
             if not output_dir:
                 output_dir = get_default_output_dir(platform)
@@ -1078,8 +1227,9 @@ class App(tk.Tk):
         try:
             if not self._log_text:
                 return
+            tag = level if level in ("info", "success", "warning", "error", "dim") else "info"
             self._log_text.configure(state="normal")
-            self._log_text.insert("end", text + "\n", level)
+            self._log_text.insert("end", text + "\n", tag)
             self._log_text.configure(state="disabled")
             self._log_text.see("end")
         except Exception:

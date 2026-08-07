@@ -159,72 +159,195 @@ def check_download_policy(platform: str = "windows") -> str:
     return "allow"
 
 
+# Shared machine-readable changelog: one file consumed by every client
+# (CLI / Windows GUI / macOS / iOS), generated from CHANGELOG.md by
+# scripts/update-changelog-json.py. Raw-file mirrors are reliable in CN,
+# unlike api.github.com (rate-limited / blocked).
+_CHANGELOG_SOURCES = [
+    "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json",
+    "https://gh-proxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json",
+    "https://ghproxy.net/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json",
+    "https://fastly.jsdelivr.net/gh/Francis-Xavier-code/tiktok-douyin-dl@main/changelog.json",
+]
+
+
+def fetch_changelog(platform="windows", max_versions=3):
+    """Fetch changelog.json and return (latest_version, notes_text).
+
+    Entries are filtered to the given platform plus [全平台] (all) entries.
+    On any failure returns (None, "") so callers stay fail-open.
+    """
+    data = None
+    for url in _CHANGELOG_SOURCES:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            if isinstance(data, dict):
+                break
+        except Exception:
+            continue
+    if not isinstance(data, dict):
+        return None, ""
+
+    versions = data.get("versions") or []
+    latest = None
+    lines = []
+    for v in versions[:max_versions]:
+        version = str(v.get("version", "")).lstrip("v")
+        if not version:
+            continue
+        if latest is None:
+            latest = version
+        if _parse_version(version) <= _parse_version(CURRENT_VERSION):
+            continue
+        bucket = v.get("entries") or {}
+        entries = []
+        for key in (platform, "all"):
+            entries.extend(bucket.get(key) or [])
+        if not entries:
+            continue
+        header = f"v{version}"
+        if v.get("date"):
+            header += f" ({v['date']})"
+        lines.append(header)
+        for e in entries:
+            for ln in str(e).splitlines():
+                lines.append(f"  • {ln}")
+        lines.append("")
+    return latest, "\n".join(lines).strip()
+
+
 def check_for_updates(root, silent=True):
+    """检查更新。网络请求在后台线程执行，结果经队列回到主线程展示。"""
+    import queue as _queue
+    result_q = _queue.Queue()
+
     def _run():
         import re
         import urllib.request
-        
-        # 使用加速镜像站的 /releases/latest 页面（非 API）来绕过 403 限制和 GFW
-        check_urls = [
-            "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
-            "https://kgithub.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
-        ]
-        
-        latest_version = None
-        for url in check_urls:
-            try:
-                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD")
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    final_url = resp.geturl()
-                    # 从重定向后的 URL 提取版本号，例如 .../releases/tag/v1.4.1
-                    match = re.search(r'/tag/(v\d+\.\d+\.\d+)', final_url)
-                    if match:
-                        latest_version = match.group(1)
-                        break
-            except Exception:
-                continue
-                
+
+        # 1. Preferred: shared changelog.json via raw-file mirrors (reliable in CN).
+        latest_version, notes = fetch_changelog("windows")
+
+        # 2. Fallback: /releases/latest HTML redirect for the version only.
+        if not latest_version:
+            check_urls = [
+                "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
+                "https://kgithub.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
+            ]
+            for url in check_urls:
+                try:
+                    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD")
+                    with urllib.request.urlopen(req, timeout=8) as resp:
+                        final_url = resp.geturl()
+                        # 从重定向后的 URL 提取版本号，例如 .../releases/tag/v1.4.1
+                        match = re.search(r'/tag/(v\d+\.\d+\.\d+)', final_url)
+                        if match:
+                            latest_version = match.group(1)
+                            break
+                except Exception:
+                    continue
+
+        result_q.put((latest_version, notes))
+
+    def _show_result(latest_version, notes):
         if not latest_version:
             if not silent:
                 err_msg = "无法获取最新版本信息。\n\n这通常是因为国内网络波动或加速节点失效。\n请稍后再试或开启全局代理。"
-                root.after(0, lambda: messagebox.showerror("网络错误", err_msg, parent=root))
+                messagebox.showerror("网络错误", err_msg, parent=root)
             return
-            
+
         if latest_version.lstrip("v") != CURRENT_VERSION:
-            release_notes = ""
-            try:
-                # 尝试获取更新日志
-                api_url = f"https://api.github.com/repos/Francis-Xavier-code/tiktok-douyin-dl/releases/tags/{latest_version}"
-                req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    data = json.loads(resp.read().decode('utf-8'))
-                    body = data.get("body", "").strip()
-                    if body:
-                        # 限制日志长度
-                        if len(body) > 300:
-                            body = body[:300] + "...\n(查看更多请前往 Github)"
-                        release_notes = f"\n\n【更新日志】\n{body}"
-            except Exception:
-                pass
-                
-            msg = f"发现新版本 {latest_version}！\n\n您当前版本为 {CURRENT_VERSION}。{release_notes}\n\n是否立即下载并覆盖更新？\n(国内网络将自动启用加速节点下载)"
-            def _show_prompt():
-                if messagebox.askyesno("软件更新", msg, parent=root):
-                    # 真实 Release 资产名：MediaDownloader-Windows-x64-Setup-<ver>.exe
-                    # 直接用 ghproxy 加速下载，下载后静默运行安装包完成覆盖更新。
-                    raw_dl_url = (
-                        f"https://github.com/Francis-Xavier-code/tiktok-douyin-dl"
-                        f"/releases/download/{latest_version}/"
-                        f"MediaDownloader-Windows-x64-Setup-{latest_version.lstrip('v')}.exe"
-                    )
-                    proxy_dl_url = f"https://ghproxy.net/{raw_dl_url}"
-                    _start_download_and_update(root, proxy_dl_url)
-            root.after(0, _show_prompt)
+            # 真实 Release 资产名：MediaDownloader-Windows-x64-Setup-<ver>.exe
+            raw_dl_url = (
+                f"https://github.com/Francis-Xavier-code/tiktok-douyin-dl"
+                f"/releases/download/{latest_version}/"
+                f"MediaDownloader-Windows-x64-Setup-{latest_version.lstrip('v')}.exe"
+            )
+            proxy_dl_url = f"https://ghproxy.net/{raw_dl_url}"
+
+            _show_update_prompt(
+                root, latest_version, notes,
+                on_confirm=lambda: _start_download_and_update(root, proxy_dl_url),
+            )
         else:
             if not silent:
-                root.after(0, lambda: messagebox.showinfo("检查更新", "当前已经是最新版本！", parent=root))
+                messagebox.showinfo(
+                    "检查更新",
+                    f"当前已是最新版本 v{CURRENT_VERSION}！",
+                    parent=root,
+                )
 
+    def _poll():
+        try:
+            latest_version, notes = result_q.get_nowait()
+        except Exception:
+            root.after(100, _poll)  # 主线程轮询，等后台线程结果
+            return
+        _show_result(latest_version, notes)
+
+    root.after(0, _poll)  # 主线程调度，可靠
     threading.Thread(target=_run, daemon=True).start()
+
+
+def _show_update_prompt(root, latest_version, notes, on_confirm):
+    """更新提示对话框：展示新版本号 + 按端过滤的更新日志（可滚动）。"""
+    import tkinter as tk
+    from tkinter import ttk
+
+    win = tk.Toplevel(root)
+    win.title("软件更新")
+    win.geometry("600x500")
+    win.resizable(False, False)
+    win.transient(root)
+    win.grab_set()
+    win.update_idletasks()
+    sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+    win.geometry(f"+{max((sw - 600) // 2, 0)}+{max((sh - 500) // 2, 0)}")
+
+    ttk.Label(win, text="✨ 发现新版本", font=("微软雅黑", 15, "bold")).pack(pady=(18, 2))
+    ttk.Label(win, text=latest_version, foreground="#3d7eff",
+              font=("微软雅黑", 13, "bold")).pack()
+    ttk.Label(win, text=f"当前版本：v{CURRENT_VERSION}",
+              foreground="#8b949e", font=("微软雅黑", 9)).pack(pady=(2, 8))
+    ttk.Label(win, text="本次更新内容（已按当前客户端过滤）",
+              foreground="#8b949e", font=("微软雅黑", 9)).pack()
+
+    # 可滚动更新日志
+    frame = ttk.Frame(win)
+    frame.pack(fill="both", expand=True, padx=20, pady=8)
+    txt = tk.Text(frame, height=14, wrap="word", relief="flat",
+                  bg="#1e1f22", fg="#c9d1d9", font=("Microsoft YaHei UI", 10),
+                  padx=14, pady=10, selectbackground="#3d7eff", selectforeground="#ffffff")
+    scroll = ttk.Scrollbar(frame, command=txt.yview)
+    txt.configure(yscrollcommand=scroll.set)
+    txt.pack(side="left", fill="both", expand=True)
+    scroll.pack(side="right", fill="y")
+
+    txt.tag_configure("header", foreground="#e6edf3", font=("Microsoft YaHei UI", 10, "bold"))
+    txt.tag_configure("bullet", foreground="#3fb950")
+    txt.tag_configure("body", foreground="#c9d1d9")
+    txt.tag_configure("dim", foreground="#8b949e")
+    txt.insert("end", "📝 更新日志\n", "header")
+    if notes:
+        for line in notes.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("v") and "(" in stripped and ")" in stripped:
+                txt.insert("end", "\n" + line + "\n", "header")
+            elif stripped.startswith("•"):
+                txt.insert("end", line + "\n", "bullet")
+            elif stripped:
+                txt.insert("end", line + "\n", "body")
+    else:
+        txt.insert("end", "暂无更新说明。\n", "dim")
+    txt.configure(state="disabled")
+
+    btns = ttk.Frame(win)
+    btns.pack(pady=(10, 16))
+    ttk.Button(btns, text="稍后再说", width=12, command=win.destroy).pack(side="left", padx=6)
+    ttk.Button(btns, text="立即更新", width=14, style="Accent.TButton",
+               command=lambda: (win.destroy(), on_confirm())).pack(side="left", padx=6)
 
 def _start_download_and_update(root, download_url):
     import tkinter as tk
