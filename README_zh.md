@@ -5,7 +5,7 @@
 <h1 align="center">TikTok &amp; 抖音无水印下载器</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.8.2-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.0.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/swift-5.9+-orange?style=flat-square&logo=swift&logoColor=white" alt="Swift">
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Android%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
@@ -133,7 +133,7 @@ CLI 会根据链接域名自动识别抖音或 TikTok；带 `modal_id` 的抖音
 
 各平台应用位于 `apps/`，可安装的 Python 包位于 `python/`，Apple 共享 Swift 代码位于 `apple/`，自主 AI 代理 Skill 位于 `skills/`，构建入口位于 `scripts/`。详细说明见 [`docs/architecture.md`](docs/architecture.md)。
 
-执行 `./scripts/build-apple.sh all` 可按 `1.8.0` 版本同时构建 iOS 与 macOS 无签名产物；将 `all` 改为 `ios` 或 `macos` 可单独构建。
+执行 `./scripts/build-apple.sh all` 可按 `2.0.0` 版本同时构建 iOS 与 macOS 无签名产物；将 `all` 改为 `ios` 或 `macos` 可单独构建。
 
 ## ⚖️ 免责声明
 本软件仅限用于个人学习研究、学术交流及网页技术备份测试，严禁用于任何商业用途、非法抓取或网络攻击。因使用本软件导致的一切版权纠纷或账号风控后果，均由使用者自行承担全部责任。

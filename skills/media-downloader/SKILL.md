@@ -39,7 +39,7 @@ bash "{baseDir}/scripts/download.sh" --update
 Pin installation to a release when reproducibility matters:
 
 ```bash
-MEDIA_DOWNLOADER_VERSION=v1.8.2 bash "{baseDir}/scripts/download.sh" --install
+MEDIA_DOWNLOADER_VERSION=v2.0.0 bash "{baseDir}/scripts/download.sh" --install
 ```
 
 ## Guardrails

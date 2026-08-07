@@ -9,8 +9,8 @@ new release means editing ONE file and running:
     python3 scripts/sync-versions.py --policies # also bump policy min_versions
 
 version.json layout:
-    main: "1.8.2"               # shared by CLI / Windows GUI / macOS / iOS
-    android.versionName: "0.1.3"  # Android versions its own line (0.1.x)
+    main: "2.0.0"               # shared by CLI / Windows GUI / macOS / iOS
+    android.versionName: "2.0.0"  # Android aligned with the main line
     android.versionCode: 4
     apple.buildNumber: 1        # APPLE_BUILD_NUMBER / CURRENT_PROJECT_VERSION
 

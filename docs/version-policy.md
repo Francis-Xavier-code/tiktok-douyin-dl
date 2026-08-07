@@ -38,7 +38,7 @@
     // 每个平台独立配置，未列出的平台不受版本策略约束（视为放行）。
 
     "cli": {
-      "min_version": "1.8.0",
+      "min_version": "2.0.0",
       // 低于此版本的客户端视为过期。
       // 语义化版本格式（如 "1.7.0"），逐段数值比较。
       // 设为 "0.0.0" 则所有版本均通过。
@@ -49,17 +49,21 @@
     },
 
     "windows": {
-      "min_version": "1.8.0",
+      "min_version": "2.0.0",
       "hard_block": false
     },
 
     "macos": {
-      "min_version": "1.8.0",
+      "min_version": "2.0.0",
       "hard_block": false
     },
 
     "ios": {
-      "min_version": "1.8.0",
+      "min_version": "2.0.0",
+      "hard_block": true
+    },
+    "android": {
+      "min_version": "2.0.0",
       "hard_block": false
     }
   }

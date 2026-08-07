@@ -42,7 +42,7 @@ Usage:
 Environment:
   MEDIA_DOWNLOADER_BIN       Use an existing CLI executable.
   MEDIA_DOWNLOADER_HOME      Override the managed installation directory.
-  MEDIA_DOWNLOADER_VERSION   Install a specific release, for example v1.8.0.
+  MEDIA_DOWNLOADER_VERSION   Install a specific release, for example v2.0.0.
 USAGE
 }
 

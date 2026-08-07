@@ -97,7 +97,7 @@ enum AppUpdateService {
 
         // 1. Preferred: the shared changelog.json via raw-file mirrors. Works in
         //    China, no GitHub API rate limits, and gives the per-platform notes.
-        //    Releases are tagged plain v* (e.g. v1.8.2), so the release URL is
+        //    Releases are tagged plain v* (e.g. v2.0.0), so the release URL is
         //    derived directly from the changelog's newest version.
         let (latestFromChangelog, notes) = await fetchChangelog(platform: "ios", currentVersion: currentVersion)
         if let latest = latestFromChangelog {

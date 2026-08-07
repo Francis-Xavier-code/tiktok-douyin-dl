@@ -13,7 +13,7 @@ Cross-platform TikTok/Douyin no-watermark downloader. Four clients share one Pyt
 ```
 python/                  # Python package (source of truth for version + logic)
   src/media_downloader/  # Package source
-    __init__.py          # __version__ = "1.8.0" — THE version source of truth
+    __init__.py          # __version__ (synced from version.json)
     cli.py               # Entry points: main(), douyin_main(), tiktok_main()
     core/                # Models, downloader dispatch, policies, network
     platforms/           # douyin.py, tiktok.py — platform-specific parsers + downloaders
@@ -97,7 +97,7 @@ Apple build env vars: `APPLE_VERSION`, `APPLE_BUILD_NUMBER`, `APPLE_OUTPUT_DIR`,
 Version is defined in exactly one place: `version.json` at the repo root.
 
 ```json
-{ "main": "1.8.2", "android": {"versionName": "0.1.3", "versionCode": 4}, "apple": {"buildNumber": 1} }
+{ "main": "2.0.0", "android": {"versionName": "2.0.0", "versionCode": 4}, "apple": {"buildNumber": 1} }
 ```
 
 - `main` — shared by CLI / Windows GUI / macOS / iOS (matches `media_downloader.__version__`)

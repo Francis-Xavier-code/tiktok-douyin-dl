@@ -5,7 +5,7 @@
 <h1 align="center">TikTok &amp; Douyin No-Watermark Downloader</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v1.8.2-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.0.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/swift-5.9+-orange?style=flat-square&logo=swift&logoColor=white" alt="Swift">
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Android%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
@@ -144,7 +144,7 @@ Every client (Windows GUI, macOS/iOS apps, CLI) checks for updates and shows a *
 
 Application shells live in `apps/`, the installable Python package in `python/`, shared Swift code in `apple/`, the autonomous-agent skill in `skills/`, and reproducible build entry points in `scripts/`. See [`docs/architecture.md`](docs/architecture.md) for details.
 
-Build both unsigned Apple artifacts at version `1.8.0` with `./scripts/build-apple.sh all`. Use `ios` or `macos` instead of `all` to build one platform.
+Build both unsigned Apple artifacts at version `2.0.0` with `./scripts/build-apple.sh all`. Use `ios` or `macos` instead of `all` to build one platform.
 
 ## ⚖️ Disclaimer
 

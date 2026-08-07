@@ -62,7 +62,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/ios-v* ]]; then
             echo "value=${GITHUB_REF_NAME#ios-v}" >> "$GITHUB_OUTPUT"
           else
-            echo "value=1.8.2" >> "$GITHUB_OUTPUT"
+            echo "value=$(python3 -c 'import json;print(json.load(open("version.json"))["main"])')" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build unsigned IPA
