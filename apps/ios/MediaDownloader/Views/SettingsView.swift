@@ -253,7 +253,11 @@ struct SettingsView: View {
             let result = try await AppUpdateService.checkForUpdates()
             if result.isUpdateAvailable {
                 availableUpdateURL = result.releaseURL
-                updateMessage = "发现 iOS \(result.latestVersion)；当前版本为 \(result.currentVersion)。请前往发布页获取新版并重新签名安装。"
+                var msg = "发现 iOS \(result.latestVersion)；当前版本为 \(result.currentVersion)。请前往发布页获取新版并重新签名安装。"
+                if !result.changelog.isEmpty {
+                    msg += "\n\n【更新日志】\n\(result.changelog)"
+                }
+                updateMessage = msg
             } else if showUpToDateMessage {
                 availableUpdateURL = nil
                 updateMessage = "当前已是最新的 iOS \(result.currentVersion) 版本。"

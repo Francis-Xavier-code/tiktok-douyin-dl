@@ -133,7 +133,11 @@ final class DownloadController {
             }
             updateState = .downloading
             try await AppUpdateService.downloadAndOpenDMG(from: dmgURL)
-            updateState = .done("安装包已打开，请将 MediaDownloader 拖入“应用程序”完成更新。")
+            var doneMsg = "安装包已打开，请将 MediaDownloader 拖入“应用程序”完成更新。"
+            if !result.changelog.isEmpty {
+                doneMsg += "\n\n【更新日志】\n\(result.changelog)"
+            }
+            updateState = .done(doneMsg)
         } catch {
             updateState = .failed(error.localizedDescription)
         }
