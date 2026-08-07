@@ -35,6 +35,11 @@ scripts/                 # Build entry points (see Build section)
 Casks/                   # Homebrew cask (tiktok-douyin-dl.rb) — sha256 updated by CI
 skills/                  # AgentSkills-compatible media-downloader skill
 docs/                    # Architecture, release notes, policy docs
+  MAINTENANCE.md          # ⭐ 维护指南：客户端全景 / 版本号 / 攒更新工作流 / 发版 / 策略（改任何端前先读）
+  architecture.md        # Architecture overview
+  version-policy.md      # version-policy.json spec
+  download-policy.md     # download-policy.json spec
+  releases/              # Per-release download pages (used as GitHub Release notes)
 version-policy.json      # Client-side version nag/block rules (fail-open)
 download-policy.json     # Client-side download enable/disable (fail-closed)
 changelog.json           # Machine-readable per-platform changelog (generated from CHANGELOG.md)
