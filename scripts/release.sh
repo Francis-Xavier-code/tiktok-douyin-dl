@@ -67,7 +67,7 @@ fi
 # ---------------------------------------------------------------------------
 echo "==> Syncing version constants from version.json (main $VERSION)"
 "$PYTHON_BIN" "$REPO_ROOT/scripts/sync-versions.py"
-git -C "$REPO_ROOT" add -A "$REPO_ROOT/python" "$REPO_ROOT/apps" "$REPO_ROOT/scripts" "$REPO_ROOT/Casks" "$REPO_ROOT/install.sh"
+git -C "$REPO_ROOT" add -A "$REPO_ROOT/python" "$REPO_ROOT/apps" "$REPO_ROOT/scripts" "$REPO_ROOT/Casks" "$REPO_ROOT/install.sh" "$REPO_ROOT/version.json"
 if ! git -C "$REPO_ROOT" diff --cached --quiet; then
   git -C "$REPO_ROOT" commit -m "release: sync version constants to $VERSION"
   echo "==> Committed version constant sync"
