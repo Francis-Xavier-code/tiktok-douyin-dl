@@ -1,3 +1,3 @@
 """Shared Python implementation for the MediaDownloader applications."""
 
-__version__ = "1.8.2"
+__version__ = "2.0.0"

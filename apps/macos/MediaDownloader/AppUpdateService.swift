@@ -159,7 +159,7 @@ enum AppUpdateService {
     private static func makeResult(for release: GitHubRelease) -> AppUpdateResult {
         let currentVersion = Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "1.8.2"
+        ) as? String ?? "2.0.0"
         let latestVersion = release.tagName.hasPrefix("v") ? String(release.tagName.dropFirst(1)) : release.tagName
 
         // Find the unsigned DMG asset.

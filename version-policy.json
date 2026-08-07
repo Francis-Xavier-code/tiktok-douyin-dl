@@ -5,19 +5,19 @@
   "update_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
   "platforms": {
     "cli": {
-      "min_version": "1.8.2",
+      "min_version": "2.0.0",
       "hard_block": true
     },
     "windows": {
-      "min_version": "1.8.2",
+      "min_version": "2.0.0",
       "hard_block": true
     },
     "macos": {
-      "min_version": "1.8.2",
+      "min_version": "2.0.0",
       "hard_block": true
     },
     "ios": {
-      "min_version": "1.8.2",
+      "min_version": "2.0.0",
       "hard_block": true
     },
     "android": {

@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-08-08
 
 ### Added
 
@@ -79,7 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Linux/Windows CLI 新增抖音搜索结果 URL 规范化，支持 `modal_id` 和抖音精选作品链接，不再强制要求手机分享短链。
 - 全平台版本号统一为 `1.7.0`。
 
-[Unreleased]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/compare/v1.8.2...HEAD
+[2.0.0]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v2.0.0
+[Unreleased]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/compare/v2.0.0...HEAD
 [1.8.2]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.2
 [1.8.1]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.1
 [1.8.0]: https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v1.8.0
