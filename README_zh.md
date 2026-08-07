@@ -4,14 +4,21 @@
 
 <h1 align="center">TikTok &amp; 抖音无水印下载器</h1>
 
+<!-- 语言切换：置顶显眼，新手一眼可见 -->
+<p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/🌐_English-Read%20in%20English-blue?style=for-the-badge" alt="English"></a>
+  <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_简体中文-阅读中文-red?style=for-the-badge" alt="简体中文"></a>
+</p>
+
 <p align="center">
   <img src="https://img.shields.io/badge/version-v2.0.0-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/swift-5.9+-orange?style=flat-square&logo=swift&logoColor=white" alt="Swift">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Android%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
-  <a href="README.md"><img src="https://img.shields.io/badge/lang-English-blue?style=flat-square" alt="English"></a>
-  <a href="README_zh.md"><img src="https://img.shields.io/badge/简体中文-red?style=flat-square" alt="简体中文"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Android%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
 </p>
 
 一款跨平台的高效工具套件，用于下载 TikTok 和抖音无水印视频及图文作品。项目提供 **现代化 Windows 桌面客户端**、**原生 SwiftUI iOS App**、**Android 客户端**、适合 NAS 的 **实验性 Docker WebUI**，以及 **Linux/macOS 独立命令行工具**。
