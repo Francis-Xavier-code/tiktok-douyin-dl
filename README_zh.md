@@ -40,15 +40,18 @@
 
 ### 📱 iOS App
 
-| 新建下载 | 本地文件管理 | 照片与 iCloud 设置 |
+| 选择视频 | 预览下载 | 查看已下载视频 |
 |:---:|:---:|:---:|
-| ![iOS 新建下载](apps/ios/image/ios-new-download.png) | ![iOS 本地文件管理](apps/ios/image/ios-local-files.png) | ![iOS 照片与 iCloud 设置](apps/ios/image/ios-settings.png) |
+| ![iOS 选择视频](assets/ios-gui-select-video.png) | ![iOS 预览下载](assets/ios-gui-preview-download.png) | ![iOS 查看已下载视频](assets/ios-look-downloaded-video.png) |
+| 设置 | 免责声明 | 使用下载器 |
+|:---:|:---:|:---:|
+| ![iOS 设置](assets/ios-gui-setting.png) | ![iOS 免责声明](assets/ios-login-免责声明.png) | ![iOS 使用下载器](assets/ios-gui-useDownload.png) |
 
 ### 🐧 Linux 命令行
 
 | 终端 |
 |:---:|
-| ![Linux CLI](assets/linux-cli-preview.png) |
+| ![Linux CLI](assets/linux-cli.png) |
 
 ### 🤖 Android
 

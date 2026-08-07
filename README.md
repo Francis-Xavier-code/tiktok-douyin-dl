@@ -38,15 +38,18 @@ Packaged desktop applications include the required runtime and browser component
 
 ### 📱 iOS App
 
-| New Download | Local Files | Photos & iCloud Settings |
+| Select Video | Preview & Download | Downloaded Videos |
 |:---:|:---:|:---:|
-| ![iOS new download](apps/ios/image/ios-new-download.png) | ![iOS local files](apps/ios/image/ios-local-files.png) | ![iOS settings](apps/ios/image/ios-settings.png) |
+| ![iOS select video](assets/ios-gui-select-video.png) | ![iOS preview download](assets/ios-gui-preview-download.png) | ![iOS downloaded videos](assets/ios-look-downloaded-video.png) |
+| Settings | Disclaimer | Using the Downloader |
+|:---:|:---:|:---:|
+| ![iOS settings](assets/ios-gui-setting.png) | ![iOS disclaimer](assets/ios-login-免责声明.png) | ![iOS download in use](assets/ios-gui-useDownload.png) |
 
 ### 🐧 Linux CLI
 
 | Terminal |
 |:---:|
-| ![Linux CLI](assets/linux-cli-preview.png) |
+| ![Linux CLI](assets/linux-cli.png) |
 
 ### 🤖 Android
 
