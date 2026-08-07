@@ -8,13 +8,13 @@
   <img src="https://img.shields.io/badge/version-v1.8.2-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/swift-5.9+-orange?style=flat-square&logo=swift&logoColor=white" alt="Swift">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Android%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
   <a href="README.md"><img src="https://img.shields.io/badge/lang-English-blue?style=flat-square" alt="English"></a>
   <a href="README_zh.md"><img src="https://img.shields.io/badge/简体中文-red?style=flat-square" alt="简体中文"></a>
 </p>
 
-A fast, cross-platform tool suite for downloading TikTok and Douyin videos and photo posts without watermarks. The project provides a **modern Windows desktop client**, a **native SwiftUI iOS app**, an **experimental Docker WebUI for NAS**, and an **independent Linux CLI**.
+A fast, cross-platform tool suite for downloading TikTok and Douyin videos and photo posts without watermarks. The project provides a **modern Windows desktop client**, a **native SwiftUI iOS app**, an **Android client**, an **experimental Docker WebUI for NAS**, and an **independent Linux/macOS CLI**.
 
 Packaged desktop applications include the required runtime and browser components. The iOS client parses supported share pages and downloads media directly on the device without relying on a Python service or the Docker WebUI.
 
@@ -110,9 +110,10 @@ brew install --cask tiktok-douyin-dl
 
 The cask ships an ad-hoc signed build and removes the Gatekeeper quarantine attribute automatically, so the app opens without any approval prompt. See [docs/brew.md](docs/brew.md) for details.
 
-### 🐧 Linux Users (CLI)
+### 🐧 Linux / 🍎 macOS Users (CLI)
 
-Run the following command in your terminal to download the latest binaries and create symlinks in `~/.local/bin`:
+Run the following command in your terminal to download the latest binaries (macOS builds are
+per-architecture: Apple Silicon arm64 and Intel x86_64) and create symlinks in `~/.local/bin`:
 
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
@@ -154,13 +155,26 @@ Open **MediaDownloader** from the desktop, paste the share text or link copied f
 
 Paste Douyin/TikTok share text or a link into the download screen and start the task. Completed media is stored only in the app's local files directory by default. Optional Photos or iCloud Drive copies can be enabled in Settings.
 
-### CLI (Linux or Windows CMD)
+### CLI (Linux, macOS or Windows CMD)
 
 ```bash
 media-downloader "Share text or link" [output_directory]
 ```
 
+Windows/macOS CLI zips and the Linux tar.gz are attached to every [Release](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)
+(the macOS CLI ships both arm64 and x86_64 builds). All CLI archives bundle the Playwright headless
+Chromium as a sidecar (`ms-playwright/`), so no browser download is needed on first run. If macOS reports
+an unidentified developer on first run, remove the quarantine attribute once:
+
+```bash
+xattr -d com.apple.quarantine $(which media-downloader)
+```
+
 The CLI automatically detects Douyin or TikTok from the link domain. Douyin search-result URLs containing `modal_id` are converted to direct work URLs automatically, so mobile share text is not required. Use `--platform douyin` or `--platform tiktok` only when a manual override is needed.
+
+### Update changelog
+
+Every client (Windows GUI, macOS/iOS apps, CLI) checks for updates and shows a **per-platform changelog** — only the entries relevant to that client (tagged `[Windows]` / `[macOS]` / `[iOS]` / `[Android]` / `[CLI]` / `[全平台]` in [CHANGELOG.md](CHANGELOG.md)). All clients read the same machine-readable [`changelog.json`](changelog.json), which is regenerated from CHANGELOG.md at each release, so a single long changelog file serves every platform.
 
 ## Project layout
 

@@ -28,6 +28,7 @@ apple/                   # Shared Swift library (MediaDownloaderCore) for iOS + 
 apps/
   ios/                   # Xcode project, SwiftUI app
   macos/                 # Xcode project, SwiftUI app
+  android/               # Android app (Kotlin, Gradle; Douyin downloader, versioned 0.1.x independently)
   windows/               # Python GUI (gui/) + Inno Setup installer (installer/)
   web/                   # Gradio WebUI (single file webui.py)
 scripts/                 # Build entry points (see Build section)
@@ -36,7 +37,15 @@ skills/                  # AgentSkills-compatible media-downloader skill
 docs/                    # Architecture, release notes, policy docs
 version-policy.json      # Client-side version nag/block rules (fail-open)
 download-policy.json     # Client-side download enable/disable (fail-closed)
+changelog.json           # Machine-readable per-platform changelog (generated from CHANGELOG.md)
+version.json             # SINGLE source of truth for all version numbers (scripts/sync-versions.py)
 ```
+
+## Platforms
+
+Clients: Windows GUI, macOS/iOS native apps, Android (Kotlin), CLI (Windows/Linux/macOS), WebUI.
+The shared policy/changelog platform keys are: `cli`, `windows`, `macos`, `ios`, `android` (plus `all` for changelog).
+Android versions (0.1.x) are independent of the `media_downloader.__version__` line.
 
 ## Commands
 
@@ -65,7 +74,11 @@ cd python && uv run python -m media_downloader.cli "share text or link"
 ./scripts/build-apple.sh ios            # iOS only
 ./scripts/build-apple.sh macos          # macOS only
 ./scripts/build-linux.sh                # Linux CLI (PyInstaller one-file)
+./scripts/build-macos-cli.sh            # macOS CLI for host arch (arm64/x86_64, PyInstaller one-file + zip)
 ./scripts/build-windows.ps1             # Windows (PowerShell, needs Inno Setup)
+./scripts/update-changelog-json.py      # Regenerate changelog.json from CHANGELOG.md (run at release)
+./scripts/sync-versions.py               # Propagate version.json to all hard-coded version constants
+./scripts/sync-versions.py --policies    # Also mirror policy min_version fields
 ./scripts/release.sh                    # Bump policy timestamps, tag, push → CI builds all
 ```
 
@@ -81,14 +94,27 @@ Apple build env vars: `APPLE_VERSION`, `APPLE_BUILD_NUMBER`, `APPLE_OUTPUT_DIR`,
 
 ## Version management
 
-Version is defined in exactly one place: `python/src/media_downloader/__init__.py` → `__version__`.
+Version is defined in exactly one place: `version.json` at the repo root.
 
-When bumping version, also update these (they are NOT auto-synced):
-- `python/pyproject.toml` → `version`
-- `scripts/install.sh` → `RELEASE_TAG`
-- `scripts/build-apple.sh` → `APPLE_VERSION` default
-- `scripts/build-windows.ps1` → `APP_VERSION` default
-- `Casks/tiktok-douyin-dl.rb` → `version` (sha256 is auto-updated by CI)
+```json
+{ "main": "1.8.2", "android": {"versionName": "0.1.3", "versionCode": 4}, "apple": {"buildNumber": 1} }
+```
+
+- `main` — shared by CLI / Windows GUI / macOS / iOS (matches `media_downloader.__version__`)
+- `android.*` — the Android app versions its own line (0.1.x, independent of main)
+- `apple.buildNumber` — `APPLE_BUILD_NUMBER` / `CURRENT_PROJECT_VERSION`
+
+**Bump flow**: edit `version.json` → run `python3 scripts/sync-versions.py` → commit.
+`scripts/sync-versions.py` propagates to every hard-coded location:
+`python/src/media_downloader/__init__.py` (`__version__`), `python/pyproject.toml`,
+`python/src/media_downloader/core/updater.py` (`VERSION`), `apps/windows/gui/auto_updater.py`
+(`CURRENT_VERSION`), `install.sh` (`RELEASE_TAG`), `Casks/tiktok-douyin-dl.rb`,
+both Xcode `project.pbxproj` (`MARKETING_VERSION`), the Swift Bundle fallbacks, and
+`apps/android/app/build.gradle.kts` (`versionName`/`versionCode`).
+`scripts/build-apple.sh` and `scripts/build-windows.ps1` read `version.json` directly.
+Run `sync-versions.py --policies` to also mirror policy `min_version` fields
+(`version-policy.json` platforms + `download-policy.json` platforms.android).
+`scripts/release.sh` auto-syncs versions before tagging.
 
 ## Key architecture notes
 
@@ -97,6 +123,8 @@ When bumping version, also update these (they are NOT auto-synced):
 - **Douyin search-result URLs** with `modal_id` are auto-converted to direct `/video/` URLs by `douyin.normalize_douyin_url()`.
 - **Policy evaluation**: `download-policy.json` is fail-closed (unreachable = block downloads). `version-policy.json` is fail-open (unreachable = allow, no nag). Both support per-platform overrides.
 - **Playwright + stealth** is required for actual downloads (bypasses WebDriver fingerprint detection). Tests do NOT exercise the browser — they only test parsers and policy logic.
+- **CLI archives bundle the browser**: build scripts install the Playwright headless shell (`--only-shell`) into `dist/ms-playwright` as a sidecar next to the binary; the frozen CLI finds it via `core/launch.py:bundled_browser_path()` and falls back to runtime auto-install when absent.
+- **Shared changelog**: `changelog.json` at repo root is a machine-readable, per-platform changelog generated from `CHANGELOG.md` by `scripts/update-changelog-json.py` (single source of truth). Entry bullets are tagged `**[全平台]**` / `**[CLI]**` / `**[Windows]**` / `**[macOS]**` / `**[iOS]**` / `**[Android]**`. Every client (CLI updater, Windows `auto_updater.py`, macOS/iOS `AppUpdateService.swift`) fetches it via raw-file mirrors and filters entries for its own platform; `scripts/release.sh` regenerates it on release.
 - **Windows GUI** and **WebUI** add `python/src` to `sys.path` when run from a checkout. Packaged builds use the installed `media-downloader` distribution.
 - **Apple targets** require iOS 17+ / macOS 14+. The Swift `MediaDownloaderCore` library is shared via SPM local package.
 
