@@ -119,6 +119,11 @@ struct MenuBarView: View {
                     controller.refreshClipboard(force: true)
                 }
 
+                Button("检查更新…", systemImage: "arrow.triangle.2.circlepath") {
+                    showMainWindow()
+                    Task { await controller.checkForUpdatesManually() }
+                }
+
                 Divider()
 
                 Button("退出 MediaDownloader", systemImage: "power") {

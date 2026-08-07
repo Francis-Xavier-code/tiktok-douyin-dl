@@ -26,6 +26,45 @@ final class DownloadController {
     }
     private(set) var updateState: UpdateState = .idle
 
+    /// Manual update check result (title/message/links) shown as an alert.
+    struct UpdateAlert: Equatable {
+        let title: String
+        let message: String
+        let releaseURL: URL?
+        let dmgURL: URL?
+    }
+    var updateAlert: UpdateAlert?
+
+    /// Manually check for a newer release and surface the per-platform
+    /// changelog in an alert (no auto-download unless the user opts in).
+    func checkForUpdatesManually() async {
+        do {
+            let result = try await AppUpdateService.checkForUpdates()
+            var message: String
+            if result.isUpdateAvailable {
+                message = "发现新版本 v\(result.latestVersion)；当前版本为 v\(result.currentVersion)。"
+            } else {
+                message = "当前已是最新版本 v\(result.currentVersion)。"
+            }
+            if !result.changelog.isEmpty {
+                message += "\n\n【更新日志】\n\(result.changelog)"
+            }
+            updateAlert = UpdateAlert(
+                title: "软件更新",
+                message: message,
+                releaseURL: result.releaseURL,
+                dmgURL: result.dmgURL
+            )
+        } catch {
+            updateAlert = UpdateAlert(
+                title: "软件更新",
+                message: "检查更新失败：\(error.localizedDescription)",
+                releaseURL: nil,
+                dmgURL: nil
+            )
+        }
+    }
+
     private var pasteboardChangeCount = -1
 
     var canDownload: Bool {

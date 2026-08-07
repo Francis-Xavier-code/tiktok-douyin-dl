@@ -4,6 +4,13 @@ struct ContentView: View {
     @Bindable var controller: DownloadController
     @State private var showDisclaimer = false
 
+    private var updateAlertBinding: Binding<Bool> {
+        Binding(
+            get: { controller.updateAlert != nil },
+            set: { if !$0 { controller.updateAlert = nil } }
+        )
+    }
+
     var body: some View {
         Group {
             switch controller.policyStatus {
@@ -26,6 +33,21 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showDisclaimer) {
             DisclaimerSheet(isPresented: $showDisclaimer)
+        }
+        .alert(controller.updateAlert?.title ?? "软件更新", isPresented: updateAlertBinding) {
+            if let dmgURL = controller.updateAlert?.dmgURL {
+                Button("打开更新包") {
+                    Task { try? await AppUpdateService.downloadAndOpenDMG(from: dmgURL) }
+                }
+            }
+            if let releaseURL = controller.updateAlert?.releaseURL {
+                Button("前往发布页") {
+                    NSWorkspace.shared.open(releaseURL)
+                }
+            }
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text(controller.updateAlert?.message ?? "")
         }
     }
 
@@ -54,6 +76,10 @@ struct ContentView: View {
 
                 Button("打开下载目录") {
                     controller.revealDownloads()
+                }
+
+                Button("检查更新") {
+                    Task { await controller.checkForUpdatesManually() }
                 }
 
                 Text(controller.status)
