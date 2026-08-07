@@ -6,6 +6,11 @@
     "enabled": true,
     "message": "下载功能恢复。",
     "min_version": "1.7.0",
-    "platforms": {}
+    "platforms": {
+      "android": {
+        "enabled": true,
+        "min_version": "0.1.2"
+      }
+    }
   }
 }

@@ -19,6 +19,10 @@
     "ios": {
       "min_version": "1.8.2",
       "hard_block": true
+    },
+    "android": {
+      "min_version": "0.1.3",
+      "hard_block": true
     }
   }
 }

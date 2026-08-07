@@ -13,7 +13,7 @@ Sources are tried in order: direct GitHub first, then domestic mirrors. The firs
 source that returns valid JSON wins. A per-source short timeout means a dead
 mirror is skipped quickly instead of stalling the download.
 
-Client platforms: cli, windows, macos, ios.
+Client platforms: cli, windows, macos, ios, android.
 """
 
 from __future__ import annotations

@@ -12,7 +12,7 @@ Design rules (see docs/version-policy.md):
   * Loading the policy MUST fail open: any network/parse error -> ALLOW.
   * Short timeout + CDN/mirror fallbacks so a flaky network never blocks the app.
 
-Client platforms: cli, windows, macos, ios.
+Client platforms: cli, windows, macos, ios, android.
 """
 
 from __future__ import annotations
