@@ -96,7 +96,7 @@ Download `douyin-download-Android-<ver>.apk` from the [Releases page](https://gi
 
 ### 🐧 Linux / 🍎 macOS CLI Users
 
-Run the following command in your terminal to download the latest CLI (Linux x86_64, macOS arm64/Intel) and create symlinks in `~/.local/bin`:
+Run the following command in your terminal to download the latest CLI (Linux x86_64, macOS Apple Silicon arm64) and create symlinks in `~/.local/bin`:
 
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
@@ -133,7 +133,7 @@ media-downloader "Share text or link" [output_directory]
 ```
 
 Windows/macOS CLI zips and the Linux tar.gz are attached to every [Release](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)
-(the macOS CLI ships both arm64 and x86_64 builds). All CLI archives bundle the Playwright headless
+(the macOS CLI ships Apple Silicon arm64 builds). All CLI archives bundle the Playwright headless
 Chromium as a sidecar (`ms-playwright/`), so no browser download is needed on first run. If macOS reports
 an unidentified developer on first run, remove the quarantine attribute once:
 

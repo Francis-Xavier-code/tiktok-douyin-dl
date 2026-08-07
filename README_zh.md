@@ -98,7 +98,7 @@
 
 ### 🐧 Linux / 🍎 macOS 用户 (CLI 命令行)
 
-在终端运行以下命令，即可自动拉取最新 CLI（Linux x86_64 / macOS arm64·Intel）并软链接至 `~/.local/bin`：
+在终端运行以下命令，即可自动拉取最新 CLI（Linux x86_64 / macOS Apple 芯片 arm64）并软链接至 `~/.local/bin`：
 
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash

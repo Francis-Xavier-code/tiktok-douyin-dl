@@ -78,16 +78,8 @@ jobs:
   # macOS CLI：Apple 芯片 (arm64) + Intel (x86_64) 两个架构的 PyInstaller 单文件
   # ---------------------------------------------------------------------------
   build-macos-cli:
-    name: Build macOS CLI (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-14
-            arch: arm64
-          - os: macos-13
-            arch: x86_64
+    name: Build macOS CLI (arm64)
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -102,11 +94,11 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-assets
-          cp "dist/MediaDownloader-macOS-${{ matrix.arch }}-CLI-$APP_VERSION.zip" release-assets/
+          cp "dist/MediaDownloader-macOS-arm64-CLI-$APP_VERSION.zip" release-assets/
           ls -la release-assets/
       - uses: actions/upload-artifact@v4
         with:
-          name: release-macos-cli-${{ matrix.arch }}
+          name: release-macos-cli-arm64
           path: release-assets/*
           if-no-files-found: error
 
@@ -208,6 +200,11 @@ jobs:
               rm -f "$CASK.bak"
               git config user.name "github-actions[bot]"
               git config user.email "github-actions[bot]@users.noreply.github.com"
+              # 基于最新 origin/main 重新应用 sha 修改，避免对 main 的非快进推送失败
+              git fetch origin main
+              git switch -q -C ci/cask-sha origin/main
+              sed -i.bak -E "s/^[[:space:]]*sha256 \"[a-f0-9]+\"/  sha256 \"$SHA\"/" "$CASK"
+              rm -f "$CASK.bak"
               git add "$CASK"
               if ! git diff --cached --quiet -- "$CASK"; then
                 git commit -m "release: bump cask sha256 for ${GITHUB_REF_NAME}"
