@@ -22,69 +22,45 @@ Packaged desktop applications include the required runtime and browser component
 
 ---
 
----
-
 ## 🖼️ Screenshots
 
-<table width="100%">
-  <tr>
-    <th align="center">Native macOS App</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/image.png" alt="MediaDownloader running on macOS" width="900"></td>
-  </tr>
-</table>
+### 🖥️ Windows GUI
 
-<table width="100%">
-  <tr>
-    <th align="center" width="50%">Waiting for a Link</th>
-    <th align="center" width="50%">Link Detected · One-Click Download</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/macos-menubar-preview.png" alt="MediaDownloader menu bar waiting for a share link" width="430"></td>
-    <td align="center"><img src="assets/macos-menubar-ready-preview.png" alt="MediaDownloader menu bar with a detected Douyin link" width="430"></td>
-  </tr>
-</table>
+| Main Window | Update Check |
+|:---:|:---:|
+| ![Windows GUI](assets/windows-gui.png) | ![Update check](assets/windows-gui-autoupdate-checkNewVison.png) |
 
-<table width="100%">
-  <tr>
-    <th align="center" width="33%">New Download</th>
-    <th align="center" width="33%">Local File Management</th>
-    <th align="center" width="33%">Photos &amp; iCloud Settings</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="apps/ios/image/ios-new-download.png" alt="Create an iOS download" width="280"></td>
-    <td align="center"><img src="apps/ios/image/ios-local-files.png" alt="Manage local iOS files" width="280"></td>
-    <td align="center"><img src="apps/ios/image/ios-settings.png" alt="Configure Photos and iCloud copies" width="280"></td>
-  </tr>
-</table>
+### 🍎 macOS App
 
-<table width="100%">
-  <tr>
-    <th align="center">Windows GUI</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/windows-gui.png" alt="Windows GUI" width="900"></td>
-  </tr>
-</table>
+| Main Window | Menu Bar · Waiting for a Link | Menu Bar · Link Detected |
+|:---:|:---:|:---:|
+| ![macOS app](assets/macos-gui.png) | ![Menu bar waiting](assets/macos-menubar-preview.png) | ![Menu bar ready](assets/macos-menubar-ready-preview.png) |
 
-<table width="100%">
-  <tr>
-    <th align="center">Linux CLI</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/linux-cli-preview.png" alt="MediaDownloader Linux CLI" width="900"></td>
-  </tr>
-</table>
+### 📱 iOS App
 
-<table width="100%">
-  <tr>
-    <th align="center">Version Update Prompt</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/update-prompt-preview.png" alt="Version update prompt when an older build is detected" width="900"></td>
-  </tr>
-</table>
+| New Download | Local Files | Photos & iCloud Settings |
+|:---:|:---:|:---:|
+| ![iOS new download](apps/ios/image/ios-new-download.png) | ![iOS local files](apps/ios/image/ios-local-files.png) | ![iOS settings](apps/ios/image/ios-settings.png) |
+
+### 🐧 Linux CLI
+
+| Terminal |
+|:---:|
+| ![Linux CLI](assets/linux-cli-preview.png) |
+
+### 🤖 Android · coming soon
+
+<!-- 预留：截图就绪后放到 assets/android-gui.png，替换下方占位行即可 -->
+| Preview |
+|:---:|
+| _Coming soon in an upcoming release._ |
+
+### 🐳 WebUI (experimental) · coming soon
+
+<!-- 预留：截图就绪后放到 assets/webui-preview.png，替换下方占位行即可 -->
+| Preview |
+|:---:|
+| _Coming soon in an upcoming release._ |
 
 ## ✨ Highlights
 

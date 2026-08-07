@@ -26,65 +26,43 @@
 
 ## 🖼️ 界面预览
 
-<table width="100%">
-  <tr>
-    <th align="center">原生 macOS App</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/image.png" alt="MediaDownloader macOS 运行预览" width="900"></td>
-  </tr>
-</table>
+### 🖥️ Windows 图形界面
 
-<table width="100%">
-  <tr>
-    <th align="center" width="50%">等待分享链接</th>
-    <th align="center" width="50%">识别链接 · 一键下载</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/macos-menubar-preview.png" alt="MediaDownloader macOS 菜单栏等待分享链接" width="430"></td>
-    <td align="center"><img src="assets/macos-menubar-ready-preview.png" alt="MediaDownloader macOS 菜单栏已识别抖音链接" width="430"></td>
-  </tr>
-</table>
+| 主界面 | 更新检查 |
+|:---:|:---:|
+| ![Windows 图形界面](assets/windows-gui.png) | ![更新检查](assets/windows-gui-autoupdate-checkNewVison.png) |
 
-<table width="100%">
-  <tr>
-    <th align="center" width="33%">新建下载</th>
-    <th align="center" width="33%">本地文件管理</th>
-    <th align="center" width="33%">照片与 iCloud 设置</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="apps/ios/image/ios-new-download.png" alt="iOS 新建下载" width="280"></td>
-    <td align="center"><img src="apps/ios/image/ios-local-files.png" alt="iOS 本地文件管理" width="280"></td>
-    <td align="center"><img src="apps/ios/image/ios-settings.png" alt="iOS 照片与 iCloud 设置" width="280"></td>
-  </tr>
-</table>
+### 🍎 macOS App
 
-<table width="100%">
-  <tr>
-    <th align="center">Windows 图形界面</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/windows-gui.png" alt="Windows 图形界面" width="900"></td>
-  </tr>
-</table>
+| 主界面 | 菜单栏 · 等待分享链接 | 菜单栏 · 识别链接 |
+|:---:|:---:|:---:|
+| ![macOS 主界面](assets/macos-gui.png) | ![菜单栏等待](assets/macos-menubar-preview.png) | ![菜单栏就绪](assets/macos-menubar-ready-preview.png) |
 
-<table width="100%">
-  <tr>
-    <th align="center">Linux 命令行</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/linux-cli-preview.png" alt="MediaDownloader Linux 命令行预览" width="900"></td>
-  </tr>
-</table>
+### 📱 iOS App
 
-<table width="100%">
-  <tr>
-    <th align="center">版本过低更新提示</th>
-  </tr>
-  <tr>
-    <td align="center"><img src="assets/update-prompt-preview.png" alt="检测到旧版本时的更新提示界面" width="900"></td>
-  </tr>
-</table>
+| 新建下载 | 本地文件管理 | 照片与 iCloud 设置 |
+|:---:|:---:|:---:|
+| ![iOS 新建下载](apps/ios/image/ios-new-download.png) | ![iOS 本地文件管理](apps/ios/image/ios-local-files.png) | ![iOS 照片与 iCloud 设置](apps/ios/image/ios-settings.png) |
+
+### 🐧 Linux 命令行
+
+| 终端 |
+|:---:|
+| ![Linux CLI](assets/linux-cli-preview.png) |
+
+### 🤖 Android · 即将上线
+
+<!-- 预留：截图就绪后放到 assets/android-gui.png，替换下方占位行即可 -->
+| 预览 |
+|:---:|
+| _即将上线，敬请期待。_ |
+
+### 🐳 WebUI（实验性）· 即将上线
+
+<!-- 预留：截图就绪后放到 assets/webui-preview.png，替换下方占位行即可 -->
+| 预览 |
+|:---:|
+| _即将上线，敬请期待。_ |
 
 ## ✨ 功能亮点
 

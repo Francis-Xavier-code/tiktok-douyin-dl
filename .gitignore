@@ -28,6 +28,10 @@ xcuserdata/
 
 # Download outputs
 douyin_downloads/
+
+# Android 模拟器运行时杂物
+emulator_start.log
+temp_home/
 debug_page.html
 debug_page.py
 EOF
