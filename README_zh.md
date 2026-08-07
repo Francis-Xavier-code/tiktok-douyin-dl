@@ -50,12 +50,11 @@
 |:---:|
 | ![Linux CLI](assets/linux-cli-preview.png) |
 
-### 🤖 Android · 即将上线
+### 🤖 Android
 
-<!-- 预留：截图就绪后放到 assets/android-gui.png，替换下方占位行即可 -->
-| 预览 |
-|:---:|
-| _即将上线，敬请期待。_ |
+| 主界面 | 设置 |
+|:---:|:---:|
+| ![Android 主界面](assets/android-gui-index.png) | ![Android 设置](assets/android-setting-gui.png) |
 
 ### 🐳 WebUI（实验性）· 即将上线
 
@@ -75,20 +74,21 @@
 
 ## 📥 下载与安装
 
-### 💻 Windows/Mac/ios 用户 (图形界面推荐)
-前往[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载最新的安装包
+### 💻 Windows / 🍎 macOS / 📱 iOS 用户 (图形界面推荐)
 
-### 🍺 macOS 用户 (Homebrew)
+前往[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载最新安装包：
 
-```bash
-brew tap Francis-Xavier-code/tap
-brew install --cask tiktok-douyin-dl
-```
+- **Windows**：`MediaDownloader-Windows-x64-Setup-<ver>.exe`
+- **macOS**：`MediaDownloader-macOS-<ver>.dmg`（ad-hoc 签名；如首次打开被 Gatekeeper 拦截，请前往 系统设置 → 隐私与安全性 → 仍要打开）
+- **iOS**：`MediaDownloader-iOS-<ver>-unsigned.ipa`（需使用自己的 Apple ID 重新签名）
 
-该 cask 内置 ad-hoc 签名构建，安装时会自动清除 Gatekeeper 隔离属性，首次打开无需任何授权弹窗。发布说明见 [docs/brew.md](docs/brew.md)。
+### 🤖 Android 用户
 
-### 🐧 Linux 用户 (CLI 命令行)
-在终端运行以下命令，即可自动拉取最新二进制包并软链接至 `~/.local/bin`：
+在[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载 `douyin-download-Android-<ver>.apk` 并安装到手机（需允许「安装未知来源应用」）。
+
+### 🐧 Linux / 🍎 macOS 用户 (CLI 命令行)
+
+在终端运行以下命令，即可自动拉取最新 CLI（Linux x86_64 / macOS arm64·Intel）并软链接至 `~/.local/bin`：
 
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash

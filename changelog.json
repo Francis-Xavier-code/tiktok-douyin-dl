@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-07T16:23:04Z",
+  "updated_at": "2026-08-07T17:11:36Z",
   "versions": [
     {
       "version": "2.0.0",
@@ -11,7 +11,7 @@
           "版本号统一管理：新增 `version.json` 作为所有端版本号的唯一事实来源（`main` / `android.versionName+versionCode` / `apple.buildNumber`），`scripts/sync-versions.py` 一键同步到全部硬编码位置（Python 包、pyproject、updater、Windows GUI、install.sh、Homebrew cask、两个 Xcode project、Swift fallback、Android gradle），`release.sh` 发版前自动同步。"
         ],
         "android": [
-          "预留为全平台基础设施的一等公民：`changelog.json` 新增 `android` 平台桶（`[Android]` 标签）、`version-policy.json` / `download-policy.json` 新增 `android` 平台条目，Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`（debug 签名，版本号独立于主版本线）。"
+          "客户端完成：支持抖音与 TikTok 解析/下载（WebView 兜底）、远程策略 Ed25519 验签（fail-closed）、自动更新检查与按端过滤的更新日志；版本号与主版本线对齐（2.0.0），Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`。"
         ],
         "cli": [
           "内置无头浏览器：Windows / Linux / macOS CLI 产物现在随包附带 Playwright headless Chromium（`ms-playwright/` 侧车目录，仅 headless shell，~200MB），首次运行不再需要联网下载浏览器；没有侧车时回退到原有自动下载。Windows GUI 安装包同步改用 `--only-shell`，安装包体积大幅缩小。",

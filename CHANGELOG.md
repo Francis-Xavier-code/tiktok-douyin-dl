@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[macOS]** 更新时显示本端更新日志。
 - **[CLI]** 更新提示显示本端更新日志；Agent skill 支持 macOS 安装，并修复安装时下载不存在的裸二进制资产的错误。
 - **[全平台]** 版本号统一管理：新增 `version.json` 作为所有端版本号的唯一事实来源（`main` / `android.versionName+versionCode` / `apple.buildNumber`），`scripts/sync-versions.py` 一键同步到全部硬编码位置（Python 包、pyproject、updater、Windows GUI、install.sh、Homebrew cask、两个 Xcode project、Swift fallback、Android gradle），`release.sh` 发版前自动同步。
-- **[Android]** 预留为全平台基础设施的一等公民：`changelog.json` 新增 `android` 平台桶（`[Android]` 标签）、`version-policy.json` / `download-policy.json` 新增 `android` 平台条目，Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`（debug 签名，版本号独立于主版本线）。
+- **[Android]** 客户端完成：支持抖音与 TikTok 解析/下载（WebView 兜底）、远程策略 Ed25519 验签（fail-closed）、自动更新检查与按端过滤的更新日志；版本号与主版本线对齐（2.0.0），Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`。
 
 ## [1.8.2] - 2026-08-06
 

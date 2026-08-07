@@ -48,12 +48,11 @@ Packaged desktop applications include the required runtime and browser component
 |:---:|
 | ![Linux CLI](assets/linux-cli-preview.png) |
 
-### 🤖 Android · coming soon
+### 🤖 Android
 
-<!-- 预留：截图就绪后放到 assets/android-gui.png，替换下方占位行即可 -->
-| Preview |
-|:---:|
-| _Coming soon in an upcoming release._ |
+| Main | Settings |
+|:---:|:---:|
+| ![Android main](assets/android-gui-index.png) | ![Android settings](assets/android-setting-gui.png) |
 
 ### 🐳 WebUI (experimental) · coming soon
 
@@ -73,23 +72,21 @@ Packaged desktop applications include the required runtime and browser component
 
 ## 📥 Download & Install
 
-### 💻 Windows/macOS/iOS Users (GUI Recommended)
+### 💻 Windows / 🍎 macOS / 📱 iOS Users (GUI Recommended)
 
-Visit the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) to download the latest installer.
+Visit the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) to download the latest installer:
 
-### 🍺 macOS Users (Homebrew)
+- **Windows**: `MediaDownloader-Windows-x64-Setup-<ver>.exe`
+- **macOS**: `MediaDownloader-macOS-<ver>.dmg` (ad-hoc signed; if Gatekeeper blocks the first launch, go to System Settings → Privacy & Security → Open Anyway)
+- **iOS**: `MediaDownloader-iOS-<ver>-unsigned.ipa` (needs re-signing with your own Apple ID)
 
-```bash
-brew tap Francis-Xavier-code/tap
-brew install --cask tiktok-douyin-dl
-```
+### 🤖 Android Users
 
-The cask ships an ad-hoc signed build and removes the Gatekeeper quarantine attribute automatically, so the app opens without any approval prompt. See [docs/brew.md](docs/brew.md) for details.
+Download `douyin-download-Android-<ver>.apk` from the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) and install it on your phone (allow installing from unknown sources).
 
-### 🐧 Linux / 🍎 macOS Users (CLI)
+### 🐧 Linux / 🍎 macOS CLI Users
 
-Run the following command in your terminal to download the latest binaries (macOS builds are
-per-architecture: Apple Silicon arm64 and Intel x86_64) and create symlinks in `~/.local/bin`:
+Run the following command in your terminal to download the latest CLI (Linux x86_64, macOS arm64/Intel) and create symlinks in `~/.local/bin`:
 
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
