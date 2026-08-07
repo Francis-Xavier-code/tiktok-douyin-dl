@@ -23,17 +23,17 @@ sealed class VersionPolicyResult {
  */
 object VersionPolicyService {
 
-    private const val CURRENT_VERSION = "0.1.3"
+    private val CURRENT_VERSION = BuildConfig.VERSION_NAME
     private const val PLATFORM = "android"
-    const val DEFAULT_UPDATE_URL = "https://gitee.com/Xynrin/douyin-download/releases"
+    const val DEFAULT_UPDATE_URL = "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases"
 
     private val sources = listOf(
-        "https://gitee.com/Xynrin/douyin-download/raw/master/version-policy.json",
-        "https://raw.giteeusercontent.com/Xynrin/douyin-download/raw/master/version-policy.json",
-        "https://gh-proxy.com/https://raw.giteeusercontent.com/Xynrin/douyin-download/raw/master/version-policy.json",
-        "https://ghproxy.net/https://raw.giteeusercontent.com/Xynrin/douyin-download/raw/master/version-policy.json",
-        "https://raw.gitmirror.com/Xynrin/douyin-download/raw/master/version-policy.json",
-        "https://kgithub.com/Xynrin/douyin-download/raw/master/version-policy.json",
+        "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+        "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/raw/main/version-policy.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+        "https://ghproxy.net/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+        "https://raw.gitmirror.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
+        "https://kgithub.com/Francis-Xavier-code/tiktok-douyin-dl/main/version-policy.json",
     )
 
     private val client by lazy {
@@ -78,7 +78,7 @@ object VersionPolicyService {
         }
         val updateUrl = p.optString("update_url", "").ifBlank { DEFAULT_UPDATE_URL }
         val apkUrl = p.optString("apk_url", "").ifBlank {
-            updateUrl + "/download/douyin-download-Android-0.1.1.apk"
+            updateUrl + "/download/douyin-download-Android-$minVersion.apk"
         }
         
         // 解析日志字段（如果存在）

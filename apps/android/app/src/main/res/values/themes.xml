@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.DouyinDownload" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.MediaDownloader" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- 核心品牌色：抖音红 -->
         <item name="colorPrimary">#FE2C55</item>
         <item name="colorOnPrimary">#FFFFFF</item>

@@ -11,9 +11,6 @@ import org.json.JSONObject
 import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
 
-/** 单个可下载媒体。 */
-data class DirectMedia(val isVideo: Boolean, val url: String)
-
 /**
  * 抖音页面解析引擎。
  */

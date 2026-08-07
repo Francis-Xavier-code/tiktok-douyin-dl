@@ -21,17 +21,17 @@ sealed class PolicyResult {
  */
 object DownloadPolicyService {
 
-    private const val CURRENT_VERSION = "0.1.3"
+    private val CURRENT_VERSION = BuildConfig.VERSION_NAME
     private const val PLATFORM = "android"
-    private const val ISSUE_URL = "https://gitee.com/Xynrin/douyin-download/issues"
+    private const val ISSUE_URL = "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/issues"
 
     private val sources = listOf(
-        "https://gitee.com/Xynrin/douyin-download/raw/master/download-policy.json",
-        "https://raw.giteeusercontent.com/Xynrin/douyin-download/raw/master/download-policy.json",
-        "https://gh-proxy.com/https://raw.giteeusercontent.com/Xynrin/douyin-download/raw/master/download-policy.json",
-        "https://ghproxy.net/https://raw.giteeusercontent.com/Xynrin/douyin-download/raw/master/download-policy.json",
-        "https://raw.gitmirror.com/Xynrin/douyin-download/raw/master/download-policy.json",
-        "https://kgithub.com/Xynrin/douyin-download/raw/master/download-policy.json",
+        "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/raw/main/download-policy.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://ghproxy.net/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://raw.gitmirror.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
+        "https://kgithub.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
     )
 
     private val client by lazy {

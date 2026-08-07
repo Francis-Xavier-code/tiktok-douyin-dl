@@ -1,6 +1,5 @@
 package com.douyindownload
 
-import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -18,6 +17,8 @@ object TikTokParser {
     private const val TAG = "TikTokParser"
     private val urlPattern = Regex("""https?://[a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=%]+""")
     private val tiktokHostPattern = Regex("""(^|\.)tiktok\.com$""")
+    // 提取 URL 的 host（不依赖 android.net.Uri，便于单元测试且与各端实现一致）
+    private val hostPattern = Regex("""^https?://([^/?#]+)""", RegexOption.IGNORE_CASE)
     private val rehydrationDataPattern = Regex("""<script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">([^<]+)</script>""", RegexOption.DOT_MATCHES_ALL)
 
     private val client by lazy {
@@ -34,8 +35,8 @@ object TikTokParser {
         urlPattern.findAll(text).map { it.value }.filter { isTikTokUrl(it) }.distinct().toList()
 
     fun isTikTokUrl(url: String): Boolean {
-        val host = runCatching { Uri.parse(url).host }.getOrNull() ?: return false
-        return tiktokHostPattern.containsMatchIn(host.lowercase())
+        val host = hostPattern.find(url)?.groupValues?.get(1)?.lowercase() ?: return false
+        return tiktokHostPattern.containsMatchIn(host)
     }
 
     /** 极速引擎解析（兜底）。 */

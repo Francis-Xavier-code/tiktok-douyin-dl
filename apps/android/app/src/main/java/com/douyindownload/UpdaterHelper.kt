@@ -38,7 +38,7 @@ object UpdaterHelper {
 
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", "douyin-download-Android/0.1.1")
+            .header("User-Agent", "douyin-download-Android/${BuildConfig.VERSION_NAME}")
             .build()
 
         client.newCall(request).execute().use { response ->

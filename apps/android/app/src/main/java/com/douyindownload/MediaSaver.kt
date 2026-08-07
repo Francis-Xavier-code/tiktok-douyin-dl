@@ -42,10 +42,11 @@ object MediaSaver {
             var lastError = ""
             for (attempt in 1..2) {
                 try {
+                    val referer = if (media.url.contains("tiktok.com")) "https://www.tiktok.com/" else "https://www.douyin.com/"
                     val builder = Request.Builder()
                         .url(media.url)
                         .header("User-Agent", BROWSER_UA)
-                        .header("Referer", "https://www.douyin.com/")
+                        .header("Referer", referer)
                         .header("Cookie", cookies)
                     
                     if (attempt == 1) {
@@ -78,7 +79,7 @@ object MediaSaver {
     private fun saveBytes(context: Context, bytes: ByteArray, isVideo: Boolean): Uri? {
         val ext = if (isVideo) "mp4" else "jpg"
         val mime = if (isVideo) "video/mp4" else "image/jpeg"
-        val displayName = "douyin_${System.currentTimeMillis()}.$ext"
+        val displayName = "media_${System.currentTimeMillis()}.$ext"
 
         try {
             if (Build.VERSION.SDK_INT >= 29) {
@@ -88,9 +89,9 @@ object MediaSaver {
                     MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
                 }
                 val relativePath = if (isVideo) {
-                    Environment.DIRECTORY_DCIM + "/douyin-download"
+                    Environment.DIRECTORY_DCIM + "/media-download"
                 } else {
-                    Environment.DIRECTORY_PICTURES + "/douyin-download"
+                    Environment.DIRECTORY_PICTURES + "/media-download"
                 }
                 val values = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
@@ -107,7 +108,7 @@ object MediaSaver {
                 } else {
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
                 }
-                val directory = File(root, "douyin-download")
+                val directory = File(root, "media-download")
                 if (!directory.exists()) directory.mkdirs()
                 val file = File(directory, displayName)
                 FileOutputStream(file).use { it.write(bytes) }

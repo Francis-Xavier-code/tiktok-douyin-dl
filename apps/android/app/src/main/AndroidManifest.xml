@@ -12,7 +12,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.DouyinDownload">
+        android:theme="@style/Theme.MediaDownloader">
 
         <activity
             android:name=".MainActivity"

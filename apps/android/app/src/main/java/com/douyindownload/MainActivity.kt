@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_download -> {
                     binding.downloadPage.visibility = View.VISIBLE
                     binding.settingsContainer.visibility = View.GONE
-                    binding.toolbar.title = "Douyin Download"
+                    binding.toolbar.title = "Media Downloader"
                     true
                 }
                 R.id.nav_settings -> {
@@ -82,12 +82,13 @@ class MainActivity : AppCompatActivity() {
         
         // 加载开发者头像
         Glide.with(this)
-            .load("https://gitee.com/Xynrin.png")
+            .load("https://github.com/Francis-Xavier-code.png")
             .placeholder(android.R.drawable.ic_menu_myplaces)
             .circleCrop()
             .into(s.devAvatar)
             
-        s.versionText.text = "v0.1.3"
+        s.devName.text = "Francis Xavier"
+        s.versionText.text = "v${BuildConfig.VERSION_NAME}"
         
         // 异步真实读取远程仓库的 changelog
         lifecycleScope.launch {
@@ -101,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         }
         
         s.developerCard.setOnClickListener {
-            openBrowser("https://gitee.com/Xynrin")
+            openBrowser("https://github.com/Francis-Xavier-code/tiktok-douyin-dl")
         }
     }
 
@@ -126,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         if (busy) return
         val text = binding.inputText.text.toString().trim()
         if (text.isEmpty()) {
-            binding.logText.text = "请先粘贴抖音分享文本或链接。"
+            binding.logText.text = "请先粘贴抖音或 TikTok 分享文本或链接。"
             return
         }
 
@@ -148,19 +149,35 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 log("2/3 正在提取链接…")
-                val urls = DouyinParser.extractUrls(text)
-                if (urls.isEmpty()) {
-                    log("❌ 未找到支持的抖音链接。")
+                val douyinUrls = DouyinParser.extractUrls(text)
+                val tiktokUrls = TikTokParser.extractUrls(text)
+                
+                if (douyinUrls.isEmpty() && tiktokUrls.isEmpty()) {
+                    log("❌ 未找到支持的链接。")
                     return@launch
                 }
 
                 val allMedia = mutableListOf<DirectMedia>()
-                for ((index, url) in urls.withIndex()) {
-                    log("正在解析 [${index + 1}/${urls.size}]: $url")
+                
+                // 处理抖音链接
+                for ((index, url) in douyinUrls.withIndex()) {
+                    log("正在解析抖音 [${index + 1}/${douyinUrls.size}]: $url")
                     var media = DouyinWebViewParser.resolve(this@MainActivity, url)
                     if (media.isEmpty()) {
                         log("WebView 解析未命中，尝试极速引擎兜底…")
                         media = runCatching { DouyinParser.resolveDirectMedia(url) }.getOrNull() ?: emptyList()
+                    }
+                    if (media.isNotEmpty()) allMedia.addAll(media)
+                    else log("⚠️ 解析失败：$url")
+                }
+                
+                // 处理 TikTok 链接
+                for ((index, url) in tiktokUrls.withIndex()) {
+                    log("正在解析 TikTok [${index + 1}/${tiktokUrls.size}]: $url")
+                    var media = TikTokWebViewParser.resolve(this@MainActivity, url)
+                    if (media.isEmpty()) {
+                        log("WebView 解析未命中，尝试极速引擎兜底…")
+                        media = runCatching { TikTokParser.resolveDirectMedia(url) }.getOrNull() ?: emptyList()
                     }
                     if (media.isNotEmpty()) allMedia.addAll(media)
                     else log("⚠️ 解析失败：$url")
