@@ -39,7 +39,7 @@ jobs:
           New-Item -ItemType Directory -Force release-assets | Out-Null
           Copy-Item "dist\MediaDownloader-Windows-x64-Setup-$env:APP_VERSION.exe" release-assets\
           Compress-Archive `
-            -Path dist\media-downloader.exe `
+            -Path dist\media-downloader.exe, dist\ms-playwright `
             -DestinationPath "release-assets\MediaDownloader-Windows-x64-CLI-$env:APP_VERSION.zip"
       - uses: actions/upload-artifact@v4
         with:
@@ -67,10 +67,75 @@ jobs:
         shell: bash
         run: |
           mkdir -p release-assets
-          tar -C dist -czf "release-assets/MediaDownloader-Linux-x86_64-$APP_VERSION.tar.gz" media-downloader
+          tar -C dist -czf "release-assets/MediaDownloader-Linux-x86_64-$APP_VERSION.tar.gz" media-downloader ms-playwright
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux
+          path: release-assets/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # macOS CLI：Apple 芯片 (arm64) + Intel (x86_64) 两个架构的 PyInstaller 单文件
+  # ---------------------------------------------------------------------------
+  build-macos-cli:
+    name: Build macOS CLI (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+          - os: macos-13
+            arch: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Select release version
+        shell: bash
+        run: echo "APP_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Build macOS CLI
+        run: ./scripts/build-macos-cli.sh
+      - name: Package macOS CLI release asset
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp "dist/MediaDownloader-macOS-${{ matrix.arch }}-CLI-$APP_VERSION.zip" release-assets/
+          ls -la release-assets/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-cli-${{ matrix.arch }}
+          path: release-assets/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Android：douyin-download APK（Gradle；无 release 签名配置，故用 debug 变体
+  # —— debug 签名可安装，与现有 Release 中的 APK 一致。版本号独立于主版本线）
+  # ---------------------------------------------------------------------------
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Build Android APK
+        working-directory: apps/android
+        run: ./gradlew assembleDebug
+      - name: Package Android release asset
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          VERSION=$(grep -o 'versionName = "[^"]*"' apps/android/app/build.gradle.kts | sed 's/.*"\([^"]*\)".*/\1/')
+          cp apps/android/app/build/outputs/apk/debug/app-debug.apk "release-assets/douyin-download-Android-${VERSION}.apk"
+          ls -la release-assets/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
           path: release-assets/*
           if-no-files-found: error
 
