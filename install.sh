@@ -142,8 +142,63 @@ install_binary() {
     fi
 }
 
+# Show the changelog for the version being installed (CLI + 全平台 entries)
+show_changelog() {
+    local version="${RELEASE_TAG#v}"
+    local raw_url="https://raw.githubusercontent.com/$GITHUB_USER/$GITHUB_REPO/main/changelog.json"
+    local -a MIRROR_URLS=(
+        "$raw_url"
+        "https://gh-proxy.com/$raw_url"
+        "https://ghproxy.net/$raw_url"
+        "https://fastly.jsdelivr.net/gh/$GITHUB_USER/$GITHUB_REPO@main/changelog.json"
+    )
+    local tmp_json
+    tmp_json="$(mktemp)"
+    for url in "${MIRROR_URLS[@]}"; do
+        if curl -fsL --connect-timeout 8 --max-time 15 "$url" -o "$tmp_json" 2>/dev/null; then
+            break
+        fi
+    done
+    if [ -s "$tmp_json" ] && command -v python3 >/dev/null 2>&1; then
+        python3 - "$tmp_json" "$version" "$USER_LANG" <<'PY' || true
+import json, sys
+path, version, lang = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    target = None
+    for v in data.get("versions", []):
+        if str(v.get("version", "")).lstrip("v") == version:
+            target = v
+            break
+    if not target:
+        sys.exit(0)
+    entries = []
+    bucket = target.get("entries") or {}
+    for key in ("cli", "all"):
+        entries.extend(bucket.get(key) or [])
+    if not entries:
+        sys.exit(0)
+    title = "📝 本版本更新内容" if lang == "zh" else "📝 Changelog for this version"
+    print()
+    print(f"{title}  v{version}")
+    print("-" * 50)
+    for e in entries:
+        for line in str(e).splitlines():
+            print(f"  • {line}")
+    print("-" * 50)
+except Exception:
+    pass
+PY
+    fi
+    rm -f "$tmp_json"
+}
+
 # Install the unified auto-detecting CLI
 install_binary "media-downloader"
+
+# 2.5 Show the changelog of the installed version
+show_changelog
 
 # 3. Configure terminal command
 echo -e "\n${YELLOW}💬 配置启动命令 / Configure Startup Commands:${NC}"

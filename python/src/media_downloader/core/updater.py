@@ -24,7 +24,6 @@ VERSION = "2.0.0"
 GITHUB_USER = "Francis-Xavier-code"
 GITHUB_REPO = "tiktok-douyin-dl"
 
-_API_LATEST = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
 _WEB_LATEST = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
 
 
@@ -150,34 +149,29 @@ def _print_changelog(platform: str) -> bool:
 
 
 def check_for_updates(silent: bool = False) -> None:
-    """Check GitHub for a newer release and prompt to self-update."""
+    """Check for a newer release and prompt to self-update (API-free).
+
+    Uses the shared changelog.json mirrors (raw + CN mirrors, the same source the
+    GUI / macOS / iOS clients use) instead of api.github.com, so the anonymous
+    REST API rate limit (60/h) never blocks the check. Falls back to the
+    /releases/latest web-page redirect for the version only.
+    """
     if "YOUR_GITHUB_" in GITHUB_USER or "YOUR_GITHUB_" in GITHUB_REPO:
         return  # not configured yet
 
     latest_version = None
-    changelog = ""
-    download_url = ""
-    tag_name = ""
+    notes = []
 
-    # 1. GitHub API first.
-    api_success = False
+    # 1. Preferred: shared changelog.json via raw-file mirrors (no REST API).
     try:
-        data = http_json(_API_LATEST, timeout=5, verify=True,
-                         headers={"User-Agent": "Mozilla/5.0 updater"})
-        tag_name = data.get("tag_name", "").strip()
-        latest_version = tag_name.lstrip("v")
-        changelog = data.get("body", "").strip()
-        asset_name = os.path.basename(sys.argv[0])
-        for asset in data.get("assets", []):
-            if asset.get("name") == asset_name:
-                download_url = asset.get("browser_download_url")
-                break
-        api_success = True
+        notes = fetch_changelog("cli", max_versions=1)
+        if notes:
+            latest_version = notes[0]["version"]
     except Exception:
-        api_success = False
+        notes = []
 
-    # 2. Fall back to the redirect of the /releases/latest web page.
-    if not api_success:
+    # 2. Fallback: /releases/latest web-page redirect for the version only.
+    if not latest_version:
         import urllib.request
         try:
             probe = urllib.request.Request(
@@ -188,11 +182,6 @@ def check_for_updates(silent: bool = False) -> None:
             if "/releases/tag/" in final_url:
                 tag_name = final_url.split("/releases/tag/")[-1].split("?")[0].split("#")[0].strip("/")
                 latest_version = tag_name.lstrip("v")
-                download_url = (
-                    f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}"
-                    f"/releases/download/{tag_name}/{os.path.basename(sys.argv[0])}"
-                )
-                changelog = _t("update_changelog_unavailable")
         except Exception as e:
             if not silent:
                 print(_t("update_failed", err=e))
@@ -202,13 +191,16 @@ def check_for_updates(silent: bool = False) -> None:
     if latest_version and parse_version(latest_version) > parse_version(VERSION):
         print(_t("update_found", latest_version=latest_version, version=VERSION))
 
-        # Prefer the shared per-platform changelog; fall back to the release body.
-        if not _print_changelog("cli") and changelog:
+        # 打印本端更新日志（changelog.json 镜像已按 CLI 平台过滤）
+        if notes:
             print(_t("changelog_title"))
             print("─" * 50)
-            print(changelog)
+            for entry in notes[0]["entries"]:
+                for line in entry.splitlines():
+                    print(f"  • {line}")
             print("─" * 50)
 
+        download_url = _cli_asset_url(latest_version)
         if download_url:
             if getattr(sys, "frozen", False):
                 if not silent:
@@ -223,26 +215,78 @@ def check_for_updates(silent: bool = False) -> None:
                     print(_t("source_mode_update_skipped"))
 
 
-def perform_self_update(download_url: str, expected_sha256: str | None = None) -> None:
-    """Download the newer executable and replace this process in place.
+def _cli_asset_url(version: str) -> str:
+    """Build the CLI release asset URL for the current OS/arch.
 
-    When ``expected_sha256`` is provided the download is verified before the
-    running binary is overwritten. A mismatch aborts the update.
+    Assets: MediaDownloader-Windows-x64-CLI-<v>.zip,
+    MediaDownloader-Linux-x86_64-<v>.tar.gz,
+    MediaDownloader-macOS-arm64-CLI-<v>.zip. Returns "" for unknown platforms
+    (macOS x86_64 CLI is no longer built since the Intel runner was retired).
     """
-    temp_exe = ""
+    base = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/download/v{version}"
+    if sys.platform.startswith("win"):
+        return f"{base}/MediaDownloader-Windows-x64-CLI-{version}.zip"
+    if sys.platform.startswith("linux"):
+        return f"{base}/MediaDownloader-Linux-x86_64-{version}.tar.gz"
+    if sys.platform == "darwin":
+        import platform
+        if platform.machine() != "arm64":
+            return ""
+        return f"{base}/MediaDownloader-macOS-arm64-CLI-{version}.zip"
+    return ""
+
+
+def perform_self_update(download_url: str, expected_sha256: str | None = None) -> None:
+    """Download the newer CLI archive and replace this process in place.
+
+    Release assets are archives (zip / tar.gz) containing the binary plus the
+    ms-playwright sidecar. The archive is unpacked into a temp dir, the binary
+    is swapped in (SHA-256 verified when supplied), and the browser sidecar is
+    refreshed next to the running executable.
+    """
+    temp_dir = ""
     try:
+        import io
+        import shutil
+        import tarfile
+        import tempfile
+        import zipfile
+
         current_exe = os.path.abspath(sys.argv[0])
-        temp_exe = current_exe + ".tmp"
+        binary_name = os.path.basename(current_exe)
 
         print(_t("update_downloading"))
         data = http_get_bytes(download_url, timeout=120, verify=True,
                               headers={"User-Agent": "Mozilla/5.0 updater"})
 
-        # Verify integrity before touching the live binary.
-        import tempfile
-        tmp_path = temp_exe
-        with open(tmp_path, "wb") as f:
-            f.write(data)
+        temp_dir = tempfile.mkdtemp(prefix="md-update-")
+        if download_url.endswith(".zip"):
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                zf.extractall(temp_dir)
+        else:
+            with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tf:
+                tf.extractall(temp_dir)
+
+        # 定位新二进制（归档顶层：media-downloader / media-downloader.exe）
+        new_binary = os.path.join(temp_dir, binary_name)
+        if not os.path.isfile(new_binary):
+            candidates = [
+                os.path.join(temp_dir, name)
+                for name in os.listdir(temp_dir)
+                if os.path.isfile(os.path.join(temp_dir, name))
+            ]
+            new_binary = next((p for p in candidates if os.access(p, os.X_OK)), "")
+        if not new_binary or not os.path.isfile(new_binary):
+            raise RuntimeError("binary not found in release archive")
+
+        # 浏览器侧车同步到当前二进制同目录
+        sidecar = os.path.join(temp_dir, "ms-playwright")
+        if os.path.isdir(sidecar):
+            dst = os.path.join(os.path.dirname(current_exe), "ms-playwright")
+            shutil.copytree(sidecar, dst, dirs_exist_ok=True)
+
+        tmp_path = current_exe + ".tmp"
+        shutil.copy2(new_binary, tmp_path)
 
         if expected_sha256:
             from media_downloader.core.network import verify_sha256
@@ -257,8 +301,8 @@ def perform_self_update(download_url: str, expected_sha256: str | None = None) -
         sys.exit(0)
     except Exception as e:
         print(_t("update_failed_install", error=e))
-        if temp_exe and os.path.exists(temp_exe):
+        if temp_dir and os.path.isdir(temp_dir):
             try:
-                os.remove(temp_exe)
+                shutil.rmtree(temp_dir)
             except Exception:
                 pass

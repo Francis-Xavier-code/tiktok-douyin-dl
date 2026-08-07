@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[Android]** 客户端完成：支持抖音与 TikTok 解析/下载（WebView 兜底）、远程策略 Ed25519 验签（fail-closed）、自动更新检查与按端过滤的更新日志（含国内镜像兜底）；版本号与主版本线对齐（2.0.0），Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`。
 - **[全平台]** AI Skill 一句话指令：README 提供复制即用的一句话提示词（内嵌技能文件 URL），AI 自行读取技能文件后即可帮助下载，无需安装或敲命令。
 - **[Windows]** 关于窗口显示项目贡献者：带头像、可点击跳转贡献者主页；数据直接取自 GitHub 贡献者页面（非 REST API，避免限流），加载失败时回退为贡献者页面链接。
+- **[CLI]** 更新检测免限流：检查更新不再调用 GitHub REST API（api.github.com，匿名 60 次/小时限制），改用共享 changelog.json 镜像获取版本与更新日志（与 Windows / macOS / iOS 一致）；自更新支持新版归档资产（zip / tar.gz，含浏览器侧车），自动解压替换。
+- **[CLI]** install.sh 安装时展示本版本更新日志：安装完成后打印当前版本 CLI + 全平台（[全平台]）的更新内容（changelog.json 镜像，python3 解析，缺失时静默跳过）。
 
 ## [1.8.2] - 2026-08-06
 
