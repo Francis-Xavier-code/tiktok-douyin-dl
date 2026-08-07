@@ -13,7 +13,13 @@ import java.util.concurrent.TimeUnit
  */
 object ChangelogService {
 
-    private const val URL = "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json"
+    // 直连 + 国内镜像兜底（与其它端保持一致：gh-proxy / ghproxy / jsDelivr）
+    private val urls = listOf(
+        "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json",
+        "https://ghproxy.net/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/changelog.json",
+        "https://fastly.jsdelivr.net/gh/Francis-Xavier-code/tiktok-douyin-dl@main/changelog.json",
+    )
     
     private val client by lazy {
         OkHttpClient.Builder()
@@ -28,21 +34,23 @@ object ChangelogService {
     suspend fun fetchLogs(): String = withContext(Dispatchers.IO) {
         cachedLogs?.let { return@withContext it }
 
-        try {
-            val request = Request.Builder().url(URL).build()
-            client.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    val raw = response.body?.string() ?: ""
-                    val parsed = parseJson(raw)
-                    cachedLogs = parsed
-                    return@withContext parsed
+        for (url in urls) {
+            try {
+                val request = Request.Builder().url(url).build()
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val raw = response.body?.string() ?: ""
+                        val parsed = parseJson(raw)
+                        cachedLogs = parsed
+                        return@withContext parsed
+                    }
                 }
+            } catch (e: Exception) {
+                // 当前源失败，尝试下一个镜像
             }
-        } catch (e: Exception) {
-            return@withContext "获取日志失败: ${e.message}"
         }
-        
-        "暂无日志数据"
+
+        "获取日志失败，请检查网络后重试"
     }
 
     /** 解析 changelog.json 并提取 [all] 和 [android] 相关条目。 */
