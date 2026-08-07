@@ -97,6 +97,36 @@ def fetch_changelog(platform: str = "cli", max_versions: int = 3) -> list[dict]:
         return []
 
 
+def notify_update() -> bool:
+    """Check for a newer release and print the per-platform changelog.
+
+    Unlike check_for_updates(), this NEVER replaces the running binary or
+    prompts — it only prints what changed, so the packaged CLI can show the
+    changelog at startup without surprising the user. Fail-open (returns False
+    on any network error). Uses the raw-file mirror path (fast in CN).
+    """
+    if "YOUR_GITHUB_" in GITHUB_USER or "YOUR_GITHUB_" in GITHUB_REPO:
+        return False
+    try:
+        notes = fetch_changelog("cli", max_versions=1)
+        if not notes:
+            return False
+        latest = notes[0]["version"]
+        if parse_version(latest) <= parse_version(VERSION):
+            return False
+        print(_t("update_found", latest_version=latest, version=VERSION))
+        print(_t("changelog_title"))
+        print("─" * 50)
+        for entry in notes[0]["entries"]:
+            for line in entry.splitlines():
+                print(f"  • {line}")
+        print("─" * 50)
+        print(_t("update_hint", cmd="media-downloader"))
+        return True
+    except Exception:
+        return False
+
+
 def _print_changelog(platform: str) -> bool:
     """Print per-platform changelog entries for newer releases (fail-open).
 

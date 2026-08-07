@@ -56,6 +56,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         parser.print_help()
         return
     try:
+        # 启动时静默检查：有新版本时打印本端更新日志（不自动替换，fail-open）
+        from media_downloader.core.updater import notify_update
+        notify_update()
+    except Exception:
+        pass
+    try:
         platform = Platform(args.platform) if args.platform else detect_platform(args.share_text)
     except ValueError as error:
         parser.error(str(error))
