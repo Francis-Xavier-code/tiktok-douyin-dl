@@ -1,11 +1,11 @@
 ---
 name: media-downloader
-description: Download public Douyin or TikTok videos and photo posts from share text, direct URLs, short links, or Douyin search-result URLs. Use when a user asks an autonomous agent to find and save supported Douyin/TikTok media locally, choose an output folder, install the official Linux CLI when missing, or explicitly update the managed CLI.
+description: Download public Douyin or TikTok videos and photo posts from share text, direct URLs, short links, or Douyin search-result URLs. Use when a user asks an autonomous agent to find and save supported Douyin/TikTok media locally, choose an output folder, install the official Linux/macOS CLI when missing, or explicitly update the managed CLI.
 ---
 
 # Media Downloader
 
-Use the bundled script to run the project CLI with safely quoted input. It normalizes supported Douyin web-result URLs before invoking the CLI, supports Linux x86_64 directly, and can use a caller-supplied executable on other systems through `MEDIA_DOWNLOADER_BIN`.
+Use the bundled script to run the project CLI with safely quoted input. It normalizes supported Douyin web-result URLs before invoking the CLI, supports Linux x86_64 and macOS (Apple Silicon arm64 / Intel x86_64) directly, and can use a caller-supplied executable on other systems through `MEDIA_DOWNLOADER_BIN`. Packaged CLI archives bundle the headless Chromium, so no browser download is needed on first run.
 
 ## Workflow
 
@@ -24,7 +24,7 @@ bash "{baseDir}/scripts/download.sh" --output "<output-directory>" -- "<share-te
 
 ## CLI management
 
-Install the latest official Linux x86_64 CLI without downloading media:
+Install the latest official Linux x86_64 or macOS CLI without downloading media:
 
 ```bash
 bash "{baseDir}/scripts/download.sh" --install
@@ -39,7 +39,7 @@ bash "{baseDir}/scripts/download.sh" --update
 Pin installation to a release when reproducibility matters:
 
 ```bash
-MEDIA_DOWNLOADER_VERSION=v1.8.0 bash "{baseDir}/scripts/download.sh" --install
+MEDIA_DOWNLOADER_VERSION=v1.8.2 bash "{baseDir}/scripts/download.sh" --install
 ```
 
 ## Guardrails

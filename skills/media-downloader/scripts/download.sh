@@ -80,31 +80,72 @@ managed_install() {
   [[ -z "$custom_binary" ]] || fail "cannot install or update when MEDIA_DOWNLOADER_BIN is set"
   command -v curl >/dev/null 2>&1 || fail "curl is required to install the CLI"
 
-  local operating_system architecture requested_version asset_url resolved_version
+  local operating_system architecture requested_version asset_url resolved_version archive_fmt
   operating_system="$(uname -s)"
   architecture="$(uname -m)"
-  [[ "$operating_system" == "Linux" ]] || fail "automatic installation currently supports Linux only; set MEDIA_DOWNLOADER_BIN on $operating_system"
-  case "$architecture" in
-    x86_64|amd64) ;;
-    *) fail "no official Linux release binary is available for architecture $architecture" ;;
+  case "$operating_system" in
+    Linux)
+      case "$architecture" in
+        x86_64|amd64) archive_fmt="MediaDownloader-Linux-x86_64-%s.tar.gz" ;;
+        *) fail "no official Linux release binary is available for architecture $architecture" ;;
+      esac
+      ;;
+    Darwin)
+      command -v unzip >/dev/null 2>&1 || fail "unzip is required to install the macOS CLI"
+      case "$architecture" in
+        arm64) archive_fmt="MediaDownloader-macOS-arm64-CLI-%s.zip" ;;
+        x86_64) archive_fmt="MediaDownloader-macOS-x86_64-CLI-%s.zip" ;;
+        *) fail "no official macOS release binary is available for architecture $architecture" ;;
+      esac
+      ;;
+    *)
+      fail "automatic installation supports Linux and macOS only; set MEDIA_DOWNLOADER_BIN on $operating_system"
+      ;;
   esac
 
   requested_version="${MEDIA_DOWNLOADER_VERSION:-}"
   if [[ -n "$requested_version" ]]; then
     [[ "$requested_version" == v* ]] || requested_version="v$requested_version"
     [[ "$requested_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "invalid MEDIA_DOWNLOADER_VERSION: $requested_version"
-    asset_url="https://github.com/$REPOSITORY/releases/download/$requested_version/media-downloader"
     resolved_version="$requested_version"
   else
-    asset_url="https://github.com/$REPOSITORY/releases/latest/download/media-downloader"
-    resolved_version="latest"
+    # Resolve the latest release version from the shared changelog.json (raw-file
+    # mirrors, reliable in CN); fall back to the /releases/latest redirect.
+    resolved_version="$(curl -fsSL --retry 3 --proto '=https' --tlsv1.2 \
+      "https://raw.githubusercontent.com/$REPOSITORY/main/changelog.json" 2>/dev/null \
+      | grep -o '"version": *"[^"]*"' | head -1 \
+      | sed 's/.*"version": *"\([^"]*\)".*/\1/' || true)"
+    if [[ -z "$resolved_version" ]]; then
+      resolved_version="$(curl -fsSI --retry 2 -o /dev/null -w '%{url_effective}' \
+        "https://github.com/$REPOSITORY/releases/latest" 2>/dev/null \
+        | sed -n 's#.*/tag/\(v[0-9.]*\)[^0-9]*.*#\1#p' || true)"
+    fi
+    [[ -n "$resolved_version" ]] || fail "could not resolve the latest release version"
   fi
+
+  local archive_name
+  printf -v archive_name "$archive_fmt" "${resolved_version#v}"
+  asset_url="https://github.com/$REPOSITORY/releases/download/$resolved_version/$archive_name"
 
   temporary_directory="$(mktemp -d "${TMPDIR:-/tmp}/media-downloader-skill.XXXXXX")"
   printf 'Downloading official CLI from %s\n' "$asset_url" >&2
-  curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
-    --output "$temporary_directory/media-downloader" \
-    "$asset_url"
+  local tmp_archive="$temporary_directory/archive"
+  local download_ok=false
+  for url in "$asset_url" "https://gh-proxy.com/$asset_url" "https://ghproxy.net/$asset_url"; do
+    if curl --fail --location --retry 2 --proto '=https' --tlsv1.2 --output "$tmp_archive" "$url" 2>/dev/null; then
+      download_ok=true
+      break
+    fi
+  done
+  [[ "$download_ok" == true ]] || fail "failed to download $asset_url"
+
+  if [[ "$operating_system" == "Linux" ]]; then
+    tar -xzf "$tmp_archive" -C "$temporary_directory"
+  else
+    unzip -q -o "$tmp_archive" -d "$temporary_directory"
+    # macOS: drop the quarantine attribute so Gatekeeper doesn't block first run
+    xattr -dr com.apple.quarantine "$temporary_directory/media-downloader" 2>/dev/null || true
+  fi
   chmod 0755 "$temporary_directory/media-downloader"
   mkdir -p "$managed_root"
   mv "$temporary_directory/media-downloader" "$managed_binary"
