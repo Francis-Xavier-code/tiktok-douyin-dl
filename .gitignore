@@ -64,3 +64,6 @@ ms-playwright/
 
 # Test extract directories
 test_extract/
+
+# local plan
+plan.md
