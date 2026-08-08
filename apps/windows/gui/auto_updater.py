@@ -9,7 +9,7 @@ import tempfile
 import subprocess
 import tkinter.messagebox as messagebox
 
-CURRENT_VERSION = "2.0.1"
+CURRENT_VERSION = "2.0.0"
 
 # Remote version-policy enforcement (fail-open). Lets the maintainer retire old
 # builds without re-shipping every binary. See version-policy.json / docs.
