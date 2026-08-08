@@ -38,19 +38,20 @@
 }
 ```
 
-改完运行 `python3 scripts/sync-versions.py`，自动同步到 **11 处硬编码位置**：
+改完运行 `python3 scripts/sync-versions.py`，自动同步到 **12 处硬编码位置**：
 
 1. `python/src/media_downloader/__init__.py` → `__version__`
 2. `python/pyproject.toml` → `version`
 3. `python/src/media_downloader/core/updater.py` → `VERSION`（**CLI 检测更新靠它**）
 4. `apps/windows/gui/auto_updater.py` → `CURRENT_VERSION`
 5. `install.sh` → `RELEASE_TAG`
-6. `Casks/tiktok-douyin-dl.rb` → `version`
-7. `apps/macos/MediaDownloader.xcodeproj/project.pbxproj` → `MARKETING_VERSION`（Debug + Release）
-8. `apps/ios/MediaDownloader.xcodeproj/project.pbxproj` → `MARKETING_VERSION`
-9. `apps/macos/MediaDownloader/AppUpdateService.swift` → Bundle fallback
-10. `apps/ios/MediaDownloader/Views/SettingsView.swift` → Bundle fallback
-11. `apps/android/app/build.gradle.kts` → `versionName` + `versionCode`
+6. `install.ps1` → `RELEASE_TAG`
+7. `Casks/tiktok-douyin-dl.rb` → `version`
+8. `apps/macos/MediaDownloader.xcodeproj/project.pbxproj` → `MARKETING_VERSION`（Debug + Release）
+9. `apps/ios/MediaDownloader.xcodeproj/project.pbxproj` → `MARKETING_VERSION`
+10. `apps/macos/MediaDownloader/AppUpdateService.swift` → Bundle fallback
+11. `apps/ios/MediaDownloader/Views/SettingsView.swift` → Bundle fallback
+12. `apps/android/app/build.gradle.kts` → `versionName` + `versionCode`
 
 注意：
 

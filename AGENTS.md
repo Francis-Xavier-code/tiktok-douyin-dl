@@ -113,7 +113,7 @@ Version is defined in exactly one place: `version.json` at the repo root.
 `scripts/sync-versions.py` propagates to every hard-coded location:
 `python/src/media_downloader/__init__.py` (`__version__`), `python/pyproject.toml`,
 `python/src/media_downloader/core/updater.py` (`VERSION`), `apps/windows/gui/auto_updater.py`
-(`CURRENT_VERSION`), `install.sh` (`RELEASE_TAG`), `Casks/tiktok-douyin-dl.rb`,
+(`CURRENT_VERSION`), `install.sh` (`RELEASE_TAG`), `install.ps1` (`RELEASE_TAG`), `Casks/tiktok-douyin-dl.rb`,
 both Xcode `project.pbxproj` (`MARKETING_VERSION`), the Swift Bundle fallbacks, and
 `apps/android/app/build.gradle.kts` (`versionName`/`versionCode`).
 `scripts/build-apple.sh` and `scripts/build-windows.ps1` read `version.json` directly.
