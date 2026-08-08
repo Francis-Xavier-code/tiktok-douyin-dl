@@ -46,12 +46,16 @@
 
 ### 📱 iOS App
 
+<div align="center">
+
 | 选择视频 | 预览下载 | 查看已下载视频 |
-|:---:|:---:|:---:|
-| ![iOS 选择视频](assets/ios-gui-select-video.png) | ![iOS 预览下载](assets/ios-gui-preview-download.png) | ![iOS 查看已下载视频](assets/ios-look-downloaded-video.png) |
+| :-: | :-: | :-: |
+| <img src="assets/ios-gui-select-video.png" width="230" alt="选择视频"> | <img src="assets/ios-gui-preview-download.png" width="230" alt="预览下载"> | <img src="assets/ios-look-downloaded-video.png" width="230" alt="查看已下载视频"> |
 | 设置 | 免责声明 | 使用下载器 |
-|:---:|:---:|:---:|
-| ![iOS 设置](assets/ios-gui-setting.png) | ![iOS 免责声明](assets/ios-login-免责声明.png) | ![iOS 使用下载器](assets/ios-gui-useDownload.png) |
+| :-: | :-: | :-: |
+| <img src="assets/ios-gui-setting.png" width="230" alt="设置"> | <img src="assets/ios-login-免责声明.png" width="230" alt="免责声明"> | <img src="assets/ios-gui-useDownload.png" width="230" alt="使用下载器"> |
+
+</div>
 
 ### 🐧 Linux 命令行
 

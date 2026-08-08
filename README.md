@@ -44,12 +44,16 @@ Packaged desktop applications include the required runtime and browser component
 
 ### 📱 iOS App
 
+<div align="center">
+
 | Select Video | Preview & Download | Downloaded Videos |
-|:---:|:---:|:---:|
-| ![iOS select video](assets/ios-gui-select-video.png) | ![iOS preview download](assets/ios-gui-preview-download.png) | ![iOS downloaded videos](assets/ios-look-downloaded-video.png) |
+| :-: | :-: | :-: |
+| <img src="assets/ios-gui-select-video.png" width="230" alt="Select video"> | <img src="assets/ios-gui-preview-download.png" width="230" alt="Preview & download"> | <img src="assets/ios-look-downloaded-video.png" width="230" alt="Downloaded videos"> |
 | Settings | Disclaimer | Using the Downloader |
-|:---:|:---:|:---:|
-| ![iOS settings](assets/ios-gui-setting.png) | ![iOS disclaimer](assets/ios-login-免责声明.png) | ![iOS download in use](assets/ios-gui-useDownload.png) |
+| :-: | :-: | :-: |
+| <img src="assets/ios-gui-setting.png" width="230" alt="Settings"> | <img src="assets/ios-login-免责声明.png" width="230" alt="Disclaimer"> | <img src="assets/ios-gui-useDownload.png" width="230" alt="Using the downloader"> |
+
+</div>
 
 ### 🐧 Linux CLI
 
