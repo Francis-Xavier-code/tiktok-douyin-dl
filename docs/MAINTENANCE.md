@@ -32,7 +32,7 @@
 
 ```json
 {
-  "main": "2.0.1",                          // CLI / Windows / macOS / iOS 共享
+  "main": "2.0.0",                          // CLI / Windows / macOS / iOS 共享
   "android": { "versionName": "2.0.0", "versionCode": 4 },  // Android 独立线
   "apple": { "buildNumber": 1 }             // APPLE_BUILD_NUMBER（CI 硬编码为 1）
 }
@@ -100,7 +100,7 @@ git log --oneline -5                          # 最近提交
 ### 步骤
 
 1. **改代码** → 跑测试（`cd python && uv run pytest`，61 个用例，无网络无浏览器）。
-2. **加 CHANGELOG 条目**：写进当前攒的版本 section（如 `## [2.0.1]`），标签写对该端。
+2. **加 CHANGELOG 条目**：写进当前攒的版本 section（如 `## [2.1.0]`），标签写对该端。
 3. **版本号**：
    - 若还没为这批改动 bump 过 → 改 `version.json` 的 `main` 到下个版本 → `python3 scripts/sync-versions.py`。
    - 若已经 bump 过（版本 section 已存在）→ 跳过。
@@ -110,9 +110,9 @@ git log --oneline -5                          # 最近提交
 
 ### 关键约定
 
-- **`version-policy.json` 的 `min_version` 保持已发布版本不变**（比如现在线上是 2.0.0，那么攒 2.0.1 期间它一直是 `2.0.0`），等真正要强制升级旧版时再用 `--policies` 升。`release.sh` 只会刷 `updated_at`，不会动 `min_version`。
-- 攒更新期间，各端「检查更新」看到的"最新版本"来自 changelog.json——所以只要 `changelog.json` 已经含 2.0.1，**已发布版用户就会看到 2.0.1 的更新提示**。想低调攒着不惊动用户，就先**不要**把 2.0.1 条目写进 `CHANGELOG.md`/生成 `changelog.json`，攒够再一次性加。
-- 当前状态（2026-08-08）：最新发布 `v2.0.0`；`2.0.1` 已在本地 commit（未 push 未打 tag），正在攒。
+- **`version-policy.json` 的 `min_version` 保持已发布版本不变**（比如现在线上是 2.0.0，那么攒 2.1.0 期间它一直是 `2.0.0`），等真正要强制升级旧版时再用 `--policies` 升。`release.sh` 只会刷 `updated_at`，不会动 `min_version`。
+- 攒更新期间，各端「检查更新」看到的"最新版本"来自 changelog.json——所以只要 `changelog.json` 已经含 2.1.0，**已发布版用户就会看到 2.1.0 的更新提示**。想低调攒着不惊动用户，就先**不要**把 2.1.0 条目写进 `CHANGELOG.md`/生成 `changelog.json`，攒够再一次性加。
+- 当前状态（2026-08-08）：最新发布 `v2.0.0`；全仓版本统一 `2.0.0`（曾 bump 的 2.0.1 已全部回滚、从未发布）；`v2.1.0` 计划攒在 `plan.md`（未 bump 版本、未写 CHANGELOG）。
 
 ---
 
