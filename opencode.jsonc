@@ -1,0 +1,15 @@
+{
+  "mcp": {
+    "code-review-graph": {
+      "type": "local",
+      "command": [
+        "/Users/mac/Library/Application Support/pipx/venvs/code-review-graph/bin/python",
+        "-m",
+        "code_review_graph",
+        "serve",
+        "--repo",
+        "/Users/mac/Desktop/project-code/tiktok-douyin-dl"
+      ]
+    }
+  }
+}

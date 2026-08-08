@@ -71,3 +71,5 @@ test_extract/
 
 # local plan
 plan.md
+# Added by code-review-graph
+.code-review-graph/
