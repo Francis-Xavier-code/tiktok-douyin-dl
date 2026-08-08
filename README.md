@@ -102,6 +102,20 @@ Run the following command in your terminal to download the latest CLI (Linux x86
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
 
+### 🪟 Windows CLI Users
+
+Run the following command in PowerShell to install the Windows CLI (adds `%LOCALAPPDATA%\MediaDownloader` to your user PATH, no admin needed):
+
+```powershell
+irm https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.ps1 | iex
+```
+
+Uninstall with:
+
+```powershell
+irm https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/uninstall.ps1 | iex
+```
+
 ## 🤖 One-Sentence AI Prompt
 
 Copy the sentence below, replace `<link>` with the Douyin/TikTok share link or result URL, and send it to any AI assistant — the AI reads the skill file itself, then downloads the work. **No installation or commands needed.**

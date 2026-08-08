@@ -104,6 +104,20 @@
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
 
+### 🪟 Windows 用户 (CLI 命令行)
+
+在 PowerShell 中运行以下命令，即可安装 Windows CLI（将 `%LOCALAPPDATA%\MediaDownloader` 加入用户 PATH，无需管理员权限）：
+
+```powershell
+irm https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.ps1 | iex
+```
+
+卸载：
+
+```powershell
+irm https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/uninstall.ps1 | iex
+```
+
 ## 🤖 给 AI 的一句话指令
 
 复制下面这句话，把 `<链接>` 换成你要下载的抖音 / TikTok 分享链接或作品链接，直接发给任意 AI 助手即可——AI 会自己读取技能文件并按其中的方法帮你下载。**无需安装，不用敲命令。**
