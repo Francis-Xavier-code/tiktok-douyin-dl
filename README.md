@@ -6,8 +6,8 @@
 
 <!-- 语言切换：置顶显眼，新手一眼可见 -->
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/🌐_English-Read%20in%20English-blue?style=for-the-badge" alt="English"></a>
-  <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_简体中文-阅读中文-red?style=for-the-badge" alt="简体中文"></a>
+</a>
+  <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_简体中文-点我阅读中文-red?style=for-the-badge" alt="简体中文"></a>
 </p>
 
 <p align="center">
