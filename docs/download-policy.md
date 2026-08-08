@@ -96,3 +96,4 @@
 | Windows GUI | `apps/windows/gui/auto_updater.py` → `check_download_policy()` | `gui_downloader.py` 下载按钮回调 |
 | iOS | `apps/ios/MediaDownloader/Services/DownloadPolicyService.swift` | `DownloadStore.downloadDirectMedia()` 第一步 |
 | macOS 菜单栏 | `apps/macos/MediaDownloader/DownloadPolicyService.swift` | `DownloadController.startDownload()` Task 第一步 |
+| Android | `apps/android/app/src/main/java/com/douyindownload/DownloadPolicyService.kt` | `MainActivity` 下载前 `DownloadPolicyService.evaluate()`（另经 `PolicyVerifier.kt` Ed25519 验签） |

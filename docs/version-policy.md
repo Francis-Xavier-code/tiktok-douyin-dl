@@ -111,3 +111,4 @@
 | Windows GUI | `apps/windows/gui/auto_updater.py` | 启动时调用 |
 | iOS | `apps/ios/MediaDownloader/Services/VersionPolicyService.swift` | `MediaDownloaderApp.swift` `.task` 启动时 |
 | macOS 菜单栏 | `apps/macos/MediaDownloader/VersionPolicyService.swift` | `DownloadController.refreshPolicy()` 启动时 |
+| Android | `apps/android/app/src/main/java/com/douyindownload/VersionPolicyService.kt` | `MainActivity.checkVersionAndUpdate()` 启动时 / 手动检查 |
