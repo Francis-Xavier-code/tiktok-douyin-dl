@@ -192,7 +192,7 @@ This software is intended solely for personal study, academic exchange, and tech
 
 ## ⭐ Star History
 
-If this project helps you, please give it a ⭐ — it motivates us to keep improving. If the chart below fails to load (the third-party star-history service is unreliable for small repos), the live badge counts always render:
+If this project helps you, please give it a ⭐ — it motivates us to keep improving. The chart below is self-hosted (regenerated weekly by CI), so it always renders:
 
 <p align="center">
   <img src="https://img.shields.io/github/stars/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars">
@@ -200,10 +200,6 @@ If this project helps you, please give it a ⭐ — it motivates us to keep impr
   <img src="https://img.shields.io/github/watchers/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github" alt="GitHub Watchers">
 </p>
 
-<a href="https://www.star-history.com/?repos=Francis-Xavier-code%2Ftiktok-douyin-dl&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Francis-Xavier-code/tiktok-douyin-dl&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Francis-Xavier-code/tiktok-douyin-dl&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Francis-Xavier-code/tiktok-douyin-dl&type=date&legend=top-left" />
- </picture>
-</a>
+<div align="center">
+  <img src="assets/star-history.svg" alt="Star History Chart" width="760">
+</div>

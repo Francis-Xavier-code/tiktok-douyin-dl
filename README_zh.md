@@ -180,7 +180,7 @@ CLI 会根据链接域名自动识别抖音或 TikTok；带 `modal_id` 的抖音
 
 ## ⭐ Star History
 
-如果本项目对你有帮助，请点个 ⭐ 支持我们。若下方的第三方 star-history 图表加载失败（该服务对小仓库不稳定），上面的实时徽章计数始终可以正常显示：
+如果本项目对你有帮助，请点个 ⭐ 支持我们。下方图表为**自托管**（CI 每周自动更新），不会因第三方服务不稳定而加载失败：
 
 <p align="center">
   <img src="https://img.shields.io/github/stars/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars">
@@ -188,10 +188,6 @@ CLI 会根据链接域名自动识别抖音或 TikTok；带 `modal_id` 的抖音
   <img src="https://img.shields.io/github/watchers/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github" alt="GitHub Watchers">
 </p>
 
-<a href="https://www.star-history.com/?repos=Francis-Xavier-code%2Ftiktok-douyin-dl&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Francis-Xavier-code/tiktok-douyin-dl&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Francis-Xavier-code/tiktok-douyin-dl&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Francis-Xavier-code/tiktok-douyin-dl&type=date&legend=top-left" />
- </picture>
-</a>
+<div align="center">
+  <img src="assets/star-history.svg" alt="Star History 图表" width="760">
+</div>

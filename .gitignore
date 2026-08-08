@@ -54,6 +54,7 @@ scratch/
 !download-policy.json
 !changelog.json
 !version.json
+!assets/star-history.json
 
 scratch/tiktok_data.json
 
