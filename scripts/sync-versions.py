@@ -20,6 +20,7 @@ Locations rewritten (kept in sync by scripts/release.sh before tagging):
     python/src/media_downloader/core/updater.py  VERSION
     apps/windows/gui/auto_updater.py             CURRENT_VERSION
     install.sh                                   RELEASE_TAG
+    install.ps1                                  RELEASE_TAG
     Casks/tiktok-douyin-dl.rb                    version
     apps/{macos,ios}/MediaDownloader.xcodeproj/project.pbxproj   MARKETING_VERSION
     apps/macos/MediaDownloader/AppUpdateService.swift            Bundle fallback
@@ -113,6 +114,8 @@ def sync_versions(root: Path, data: dict, policies: bool = False) -> list[str]:
          r'CURRENT_VERSION = "[^"]*"', f'CURRENT_VERSION = "{main}"'),
         (root / "install.sh",
          r'RELEASE_TAG="v[^"]*"', f'RELEASE_TAG="v{main}"'),
+        (root / "install.ps1",
+         r'\$RELEASE_TAG = "v[^"]*"', f'$RELEASE_TAG = "v{main}"'),
         (root / "Casks/tiktok-douyin-dl.rb",
          r'version "[^"]*"', f'version "{main}"'),
         (root / "apps/macos/MediaDownloader.xcodeproj/project.pbxproj",
