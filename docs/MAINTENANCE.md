@@ -167,6 +167,45 @@ CI 产出的 Release 资产（命名必须记住，别改错）：
 - `download-policy.json` 的全局 `min_version` 是 1.7.0（历史遗留），per-platform 的 android 是 2.0.0——`--policies` 只同步 android 的 per-platform 字段，全局字段保持不动。
 - 有 `scripts/toggle-download.sh` 可快速开/关下载策略。
 
+### 紧急停服流程（收到律师函 / 平台投诉 / 账号警告时）
+
+**目标**：几分钟内让所有客户端停止下载，避免法律风险扩大。核心是改一个 JSON 推送到 main，客户端下次启动即生效。
+
+**1. 一键关闭下载**（本地执行）：
+
+```bash
+./scripts/toggle-download.sh off "根据相关法律法规要求，下载功能已暂停。如有问题请联系项目作者。"
+```
+
+该脚本自动更新 `download-policy.json` 的 `enabled=false` + `message` + `updated_at`；若 `secrets/policy-private-key.pem` 存在还会重新 Ed25519 签名（Android 验签必需，没签名时 Android 会因验签失败而拦截，属于安全默认）。
+
+**2. 推送生效**：
+
+```bash
+git add download-policy.json && git commit -m "policy: 紧急停服（下载功能暂停）" && git push origin main
+```
+
+**3. 生效机制（无需用户升级）**：
+- 各端（CLI / Windows / macOS / iOS / Android）在启动/检查时**网络优先**拉取策略；`download-policy` 是 **fail-closed**——即使所有镜像都不可达，客户端默认也阻止下载，安全兜底。
+- Android 额外要求 Ed25519 验签，验签失败同样拦截（更严格）。
+- 已在线用户在下一次策略检查后生效；理论上最长不超过一次启动周期。
+
+**4. 验证**（可选）：
+
+```bash
+curl -s https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json
+# 确认 "enabled": false 且 message 正确
+```
+
+**5. 可选：强制旧版升级**：若只想拦旧版本（而非全停），bump `version.json` 后 `python3 scripts/sync-versions.py --policies` 同步 `min_version` + `hard_block: true`（`version-policy.json` 已默认全部 hard_block），按正常流程发版。
+
+**6. 恢复下载**：
+
+```bash
+./scripts/toggle-download.sh on "下载功能已恢复。"
+# git add download-policy.json && git commit && git push origin main
+```
+
 ---
 
 ## 7. 测试与质量门禁
