@@ -6,7 +6,6 @@
 
 <!-- 语言切换：置顶显眼，新手一眼可见 -->
 <p align="center">
-</a>
   <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_简体中文-点我阅读中文-red?style=for-the-badge" alt="简体中文"></a>
 </p>
 
