@@ -32,9 +32,10 @@ The app only makes network requests when you (or the update check) trigger them:
 | Changelog fetch | Show per-platform update notes | Nothing personal |
 | Version/download policy | Fail-open / fail-closed rules | Nothing personal |
 
-Update checks are **fail-open** (CLI/macOS/iOS): if the server is unreachable
+Update checks are **fail-open** (CLI/macOS/iOS/Android): if the server is unreachable
 the app keeps working. The download policy is **fail-closed** by default:
-unreachable policy server = downloads blocked, which is the safe default.
+unreachable policy server = downloads blocked, which is the safe default
+(Android additionally verifies the policy with an Ed25519 signature).
 
 ## 3. Data storage / 数据存储
 
