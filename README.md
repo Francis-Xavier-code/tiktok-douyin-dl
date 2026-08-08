@@ -32,15 +32,23 @@ Packaged desktop applications include the required runtime and browser component
 
 ### 🖥️ Windows GUI
 
+<div align="center">
+
 | Main Window | Update Check |
-|:---:|:---:|
-| ![Windows GUI](assets/windows-gui.png) | ![Update check](assets/windows-gui-autoupdate-checkNewVison.png) |
+| :-: | :-: |
+| <img src="assets/windows-gui.png" width="380" alt="Windows GUI"> | <img src="assets/windows-gui-autoupdate-checkNewVison.png" width="380" alt="Update check"> |
+
+</div>
 
 ### 🍎 macOS App
 
+<div align="center">
+
 | Main Window | Menu Bar · Waiting for a Link | Menu Bar · Link Detected |
-|:---:|:---:|:---:|
-| ![macOS app](assets/macos-gui.png) | ![Menu bar waiting](assets/macos-menubar-preview.png) | ![Menu bar ready](assets/macos-menubar-ready-preview.png) |
+| :-: | :-: | :-: |
+| <img src="assets/macos-gui.png" width="280" alt="macOS app"> | <img src="assets/macos-menubar-preview.png" width="280" alt="Menu bar waiting"> | <img src="assets/macos-menubar-ready-preview.png" width="280" alt="Menu bar ready"> |
+
+</div>
 
 ### 📱 iOS App
 
@@ -57,15 +65,23 @@ Packaged desktop applications include the required runtime and browser component
 
 ### 🐧 Linux CLI
 
+<div align="center">
+
 | Terminal |
-|:---:|
-| ![Linux CLI](assets/linux-cli.png) |
+| :-: |
+| <img src="assets/linux-cli.png" width="640" alt="Linux CLI"> |
+
+</div>
 
 ### 🤖 Android
 
+<div align="center">
+
 | Main | Settings |
-|:---:|:---:|
-| ![Android main](assets/android-gui-index.png) | ![Android settings](assets/android-setting-gui.png) |
+| :-: | :-: |
+| <img src="assets/android-gui-index.png" width="230" alt="Android main"> | <img src="assets/android-setting-gui.png" width="230" alt="Android settings"> |
+
+</div>
 
 ### 🐳 WebUI (experimental) · coming soon
 

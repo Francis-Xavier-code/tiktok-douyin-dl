@@ -34,15 +34,23 @@
 
 ### 🖥️ Windows 图形界面
 
+<div align="center">
+
 | 主界面 | 更新检查 |
-|:---:|:---:|
-| ![Windows 图形界面](assets/windows-gui.png) | ![更新检查](assets/windows-gui-autoupdate-checkNewVison.png) |
+| :-: | :-: |
+| <img src="assets/windows-gui.png" width="380" alt="主界面"> | <img src="assets/windows-gui-autoupdate-checkNewVison.png" width="380" alt="更新检查"> |
+
+</div>
 
 ### 🍎 macOS App
 
+<div align="center">
+
 | 主界面 | 菜单栏 · 等待分享链接 | 菜单栏 · 识别链接 |
-|:---:|:---:|:---:|
-| ![macOS 主界面](assets/macos-gui.png) | ![菜单栏等待](assets/macos-menubar-preview.png) | ![菜单栏就绪](assets/macos-menubar-ready-preview.png) |
+| :-: | :-: | :-: |
+| <img src="assets/macos-gui.png" width="280" alt="主界面"> | <img src="assets/macos-menubar-preview.png" width="280" alt="菜单栏等待"> | <img src="assets/macos-menubar-ready-preview.png" width="280" alt="菜单栏就绪"> |
+
+</div>
 
 ### 📱 iOS App
 
@@ -59,15 +67,23 @@
 
 ### 🐧 Linux 命令行
 
+<div align="center">
+
 | 终端 |
-|:---:|
-| ![Linux CLI](assets/linux-cli.png) |
+| :-: |
+| <img src="assets/linux-cli.png" width="640" alt="Linux CLI"> |
+
+</div>
 
 ### 🤖 Android
 
+<div align="center">
+
 | 主界面 | 设置 |
-|:---:|:---:|
-| ![Android 主界面](assets/android-gui-index.png) | ![Android 设置](assets/android-setting-gui.png) |
+| :-: | :-: |
+| <img src="assets/android-gui-index.png" width="230" alt="主界面"> | <img src="assets/android-setting-gui.png" width="230" alt="设置"> |
+
+</div>
 
 ### 🐳 WebUI（实验性）· 即将上线
 
