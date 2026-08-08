@@ -15,10 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **[CLI]** 内置无头浏览器：Windows / Linux / macOS CLI 产物现在随包附带 Playwright headless Chromium（`ms-playwright/` 侧车目录，仅 headless shell，~200MB），首次运行不再需要联网下载浏览器；没有侧车时回退到原有自动下载。Windows GUI 安装包同步改用 `--only-shell`，安装包体积大幅缩小。
+- **[CLI]** 内置无头浏览器：Windows / Linux / macOS CLI 产物现在随包附带 Playwright headless Chromium（`ms-playwright/` 侧车目录，仅 headless shell，~200MB），首次运行不再需要联网下载浏览器；没有侧车时回退到原有自动下载。
 - **[CLI]** macOS CLI 打包：新增 `scripts/build-macos-cli.sh`（PyInstaller 单文件），按 Apple 芯片（arm64）与 Intel（x86_64）双架构产出 `MediaDownloader-macOS-{arch}-CLI-{version}.zip`；CI 每次 Release 自动构建上传。`install.sh` 一键安装脚本现同时支持 Linux 与 macOS，并在 macOS 上自动解除 quarantine 属性。
 - **[全平台]** 更新日志自动识别显示：新增机器可读的 `changelog.json`（由 `scripts/update-changelog-json.py` 从 CHANGELOG.md 自动生成，`release.sh` 发版时自动刷新）。CLI / Windows GUI / macOS / iOS / Android 检查更新时自动拉取该文件（直连 + 国内镜像兜底），并按端过滤只显示本端相关的更新内容。
-- **[Windows]** GUI 自动识别平台：粘贴/输入链接后自动识别抖音或 TikTok 并切换平台下拉框（可手动覆盖）；同时包含两种平台的链接会报错提示分开下载。
+- **[Windows]** GUI 自动识别平台：粘贴/输入链接后自动识别抖音或 TikTok 并切换平台下拉框（可手动覆盖）；同时包含两种平台的链接会报错提示分开下载。Windows GUI 安装包同步内置无头浏览器，无需额外下载浏览器，安装改用 `--only-shell`，安装包体积大幅缩小。
 - **[Windows]** 修复更新弹窗：改用共享 changelog.json 替代被限流/被墙的 GitHub API，更新日志不再截断 300 字。
 - **[iOS]** 修复更新检测：改为读取共享 changelog.json 获取最新版本与更新日志（原来查找不存在的 `ios-v*` 标签，永远检测不到更新）。
 - **[macOS]** 检查更新：主窗口与菜单栏新增「检查更新」，弹窗显示新版本与按端过滤的更新日志（可一键打开更新包/前往发布页）；被版本策略硬阻挡时自动下载 DMG 更新。
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[Windows]** 关于窗口显示项目贡献者：带头像、可点击跳转贡献者主页；数据直接取自 GitHub 贡献者页面（非 REST API，避免限流），加载失败时回退为贡献者页面链接。
 - **[CLI]** 更新检测免限流：检查更新不再调用 GitHub REST API（api.github.com，匿名 60 次/小时限制），改用共享 changelog.json 镜像获取版本与更新日志（与 Windows / macOS / iOS 一致）；自更新支持新版归档资产（zip / tar.gz，含浏览器侧车），自动解压替换。
 - **[CLI]** install.sh 安装时展示本版本更新日志：安装完成后打印当前版本 CLI + 全平台（[全平台]）的更新内容（changelog.json 镜像，python3 解析，缺失时静默跳过）。
+- **[CLI]** 新增windows在线下载脚本，Windows端提供在线卸载命令。
 
 ## [1.8.2] - 2026-08-06
 
