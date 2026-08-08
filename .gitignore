@@ -29,6 +29,9 @@ xcuserdata/
 # Download outputs
 douyin_downloads/
 
+# Signing keys (never commit!)
+secrets/
+
 # Android 模拟器运行时杂物
 emulator_start.log
 temp_home/
