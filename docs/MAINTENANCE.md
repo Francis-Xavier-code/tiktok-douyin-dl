@@ -152,6 +152,28 @@ CI 产出的 Release 资产（命名必须记住，别改错）：
 - **确认 Release 资产齐全**（6 类产物都在）。
 - 若本次要**强制旧版升级**：发版前跑 `python3 scripts/sync-versions.py --policies`（把 `min_version` 同步成新版本），再发。
 
+### PyPI 包发布（tiktok-douyin-dl）
+
+`python/` 目录本身就是可发布的 PyPI 包（**`tiktok-douyin-dl`**），兼具两种用途：
+
+- **工具**：安装后有 `media-downloader` / `douyin-dl` / `tiktok-dl` 三个命令（`[project.scripts]`）。
+- **依赖库**：`import media_downloader`，用 `core.DownloadRequest` + `core.downloader.download()` 嵌入自己的项目。
+
+注意：PyPI 分发名 `tiktok-douyin-dl` ≠ import 名 `media_downloader`（同名包在 PyPI 已被别人占用，故改名）。**不要**把 PyPI 名改回 `media-downloader`。
+
+**发版步骤**（与主发版流程同步，版本号三处由 sync-versions 自动同步：`pyproject.toml` / `core/updater.py VERSION` / `__init__.py __version__`）：
+
+```bash
+cd python && uv sync && uv build   # 产出 dist/tiktok_douyin_dl-<v>.*
+UV_PUBLISH_TOKEN=<pypi-token> uv publish   # 或 twine upload dist/*
+```
+
+**更新逻辑与渠道**（容易混淆，记牢）：
+
+- 更新**提示**走 GitHub releases（`updater.py` 读 `changelog.json` + `/releases/latest`），PyPI 包和打包版共用，逻辑不变。
+- 实际**更新渠道**分两条路：打包版（PyInstaller）走 `perform_self_update` 下载 GitHub 资产自更新；**pip 安装的只能 `pip install --upgrade tiktok-douyin-dl`**，`perform_self_update` 对 pip 安装无效。
+- 因此：**上调 `version-policy.json` 的 `min_version` 前，必须先把新版发到 PyPI**，否则旧版用户“升无可升”，策略提示成空话。
+
 ---
 
 ## 6. 远程策略维护（两个 JSON，语义相反，别记反）
