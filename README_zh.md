@@ -115,6 +115,17 @@
 
 在[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载 `douyin-download-Android-<ver>.apk` 并安装到手机（需允许「安装未知来源应用」）。
 
+### 🐍 Python CLI (PyPI)
+
+从 PyPI 安装 Python 包（支持 Windows / Linux / macOS）：
+
+```bash
+pip install tiktok-douyin-dl
+python -m playwright install chromium
+```
+
+安装后可直接使用 `media-downloader`、`douyin-dl` 或 `tiktok-dl` 命令。
+
 ### 🐧 Linux / 🍎 macOS 用户 (CLI 命令行)
 
 在终端运行以下命令，即可自动拉取最新 CLI（Linux x86_64 / macOS Apple 芯片 arm64）并软链接至 `~/.local/bin`：

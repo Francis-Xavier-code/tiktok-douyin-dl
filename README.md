@@ -113,6 +113,17 @@ Visit the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-d
 
 Download `douyin-download-Android-<ver>.apk` from the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) and install it on your phone (allow installing from unknown sources).
 
+### 🐍 Python CLI (PyPI)
+
+Install the Python package from PyPI (works on Windows / Linux / macOS):
+
+```bash
+pip install tiktok-douyin-dl
+python -m playwright install chromium
+```
+
+Then run `media-downloader`, `douyin-dl`, or `tiktok-dl`.
+
 ### 🐧 Linux / 🍎 macOS CLI Users
 
 Run the following command in your terminal to download the latest CLI (Linux x86_64, macOS Apple Silicon arm64) and create symlinks in `~/.local/bin`:
