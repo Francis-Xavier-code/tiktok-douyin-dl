@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "media-downloader"
+name = "tiktok-douyin-dl"
 version = "2.0.0"
 description = "TikTok and Douyin media downloader core and CLI"
 readme = "README.md"

@@ -1,6 +1,13 @@
 # MediaDownloader Python package
 
-Install the CLI and core package from the repository root:
+Install from PyPI:
+
+```bash
+pip install tiktok-douyin-dl
+python -m playwright install chromium
+```
+
+Or from the repository root (development):
 
 ```bash
 python -m pip install -e ./python
