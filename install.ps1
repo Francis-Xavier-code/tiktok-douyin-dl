@@ -42,6 +42,91 @@ function Write-Colored($Color, $Text) {
     Write-Host -ForegroundColor $Color $Text
 }
 
+# -----------------------------------------------------------------------------
+# Pretty progress-bar download helpers (style inspired by the Pi installer)
+# -----------------------------------------------------------------------------
+$script:spIdx = 0
+
+function Draw-Progress {
+    param([int]$Pct, [string]$Label)
+    $esc = [char]27
+    $spinners = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    $sp = $spinners[$script:spIdx % $spinners.Length]
+    $script:spIdx++
+    $width = 30
+    $filled = [math]::Floor($Pct * $width / 100)
+    if ($filled -gt $width) { $filled = $width }
+    if ($filled -lt 0) { $filled = 0 }
+    $third = [math]::Floor($width / 3)
+    $sb = [System.Text.StringBuilder]::new()
+    for ($i = 0; $i -lt $width; $i++) {
+        if ($i -lt $filled) {
+            if ($i -lt $third) { [void]$sb.Append("${esc}[32m█${esc}[0m") }
+            elseif ($i -lt ($third * 2)) { [void]$sb.Append("${esc}[36m█${esc}[0m") }
+            else { [void]$sb.Append("${esc}[33m█${esc}[0m") }
+        }
+        elseif ($i -eq $filled) { [void]$sb.Append("${esc}[1;37m▓${esc}[0m") }
+        else { [void]$sb.Append("${esc}[2m░${esc}[0m") }
+    }
+    $pctStr = if ($Pct -lt 0) { ' --' } else { '{0,3}' -f $Pct }
+    Write-Host "`r${esc}[K  $sp $($sb.ToString()) $pctStr% $Label" -NoNewline
+}
+
+function Invoke-DownloadWithProgress {
+    param([string]$Url, [string]$OutFile, [string]$Label)
+
+    $total = 0L
+    try {
+        $headReq = [System.Net.HttpWebRequest]::Create($Url)
+        $headReq.Method = 'HEAD'
+        $headReq.UserAgent = 'MediaDownloader-Installer'
+        $headReq.Timeout = 20000
+        $headResp = $headReq.GetResponse()
+        try { $total = $headResp.ContentLength } finally { $headResp.Close() }
+    } catch {
+        $total = 0
+    }
+
+    $handler = New-Object System.Net.Http.HttpClientHandler
+    $client = New-Object System.Net.Http.HttpClient($handler)
+    $client.DefaultRequestHeaders.UserAgent.ParseAdd('MediaDownloader-Installer')
+    try {
+        $resp = $client.GetAsync($Url, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+        if (-not $resp.IsSuccessStatusCode) {
+            throw "HTTP $([int]$resp.StatusCode) $($resp.StatusCode)"
+        }
+        if ($total -le 0) {
+            $cl = $resp.Content.Headers.ContentLength
+            if ($cl -and $cl -gt 0) { $total = $cl } else { $total = 0 }
+        }
+        $stream = $resp.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+        $fs = [System.IO.File]::Create($OutFile)
+        $buffer = New-Object byte[] (81920)
+        $downloaded = 0L
+        $last = 0
+        try {
+            while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $fs.Write($buffer, 0, $read)
+                $downloaded += $read
+                $now = [Environment]::TickCount
+                if ($total -gt 0 -and ($now - $last) -gt 60) {
+                    $pct = [math]::Floor($downloaded * 100 / $total)
+                    Draw-Progress -Pct $pct -Label $Label
+                    $last = $now
+                }
+            }
+        } finally {
+            $fs.Dispose()
+            $stream.Dispose()
+            $resp.Dispose()
+        }
+        if ($total -gt 0) { Draw-Progress -Pct 100 -Label $Label }
+        Write-Host ""
+    } finally {
+        $client.Dispose()
+    }
+}
+
 # 1. Choose language (auto-detect from system locale; -Lang overrides)
 if (-not $Lang) {
     $Lang = if ((Get-Culture).Name -like "zh*") { "zh" } else { "en" }
@@ -86,17 +171,21 @@ $mirrorUrls = @(
 
 $tmpZip = Join-Path $env:TEMP ("MediaDownloader-" + [guid]::NewGuid().ToString("N") + ".zip")
 $downloaded = $false
+$script:spIdx = 0
 
+$mirrorTotal = $mirrorUrls.Count
+$mirrorIdx = 0
 foreach ($url in $mirrorUrls) {
-    Write-Host (T "⚡ 正在尝试下载 $archive ..." "⚡ Trying to download $archive ...")
-    Write-Host ("   " + $url)
+    $mirrorIdx++
+    $dlLabel = T "下载 $archive (镜像 $mirrorIdx/$mirrorTotal)" "Downloading $archive (mirror $mirrorIdx/$mirrorTotal)"
     try {
-        Invoke-WebRequest -Uri $url -OutFile $tmpZip -UseBasicParsing `
-            -TimeoutSec 300 -Headers @{ "User-Agent" = "MediaDownloader-Installer" } -ErrorAction Stop
+        Invoke-DownloadWithProgress -Url $url -OutFile $tmpZip -Label $dlLabel
         $downloaded = $true
         break
     } catch {
+        Write-Host ""
         Write-Host (T "   ⚠ 下载失败，尝试下一个源..." "   ⚠ Download failed, trying next mirror...")
+        Remove-Item -Force $tmpZip -ErrorAction SilentlyContinue
     }
 }
 

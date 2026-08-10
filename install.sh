@@ -44,6 +44,129 @@ fi
 # Write language configuration
 echo "{\"lang\": \"$USER_LANG\"}" > "$INSTALL_DIR/config.json"
 
+# -----------------------------------------------------------------------------
+# Pretty progress-bar download helpers (style inspired by the Pi installer)
+# -----------------------------------------------------------------------------
+PROGRESS_WIDTH=30
+PROGRESS_ESC=$(printf '\033')
+
+progress_spinner() {
+    case $(($1 % 10)) in
+        0) printf '⠋' ;;
+        1) printf '⠙' ;;
+        2) printf '⠹' ;;
+        3) printf '⠸' ;;
+        4) printf '⠼' ;;
+        5) printf '⠴' ;;
+        6) printf '⠦' ;;
+        7) printf '⠧' ;;
+        8) printf '⠇' ;;
+        *) printf '⠏' ;;
+    esac
+}
+
+file_size() {
+    local f=$1
+    if [ -f "$f" ]; then
+        if [ "$(uname -s)" = "Darwin" ]; then
+            stat -f%z "$f" 2>/dev/null || echo 0
+        else
+            stat -c%s "$f" 2>/dev/null || echo 0
+        fi
+    else
+        echo 0
+    fi
+}
+
+remote_size() {
+    local url=$1
+    curl -sIL --connect-timeout 8 --max-time 20 "$url" 2>/dev/null \
+        | tr -d '\r' \
+        | awk -F': ' 'tolower($1)=="content-length" {len=$2} END {gsub(/[^0-9]/,"",len); print len+0}'
+}
+
+# Draw one frame of the progress bar: $1=pct(-1 if unknown), $2=frame step, $3=label
+render_progress() {
+    local pct=$1 step=$2 label=$3
+    local esc="$PROGRESS_ESC"
+    local width=$PROGRESS_WIDTH
+    local reset="${esc}[0m" dim="${esc}[2m" bold="${esc}[1m"
+    local green="${esc}[32m" cyan="${esc}[36m" yellow="${esc}[33m" white="${esc}[37m"
+    local spinner
+    spinner=$(progress_spinner "$step")
+    local filled=$(( pct * width / 100 ))
+    [ "$filled" -gt "$width" ] && filled=$width
+    [ "$filled" -lt 0 ] && filled=0
+    local bar="" i=0 third=$((width / 3))
+    while [ "$i" -lt "$width" ]; do
+        if [ "$i" -lt "$filled" ]; then
+            if [ "$i" -lt "$third" ]; then
+                bar="${bar}${green}█${reset}"
+            elif [ "$i" -lt $((third * 2)) ]; then
+                bar="${bar}${cyan}█${reset}"
+            else
+                bar="${bar}${yellow}█${reset}"
+            fi
+        elif [ "$i" -eq "$filled" ]; then
+            bar="${bar}${bold}${white}▓${reset}"
+        else
+            bar="${bar}${dim}░${reset}"
+        fi
+        i=$((i + 1))
+    done
+    local pct_str
+    if [ "$pct" -lt 0 ]; then
+        pct_str=" --"
+    else
+        pct_str=$(printf '%3d' "$pct")
+    fi
+    printf '\r\033[K  %s %s %s%% %s' "$spinner" "$bar" "$pct_str" "$label"
+}
+
+# Download a file while animating a colored progress bar. Returns curl's status.
+download_with_progress() {
+    local url=$1 output=$2 label=$3
+    local size
+    size=$(remote_size "$url")
+    local err_file="${output}.err"
+    rm -f "$err_file"
+
+    curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -sS "$url" -o "$output" 2>"$err_file" &
+    local pid=$!
+    local downloaded=0 pct=-1 step=0
+
+    while kill -0 "$pid" 2>/dev/null; do
+        downloaded=$(file_size "$output")
+        if [ "$size" -gt 0 ]; then
+            pct=$((downloaded * 100 / size))
+            [ "$pct" -gt 100 ] && pct=100
+        else
+            pct=-1
+        fi
+        render_progress "$pct" "$step" "$label"
+        step=$((step + 1))
+        sleep 0.08
+    done
+
+    local status=0
+    if ! wait "$pid"; then
+        status=$?
+    fi
+
+    if [ "$status" -eq 0 ]; then
+        if [ "$size" -gt 0 ]; then pct=100; else pct=-1; fi
+        render_progress "$pct" "$step" "$label"
+        printf '\n'
+    else
+        printf '\n'
+        if [ -s "$err_file" ]; then
+            sed 's/^/   /' "$err_file" >&2 || true
+        fi
+    fi
+    rm -f "$err_file"
+    return "$status"
+}
+
 # 2. Install binaries (local or remote)
 install_binary() {
     local name=$1
@@ -90,18 +213,28 @@ install_binary() {
         tmp_archive="$(mktemp)"
         local download_ok=false
 
+        local mirror_idx=1
+        local mirror_total=${#MIRROR_URLS[@]}
         for url in "${MIRROR_URLS[@]}"; do
+            local dl_label
             if [ "$USER_LANG" = "zh" ]; then
-                echo -e "⚡ 正在尝试下载 $archive_name ..."
+                dl_label="下载 $archive_name (镜像 $mirror_idx/$mirror_total)"
             else
-                echo -e "⚡ Trying to download $archive_name ..."
+                dl_label="Downloading $archive_name (mirror $mirror_idx/$mirror_total)"
             fi
-            echo -e "   ${BLUE}$url${NC}"
-
-            if curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -# "$url" -o "$tmp_archive" 2>/dev/null; then
+            if download_with_progress "$url" "$tmp_archive" "$dl_label"; then
                 download_ok=true
                 break
             fi
+            rm -f "$tmp_archive"
+            if [ "$mirror_idx" -lt "$mirror_total" ]; then
+                if [ "$USER_LANG" = "zh" ]; then
+                    echo -e "   ⚠ 下载失败，尝试下一个镜像..."
+                else
+                    echo -e "   ⚠ Download failed, trying next mirror..."
+                fi
+            fi
+            mirror_idx=$((mirror_idx + 1))
         done
 
         if [ "$download_ok" != "true" ]; then
