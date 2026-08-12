@@ -35,6 +35,7 @@ NO_COLOR=0
 INTERACTIVE=0
 ASSUME_YES=0
 FORCE=0
+FORCE_MENU=0
 DO_UNINSTALL=0
 FORCE_LANG=""
 NEED_SOURCE=false
@@ -97,13 +98,16 @@ usage() {
 Usage: install.sh [options]
 
 Run without options on an interactive terminal to choose an action from a menu
-(install / force-reinstall / uninstall / exit). Options are for scripting and
-piped installs (curl URL | bash -s -- <option>):
+(install / force-reinstall / changelog / uninstall / exit). The menu also shows
+for `curl URL | bash` when the terminal exposes /dev/tty; otherwise pass options
+explicitly. For a guaranteed interactive menu, download and run the file:
+  curl -fsSL <url> -o /tmp/install.sh && bash /tmp/install.sh
 
 Options:
   --lang zh|en     Force language (auto-detected from $LANG by default)
   --yes, -y        Skip all prompts (non-interactive mode)
   --force          Reinstall even when the same version is already installed
+  --menu, -m       Force the interactive action menu
   --uninstall      Remove the installation, the command link and PATH entries
   --no-color       Disable ANSI colors
   --quiet          Only print warnings and errors
@@ -124,6 +128,7 @@ parse_args() {
                 ;;
             --yes|-y) ASSUME_YES=1; shift ;;
             --force|-f) FORCE=1; shift ;;
+            --menu|-m) FORCE_MENU=1; shift ;;
             --uninstall) DO_UNINSTALL=1; shift ;;
             --no-color) NO_COLOR=1; shift ;;
             --quiet|-q) QUIET=1; shift ;;
@@ -138,15 +143,27 @@ detect_tty() {
     [ -t 1 ] && ANIMATE=1 || ANIMATE=0
     [ "$NO_COLOR" = "1" ] && USE_COLOR=0
     [ "$QUIET" = "1" ] && { ANIMATE=0; USE_COLOR=0; }
-    # Interactive prompts read from /dev/tty so they keep working even when the
-    # script itself is piped in (e.g. `curl URL | bash`), as long as the user
-    # is sitting at a real terminal.
-    if : < /dev/tty 2>/dev/null; then
+    # A prompt/menu is possible when either stdin is a real terminal, or a
+    # controlling /dev/tty exists (the latter covers `curl URL | bash`, where
+    # stdin is the pipe but the user is still sitting at a terminal).
+    INTERACTIVE=0
+    [ -t 0 ] && INTERACTIVE=1
+    if [ "$INTERACTIVE" = "0" ] && : < /dev/tty 2>/dev/null; then
         INTERACTIVE=1
-    else
-        INTERACTIVE=0
     fi
     return 0
+}
+
+# Read one line from the user. $1 = variable name. Prefers /dev/tty so it also
+# works when the script itself is piped in (`curl URL | bash`); falls back to
+# stdin when that is a terminal. Leaves the variable unset when nothing is
+# available (fully non-interactive), so callers must use a default.
+read_user_line() {
+    if : < /dev/tty 2>/dev/null; then
+        read -r "$1" < /dev/tty || true
+    elif [ -t 0 ]; then
+        read -r "$1" || true
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -177,7 +194,7 @@ choose_language() {
         printf '        1) 简体中文\n        2) English\n'
         printf '    %s [1-2]（回车 = %s）: ' "$(color '1;33' '请输入序号 / Enter option')" "$default_num"
         local ans=""
-        if read -r ans < /dev/tty; then :; else ans=""; fi
+        read_user_line ans
         case "$ans" in
             2|en|EN|english) USER_LANG="en" ;;
             1|zh|ZH|zh_CN) USER_LANG="zh" ;;
@@ -443,7 +460,7 @@ check_upgrade() {
         if [ "$ASSUME_YES" = "0" ] && [ "$INTERACTIVE" = "1" ]; then
             printf '    %s ' "$(T "已安装 v${current}，是否重新安装？[y/N]：" "v${current} is already installed. Reinstall? [y/N]: ")"
             local ans=""
-            if read -r ans < /dev/tty; then :; else ans=""; fi
+            read_user_line ans
             if [ "$ans" = "y" ] || [ "$ans" = "Y" ] || [ "$ans" = "yes" ]; then
                 return 0
             fi
@@ -766,7 +783,7 @@ run_menu() {
         printf '    5) %s\n' "$(T "退出" "Exit")"
         printf '    %s [1-5]: ' "$(color '1;33' "$(T "请输入 / Enter" "Enter")")"
         local choice=""
-        if read -r choice < /dev/tty; then :; else choice=""; fi
+        read_user_line choice
         case "$choice" in
             1) FORCE=0; printf '\n'; return 0 ;;
             2) FORCE=1; printf '\n'; return 0 ;;
@@ -796,8 +813,8 @@ main() {
     print_banner
 
     # Interactive menu unless an explicit action was given on the command line.
-    if [ "$INTERACTIVE" = "1" ] && [ "$ASSUME_YES" = "0" ] \
-        && [ "$FORCE" = "0" ] && [ -z "$FORCE_LANG" ]; then
+    if [ "$ASSUME_YES" = "0" ] && [ -z "$FORCE_LANG" ] && [ "$FORCE" = "0" ] \
+        && { [ "$INTERACTIVE" = "1" ] || [ "$FORCE_MENU" = "1" ]; }; then
         run_menu
     fi
 
