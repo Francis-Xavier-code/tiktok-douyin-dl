@@ -98,7 +98,7 @@ usage() {
 Usage: install.sh [options]
 
 Run without options on an interactive terminal to choose an action from a menu
-(install / force-reinstall / changelog / uninstall / exit). The menu also shows
+(install / changelog / uninstall / exit). The menu also shows
 for `curl URL | bash` when the terminal exposes /dev/tty; otherwise pass options
 explicitly. For a guaranteed interactive menu, download and run the file:
   curl -fsSL <url> -o /tmp/install.sh && bash /tmp/install.sh
@@ -148,7 +148,9 @@ detect_tty() {
     # stdin is the pipe but the user is still sitting at a terminal).
     INTERACTIVE=0
     [ -t 0 ] && INTERACTIVE=1
-    if [ "$INTERACTIVE" = "0" ] && : < /dev/tty 2>/dev/null; then
+    # { : < /dev/tty; } 2>/dev/null — plain `: < /dev/tty 2>/dev/null` leaks the
+    # redirection error to stderr when no controlling terminal exists.
+    if [ "$INTERACTIVE" = "0" ] && { : < /dev/tty; } 2>/dev/null; then
         INTERACTIVE=1
     fi
     return 0
@@ -159,7 +161,7 @@ detect_tty() {
 # stdin when that is a terminal. Leaves the variable unset when nothing is
 # available (fully non-interactive), so callers must use a default.
 read_user_line() {
-    if : < /dev/tty 2>/dev/null; then
+    if { : < /dev/tty; } 2>/dev/null; then
         read -r "$1" < /dev/tty || true
     elif [ -t 0 ]; then
         read -r "$1" || true
@@ -177,7 +179,7 @@ detect_lang() {
 }
 
 choose_language() {
-    local detected
+    local detected saved=""
     detected=$(detect_lang)
     USER_LANG="$detected"
 
@@ -187,12 +189,16 @@ choose_language() {
         return 0
     fi
 
+    # Reuse the language chosen on a previous run instead of re-asking.
+    saved=$(awk -F'"' '/"lang"/{print $4}' "$INSTALL_DIR/config.json" 2>/dev/null || true)
+    case "$saved" in
+        zh|en) USER_LANG="$saved"; return 0 ;;
+    esac
+
     if [ "$INTERACTIVE" = "1" ] && [ "$ASSUME_YES" = "0" ]; then
-        local default_num=1
-        [ "$detected" = "en" ] && default_num=2
-        printf '\n    %s %s\n' "$(color '1;33' '🌐')" "$(T "请选择语言 / Choose a language:" "Please choose a language:")"
-        printf '        1) 简体中文\n        2) English\n'
-        printf '    %s [1-2]（回车 = %s）: ' "$(color '1;33' '请输入序号 / Enter option')" "$default_num"
+        printf '\n    %s\n' "$(color '1;33' "$(T "请选择语言:" "Choose a language:")")"
+        printf '    1) 简体中文\n    2) English\n'
+        printf '    %s [1-2]（回车 = %s）: ' "$(color '1;33' "$(T "请输入" "Enter")")" "$(T "自动检测" "auto-detect")"
         local ans=""
         read_user_line ans
         case "$ans" in
@@ -200,9 +206,8 @@ choose_language() {
             1|zh|ZH|zh_CN) USER_LANG="zh" ;;
             *) USER_LANG="$detected" ;;
         esac
+        ok "$(T "语言：简体中文" "Language: English")"
     fi
-
-    ok "$(T "语言：简体中文" "Language: English")"
 }
 
 # -----------------------------------------------------------------------------
@@ -210,13 +215,9 @@ choose_language() {
 # -----------------------------------------------------------------------------
 print_banner() {
     [ "$QUIET" = "1" ] && return
-    local line
-    line=$(color '36' "──────────────────────────────────────────────")
-    printf '\n%s\n' "$line"
-    printf '%s\n' "$(color '1;36' "   🚀  TikTok & Douyin Downloader  一键安装 / One-Click Installer")"
-    printf '%s\n' "$(color '36' "       $GITHUB_USER/$GITHUB_REPO  ·  $RELEASE_TAG")"
-    printf '%s\n' "$line"
-    printf '\n'
+    printf '\n%s\n' "$(color '1;36' "🚀  TikTok & Douyin Downloader")"
+    printf '%s\n' "$(color '90' "    $GITHUB_USER/$GITHUB_REPO · v${RELEASE_TAG#v}")"
+    printf '%s\n\n' "$(color '90' "    ────────────────────────────────")"
 }
 
 # -----------------------------------------------------------------------------
@@ -255,7 +256,6 @@ detect_env() {
 # Download progress helpers
 # -----------------------------------------------------------------------------
 PROGRESS_WIDTH=30
-PROGRESS_ESC=$(printf '\033')
 
 progress_spinner() {
     case $(($1 % 10)) in
@@ -298,39 +298,27 @@ human_size() {
 }
 
 # Render one frame: $1=pct(-1 unknown) $2=frame $3=label $4=downloaded $5=total
+# Optional $6=1 renders a final ✔ line instead of a spinner.
 render_progress() {
-    local pct=$1 frame=$2 label=$3 got=$4 total=$5
-    local esc="$PROGRESS_ESC"
+    local pct=$1 frame=$2 label=$3 got=$4 total=$5 done=${6:-0}
     local width=$PROGRESS_WIDTH
-    local reset="${esc}[0m" dim="${esc}[2m" bold="${esc}[1m"
-    local green="${esc}[32m" cyan="${esc}[36m" yellow="${esc}[33m"
-    local spinner
-    spinner=$(progress_spinner "$frame")
 
-    local filled=0 third=$((width / 3)) i=0
+    local filled=0 i=0 bar=""
     if [ "$pct" -ge 0 ]; then
         filled=$(( pct * width / 100 ))
         [ "$filled" -gt "$width" ] && filled=$width
     fi
-    local bar=""
     while [ "$i" -lt "$width" ]; do
-        if [ "$i" -lt "$filled" ]; then
-            if [ "$i" -lt "$third" ]; then
-                bar="${bar}${green}█${reset}"
-            elif [ "$i" -lt $((third * 2)) ]; then
-                bar="${bar}${cyan}█${reset}"
-            else
-                bar="${bar}${yellow}█${reset}"
-            fi
-        elif [ "$i" -eq "$filled" ] && [ "$pct" -ge 0 ]; then
-            bar="${bar}${bold}${esc}[37m▓${reset}"
-        else
-            bar="${bar}${dim}░${reset}"
-        fi
+        if [ "$i" -lt "$filled" ]; then bar="${bar}█"; else bar="${bar}░"; fi
         i=$((i + 1))
     done
 
-    local pct_str size_str=""
+    local mark pct_str size_str=""
+    if [ "$done" = "1" ]; then
+        mark="$(color '32' '✔')"
+    else
+        mark="$(color '36' "$(progress_spinner "$frame")")"
+    fi
     if [ "$pct" -lt 0 ]; then
         pct_str="  --"
     else
@@ -342,7 +330,7 @@ render_progress() {
         size_str=" $(human_size "$got")"
     fi
 
-    printf '\r\033[K  %s %s %s%%%s %s ' "$spinner" "$bar" "$pct_str" "$size_str" "$label"
+    printf '\r  %s %s %s%%%s %s ' "$mark" "$(color '32' "$bar")" "$pct_str" "$size_str" "$label"
 }
 
 # Download a file. Animates a colored progress bar on a TTY, stays silent
@@ -373,12 +361,12 @@ download_with_progress() {
         wait "$pid" || status=$?
         if [ "$status" -eq 0 ]; then
             if [ "$total" -gt 0 ]; then
-                render_progress 100 "$frame" "$label" "$total" "$total"
+                render_progress 100 "$frame" "$label" "$total" "$total" 1
             else
-                render_progress -1 "$frame" "$label" "$(file_size "$output")" 0
+                render_progress -1 "$frame" "$label" "$(file_size "$output")" 0 1
             fi
         fi
-        printf '\r\033[K'
+        printf '\n'
     else
         curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -sS "$url" -o "$output" 2>"$err_file" || status=$?
     fi
@@ -768,28 +756,26 @@ do_uninstall() {
 # -----------------------------------------------------------------------------
 run_menu() {
     while true; do
-        local installed=""
         if [ -x "$INSTALL_DIR/$CLI_NAME" ]; then
+            local installed=""
             installed="$(installed_version 2>/dev/null)" || installed=""
-            printf '    %s\n' "$(color '1;33' "⚙  $(T "当前已安装:" "Currently installed:") v${installed:-?}")"
+            printf '    %s\n' "$(color '1;33' "$(T "当前已安装: v${installed:-?}" "Currently installed: v${installed:-?}")")"
         else
-            printf '    %s\n' "$(color '33' "ℹ  $(T "未检测到已安装的程序" "No installation detected")")"
+            printf '    %s\n' "$(color '33' "$(T "未检测到已安装的程序" "No installation detected")")"
         fi
-        printf '\n    %s\n' "$(color '1;36' "$(T "请选择操作 / Choose an action:" "Choose an action:")")"
-        printf '    1) %s\n' "$(T "🚀 安装 / 重新安装" "🚀 Install / Reinstall")"
-        printf '    2) %s\n' "$(T "🔁 强制重新安装" "🔁 Force reinstall")"
-        printf '    3) %s\n' "$(T "📝 查看更新日志" "📝 View changelog")"
-        printf '    4) %s\n' "$(T "🗑  卸载" "🗑  Uninstall")"
-        printf '    5) %s\n' "$(T "退出" "Exit")"
-        printf '    %s [1-5]: ' "$(color '1;33' "$(T "请输入 / Enter" "Enter")")"
+        printf '\n    %s\n' "$(color '1;36' "$(T "请选择操作:" "Choose an action:")")"
+        printf '    1) %s\n' "$(T "安装程序（已安装则覆盖重装）" "Install (overwrite if already installed)")"
+        printf '    2) %s\n' "$(T "查看更新日志" "View changelog")"
+        printf '    3) %s\n' "$(T "卸载" "Uninstall")"
+        printf '    4) %s\n' "$(T "退出" "Exit")"
+        printf '    %s [1-4]（回车 = 1）: ' "$(color '1;33' "$(T "请输入" "Enter")")"
         local choice=""
         read_user_line choice
         case "$choice" in
-            1) FORCE=0; printf '\n'; return 0 ;;
-            2) FORCE=1; printf '\n'; return 0 ;;
-            3) show_changelog; printf '\n'; continue ;;
-            4) do_uninstall; exit 0 ;;
-            5|q|Q|exit) printf '\n'; exit 0 ;;
+            1|"") printf '\n'; return 0 ;;
+            2) show_changelog; printf '\n' ;;
+            3) do_uninstall; exit 0 ;;
+            4|q|Q|exit) printf '\n'; exit 0 ;;
             *) warn "$(T "无效选项: $choice" "Invalid option: $choice")"; printf '\n' ;;
         esac
     done
