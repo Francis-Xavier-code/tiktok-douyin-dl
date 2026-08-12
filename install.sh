@@ -1,9 +1,20 @@
 #!/bin/bash
 # -----------------------------------------------------------------------------
 # TikTok & Douyin Downloader - Linux / macOS One-Click Installer
+#
+#   curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh | bash
+#
+# Options:
+#   --lang zh|en     Force language (auto-detected from $LANG by default)
+#   --yes, -y        Skip all prompts (non-interactive mode)
+#   --force          Reinstall even when the same version is already installed
+#   --uninstall      Remove the installation, the command link and PATH entries
+#   --no-color       Disable ANSI colors
+#   --quiet          Only print warnings and errors
+#   --help, -h       Show this help
 # -----------------------------------------------------------------------------
 
-set -e
+set -euo pipefail
 
 # GitHub Repository Configuration
 GITHUB_USER="Francis-Xavier-code"
@@ -12,56 +23,217 @@ RELEASE_TAG="v2.0.0"
 
 INSTALL_DIR="$HOME/.local/share/tiktok-douyin-dl"
 BIN_DIR="$HOME/.local/bin"
-
-# Terminal Colors
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-echo -e "${BLUE}==================================================${NC}"
-echo -e "${BLUE}   🚀 TikTok & Douyin Downloader Installer        ${NC}"
-echo -e "${BLUE}==================================================${NC}"
-
-# Create directories
-mkdir -p "$INSTALL_DIR"
-mkdir -p "$BIN_DIR"
-
-# 1. Choose Language
-echo -e "\n${YELLOW}🌐 选择语言 / Choose Language：${NC}"
-echo "1. 简体中文 (Chinese)"
-echo "2. English"
-read -p "请输入选项序号 / Enter option number [1-2] (Default: 1): " LANG_OPT < /dev/tty
-if [ "$LANG_OPT" = "2" ]; then
-    USER_LANG="en"
-    echo -e "✓ Language set to English."
-else
-    USER_LANG="zh"
-    echo -e "✓ 语言设置为：简体中文。"
-fi
-
-# Write language configuration
-echo "{\"lang\": \"$USER_LANG\"}" > "$INSTALL_DIR/config.json"
+CLI_NAME="media-downloader"
 
 # -----------------------------------------------------------------------------
-# Pretty progress-bar download helpers (style inspired by the Pi installer)
+# Global state
+# -----------------------------------------------------------------------------
+USE_COLOR=0
+ANIMATE=0
+QUIET=0
+NO_COLOR=0
+INTERACTIVE=0
+ASSUME_YES=0
+FORCE=0
+DO_UNINSTALL=0
+FORCE_LANG=""
+NEED_SOURCE=false
+USER_LANG=""
+SHOW_CHANGELOG=0
+INSTALLED_VER=""
+
+TMP_FILES=()
+cleanup() {
+    local f
+    for f in "${TMP_FILES[@]:-}"; do
+        rm -f "$f"
+    done
+}
+trap cleanup EXIT
+
+# -----------------------------------------------------------------------------
+# Output helpers — colors and the spinner only run on a real terminal
+# -----------------------------------------------------------------------------
+# color <ansi-code> <text>
+color() {
+    if [ "$USE_COLOR" = "1" ]; then
+        printf '\033[%sm%s\033[0m' "$1" "$2"
+    else
+        printf '%s' "$2"
+    fi
+}
+
+log()  { [ "$QUIET" = "1" ] || printf '%s\n' "$*"; }
+info() { [ "$QUIET" = "1" ] || printf '    %s %s\n' "$(color '36' 'ℹ')" "$*"; }
+ok()   { [ "$QUIET" = "1" ] || printf '    %s %s\n' "$(color '32' '✔')" "$*"; }
+warn() { printf '    %s %s\n' "$(color '33' '⚠')" "$*" >&2; }
+err()  { printf '    %s %s\n' "$(color '31' '✖')" "$*" >&2; }
+
+# --- step framework: "[1/5] ▸ description" --------------------------------
+STEP_TOTAL=0
+STEP_CURRENT=0
+step() {
+    STEP_CURRENT=$((STEP_CURRENT + 1))
+    [ "$QUIET" = "1" ] && return
+    printf '    %s %s %s\n' \
+        "$(color '90' "[$STEP_CURRENT/$STEP_TOTAL]")" \
+        "$(color '1;36' '▸')" \
+        "$*"
+}
+
+# --- i18n: T "中文" "English" ---------------------------------------------
+T() {
+    if [ "$USER_LANG" = "zh" ]; then
+        printf '%s' "$1"
+    else
+        printf '%s' "$2"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# CLI arguments
+# -----------------------------------------------------------------------------
+usage() {
+    cat <<'EOF'
+Usage: install.sh [options]
+
+Options:
+  --lang zh|en     Force language (auto-detected from $LANG by default)
+  --yes, -y        Skip all prompts (non-interactive mode)
+  --force          Reinstall even when the same version is already installed
+  --uninstall      Remove the installation, the command link and PATH entries
+  --no-color       Disable ANSI colors
+  --quiet          Only print warnings and errors
+  --help, -h       Show this help
+EOF
+}
+
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --lang)
+                FORCE_LANG="${2:-}"
+                if [ "$FORCE_LANG" != "zh" ] && [ "$FORCE_LANG" != "en" ]; then
+                    err "Invalid --lang value: '$FORCE_LANG' (expected zh or en)"
+                    exit 2
+                fi
+                shift 2
+                ;;
+            --yes|-y) ASSUME_YES=1; shift ;;
+            --force|-f) FORCE=1; shift ;;
+            --uninstall) DO_UNINSTALL=1; shift ;;
+            --no-color) NO_COLOR=1; shift ;;
+            --quiet|-q) QUIET=1; shift ;;
+            --help|-h) usage; exit 0 ;;
+            *) err "Unknown option: $1"; usage >&2; exit 2 ;;
+        esac
+    done
+}
+
+detect_tty() {
+    [ -t 1 ] && USE_COLOR=1 || USE_COLOR=0
+    [ -t 1 ] && ANIMATE=1 || ANIMATE=0
+    [ -t 0 ] && INTERACTIVE=1 || INTERACTIVE=0
+    [ "$NO_COLOR" = "1" ] && USE_COLOR=0
+    [ "$QUIET" = "1" ] && { ANIMATE=0; USE_COLOR=0; }
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+# Language selection
+# -----------------------------------------------------------------------------
+detect_lang() {
+    case "${LC_ALL:-}${LANG:-}" in
+        *zh*) echo "zh" ;;
+        *) echo "en" ;;
+    esac
+}
+
+choose_language() {
+    local detected
+    detected=$(detect_lang)
+    USER_LANG="$detected"
+
+    if [ -n "$FORCE_LANG" ]; then
+        USER_LANG="$FORCE_LANG"
+        ok "Language forced to: $USER_LANG"
+        return 0
+    fi
+
+    if [ "$INTERACTIVE" = "1" ] && [ "$ASSUME_YES" = "0" ]; then
+        local default_num=1
+        [ "$detected" = "en" ] && default_num=2
+        printf '\n    %s %s\n' "$(color '1;33' '🌐')" "$(T "请选择语言 / Choose a language:" "Please choose a language:")"
+        printf '        1) 简体中文\n        2) English\n'
+        printf '    %s [1-2]（回车 = %s）: ' "$(color '1;33' '请输入序号 / Enter option')" "$default_num"
+        local ans=""
+        if read -r ans < /dev/tty; then :; else ans=""; fi
+        case "$ans" in
+            2|en|EN|english) USER_LANG="en" ;;
+            1|zh|ZH|zh_CN) USER_LANG="zh" ;;
+            *) USER_LANG="$detected" ;;
+        esac
+    fi
+
+    ok "$(T "语言：简体中文" "Language: English")"
+}
+
+# -----------------------------------------------------------------------------
+# Banner
+# -----------------------------------------------------------------------------
+print_banner() {
+    [ "$QUIET" = "1" ] && return
+    local line
+    line=$(color '36' "──────────────────────────────────────────────")
+    printf '\n%s\n' "$line"
+    printf '%s\n' "$(color '1;36' "   🚀  TikTok & Douyin Downloader  一键安装 / One-Click Installer")"
+    printf '%s\n' "$(color '36' "       $GITHUB_USER/$GITHUB_REPO  ·  $RELEASE_TAG")"
+    printf '%s\n' "$line"
+    printf '\n'
+}
+
+# -----------------------------------------------------------------------------
+# Step 1 · System / architecture detection
+# -----------------------------------------------------------------------------
+detect_env() {
+    step "$(T "检测系统环境" "Detecting system environment")"
+
+    OS="$(uname -s)"
+    case "$OS" in
+        Darwin|Linux) : ;;
+        *)
+            err "$(T "不支持的系统: ${OS}（仅支持 Linux / macOS）。" "Unsupported OS: $OS (Linux / macOS only).")"
+            exit 1
+            ;;
+    esac
+
+    if [ "$OS" = "Darwin" ]; then
+        # Detect the native arch even when running under Rosetta.
+        if [ "$(/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = "1" ]; then
+            ARCH="arm64"
+        else
+            ARCH="$(uname -m)"
+        fi
+        ok "$(T "系统: macOS ($ARCH)" "System: macOS ($ARCH)")"
+    else
+        ARCH="$(uname -m)"
+        if [ "$ARCH" != "x86_64" ]; then
+            warn "$(T "当前架构 $ARCH 没有原生构建，将安装 x86_64 版本（可能需要兼容层运行）。" "No native build for $ARCH; installing the x86_64 build (may need emulation).")"
+        fi
+        ok "$(T "系统: Linux ($ARCH)" "System: Linux ($ARCH)")"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Download progress helpers
 # -----------------------------------------------------------------------------
 PROGRESS_WIDTH=30
 PROGRESS_ESC=$(printf '\033')
 
 progress_spinner() {
     case $(($1 % 10)) in
-        0) printf '⠋' ;;
-        1) printf '⠙' ;;
-        2) printf '⠹' ;;
-        3) printf '⠸' ;;
-        4) printf '⠼' ;;
-        5) printf '⠴' ;;
-        6) printf '⠦' ;;
-        7) printf '⠧' ;;
-        8) printf '⠇' ;;
-        *) printf '⠏' ;;
+        0) printf '⠋' ;; 1) printf '⠙' ;; 2) printf '⠹' ;; 3) printf '⠸' ;; 4) printf '⠼' ;;
+        5) printf '⠴' ;; 6) printf '⠦' ;; 7) printf '⠧' ;; 8) printf '⠇' ;; *) printf '⠏' ;;
     esac
 }
 
@@ -85,19 +257,35 @@ remote_size() {
         | awk -F': ' 'tolower($1)=="content-length" {len=$2} END {gsub(/[^0-9]/,"",len); print len+0}'
 }
 
-# Draw one frame of the progress bar: $1=pct(-1 if unknown), $2=frame step, $3=label
+human_size() {
+    local bytes=$1
+    if [ "$bytes" -lt 1024 ]; then
+        echo "${bytes} B"
+    elif [ "$bytes" -lt 1048576 ]; then
+        awk -v b="$bytes" 'BEGIN { printf "%.1f KiB", b/1024 }'
+    elif [ "$bytes" -lt 1073741824 ]; then
+        awk -v b="$bytes" 'BEGIN { printf "%.1f MiB", b/1048576 }'
+    else
+        awk -v b="$bytes" 'BEGIN { printf "%.2f GiB", b/1073741824 }'
+    fi
+}
+
+# Render one frame: $1=pct(-1 unknown) $2=frame $3=label $4=downloaded $5=total
 render_progress() {
-    local pct=$1 step=$2 label=$3
+    local pct=$1 frame=$2 label=$3 got=$4 total=$5
     local esc="$PROGRESS_ESC"
     local width=$PROGRESS_WIDTH
     local reset="${esc}[0m" dim="${esc}[2m" bold="${esc}[1m"
-    local green="${esc}[32m" cyan="${esc}[36m" yellow="${esc}[33m" white="${esc}[37m"
+    local green="${esc}[32m" cyan="${esc}[36m" yellow="${esc}[33m"
     local spinner
-    spinner=$(progress_spinner "$step")
-    local filled=$(( pct * width / 100 ))
-    [ "$filled" -gt "$width" ] && filled=$width
-    [ "$filled" -lt 0 ] && filled=0
-    local bar="" i=0 third=$((width / 3))
+    spinner=$(progress_spinner "$frame")
+
+    local filled=0 third=$((width / 3)) i=0
+    if [ "$pct" -ge 0 ]; then
+        filled=$(( pct * width / 100 ))
+        [ "$filled" -gt "$width" ] && filled=$width
+    fi
+    local bar=""
     while [ "$i" -lt "$width" ]; do
         if [ "$i" -lt "$filled" ]; then
             if [ "$i" -lt "$third" ]; then
@@ -107,80 +295,199 @@ render_progress() {
             else
                 bar="${bar}${yellow}█${reset}"
             fi
-        elif [ "$i" -eq "$filled" ]; then
-            bar="${bar}${bold}${white}▓${reset}"
+        elif [ "$i" -eq "$filled" ] && [ "$pct" -ge 0 ]; then
+            bar="${bar}${bold}${esc}[37m▓${reset}"
         else
             bar="${bar}${dim}░${reset}"
         fi
         i=$((i + 1))
     done
-    local pct_str
+
+    local pct_str size_str=""
     if [ "$pct" -lt 0 ]; then
-        pct_str=" --"
+        pct_str="  --"
     else
         pct_str=$(printf '%3d' "$pct")
     fi
-    printf '\r\033[K  %s %s %s%% %s' "$spinner" "$bar" "$pct_str" "$label"
-}
-
-# Download a file while animating a colored progress bar. Returns curl's status.
-download_with_progress() {
-    local url=$1 output=$2 label=$3
-    local size
-    size=$(remote_size "$url")
-    local err_file="${output}.err"
-    rm -f "$err_file"
-
-    curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -sS "$url" -o "$output" 2>"$err_file" &
-    local pid=$!
-    local downloaded=0 pct=-1 step=0
-
-    while kill -0 "$pid" 2>/dev/null; do
-        downloaded=$(file_size "$output")
-        if [ "$size" -gt 0 ]; then
-            pct=$((downloaded * 100 / size))
-            [ "$pct" -gt 100 ] && pct=100
-        else
-            pct=-1
-        fi
-        render_progress "$pct" "$step" "$label"
-        step=$((step + 1))
-        sleep 0.08
-    done
-
-    local status=0
-    if ! wait "$pid"; then
-        status=$?
+    if [ "$total" -gt 0 ]; then
+        size_str=" $(human_size "$got")/$(human_size "$total")"
+    elif [ "$got" -gt 0 ]; then
+        size_str=" $(human_size "$got")"
     fi
 
-    if [ "$status" -eq 0 ]; then
-        if [ "$size" -gt 0 ]; then pct=100; else pct=-1; fi
-        render_progress "$pct" "$step" "$label"
-        printf '\n'
-    else
-        printf '\n'
-        if [ -s "$err_file" ]; then
-            sed 's/^/   /' "$err_file" >&2 || true
+    printf '\r\033[K  %s %s %s%%%s %s ' "$spinner" "$bar" "$pct_str" "$size_str" "$label"
+}
+
+# Download a file. Animates a colored progress bar on a TTY, stays silent
+# otherwise. Returns curl's exit status.
+download_with_progress() {
+    local url=$1 output=$2 label=$3
+    local total err_file status=0
+    total=$(remote_size "$url")
+    err_file="${output}.err"
+    rm -f "$err_file" "$output"
+
+    if [ "$ANIMATE" = "1" ]; then
+        curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -sS "$url" -o "$output" 2>"$err_file" &
+        local pid=$!
+        local downloaded=0 pct=-1 frame=0
+        while kill -0 "$pid" 2>/dev/null; do
+            downloaded=$(file_size "$output")
+            if [ "$total" -gt 0 ]; then
+                pct=$((downloaded * 100 / total))
+                [ "$pct" -gt 100 ] && pct=100
+            else
+                pct=-1
+            fi
+            render_progress "$pct" "$frame" "$label" "$downloaded" "$total"
+            frame=$((frame + 1))
+            sleep 0.08
+        done
+        wait "$pid" || status=$?
+        if [ "$status" -eq 0 ]; then
+            if [ "$total" -gt 0 ]; then
+                render_progress 100 "$frame" "$label" "$total" "$total"
+            else
+                render_progress -1 "$frame" "$label" "$(file_size "$output")" 0
+            fi
         fi
+        printf '\r\033[K'
+    else
+        curl -fL --connect-timeout 8 --max-time 300 --retry 2 --retry-delay 2 -sS "$url" -o "$output" 2>"$err_file" || status=$?
+    fi
+
+    if [ "$status" -ne 0 ] && [ -s "$err_file" ]; then
+        sed 's/^/    /' "$err_file" >&2 || true
     fi
     rm -f "$err_file"
     return "$status"
 }
 
-# 2. Install binaries (local or remote)
+# -----------------------------------------------------------------------------
+# SHA256 verification (fail-open: skips when no checksum file is published)
+# -----------------------------------------------------------------------------
+verify_checksum() {
+    local archive=$1 file=$2
+    local checksum_url="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/SHA256SUMS.txt"
+    local -a mirrors=(
+        "$checksum_url"
+        "https://gh-proxy.com/$checksum_url"
+        "https://ghproxy.net/$checksum_url"
+        "https://fastly.jsdelivr.net/gh/$GITHUB_USER/$GITHUB_REPO@$RELEASE_TAG/SHA256SUMS.txt"
+    )
+    local tmp_sum url got=false
+    tmp_sum="$(mktemp)"
+    TMP_FILES+=("$tmp_sum")
+    for url in "${mirrors[@]}"; do
+        if curl -fsL --connect-timeout 8 --max-time 15 "$url" -o "$tmp_sum" 2>/dev/null; then
+            got=true
+            break
+        fi
+    done
+    if [ "$got" != "true" ]; then
+        warn "$(T "无法获取 SHA256 校验文件，跳过校验。" "SHA256 checksum file unavailable; skipping verification.")"
+        return 0
+    fi
+
+    local expected actual
+    expected=$(awk -v name="$archive" '$2==name {print $1}' "$tmp_sum" | head -1)
+    rm -f "$tmp_sum"
+    if [ -z "$expected" ]; then
+        warn "$(T "发布包中未找到 $archive 的校验值，跳过校验。" "No checksum entry for $archive; skipping verification.")"
+        return 0
+    fi
+
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual=$(sha256sum "$file" | awk '{print $1}')
+    else
+        actual=$(shasum -a 256 "$file" | awk '{print $1}')
+    fi
+    if [ "$actual" = "$expected" ]; then
+        ok "$(T "SHA256 校验通过" "SHA256 verification passed")"
+        return 0
+    fi
+    err "$(T "SHA256 校验失败：文件可能损坏或被篡改。" "SHA256 verification failed: file may be corrupted or tampered with.")"
+    return 1
+}
+
+# -----------------------------------------------------------------------------
+# Upgrade detection
+# -----------------------------------------------------------------------------
+installed_version() {
+    if [ -x "$INSTALL_DIR/$CLI_NAME" ]; then
+        "$INSTALL_DIR/$CLI_NAME" --version 2>/dev/null \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1
+    fi
+}
+
+# Returns 0 when we should (re)install, 1 when the user wants to skip.
+check_upgrade() {
+    local current target
+    current="$(installed_version 2>/dev/null)" || current=""
+    target="${RELEASE_TAG#v}"
+
+    if [ -n "$current" ] && [ "$current" = "$target" ]; then
+        if [ "$FORCE" = "1" ]; then
+            return 0
+        fi
+        if [ "$ASSUME_YES" = "0" ] && [ "$INTERACTIVE" = "1" ]; then
+            printf '    %s ' "$(T "已安装 v${current}，是否重新安装？[y/N]：" "v${current} is already installed. Reinstall? [y/N]: ")"
+            local ans=""
+            if read -r ans < /dev/tty; then :; else ans=""; fi
+            if [ "$ans" = "y" ] || [ "$ans" = "Y" ] || [ "$ans" = "yes" ]; then
+                return 0
+            fi
+            info "$(T "跳过安装。" "Skipping installation.")"
+            return 1
+        fi
+        info "$(T "已安装 v${current}，跳过（--force 可强制重装）。" "v${current} already installed; skipping (use --force to reinstall).")"
+        return 1
+    fi
+
+    if [ -n "$current" ]; then
+        info "$(T "检测到已安装 v${current}，将升级到 v${target}。" "Found v${current}; upgrading to v${target}.")"
+    fi
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+# Step 2 · Download / extract / install the binary
+# -----------------------------------------------------------------------------
 install_binary() {
     local name=$1
     local local_file="dist/$name"
     local version="${RELEASE_TAG#v}"
-    local os_type archive_name
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        # macOS CLI is packaged per-architecture: arm64 (Apple Silicon) or x86_64 (Intel)
+    local os_type archive_name arch
+
+    step "$(T "下载并安装程序" "Downloading and installing")"
+
+    # Prefer a locally compiled binary (dev workflow).
+    if [ -f "$local_file" ]; then
+        cp "$local_file" "$INSTALL_DIR/"
+        if [ -d "dist/ms-playwright" ]; then
+            cp -r "dist/ms-playwright" "$INSTALL_DIR/"
+        fi
+        chmod +x "$INSTALL_DIR/$name"
+        ok "$(T "已安装本地构建 $name" "Installed local build $name")"
+        return 0
+    fi
+
+    if [ "$GITHUB_USER" = "YOUR_GITHUB_USERNAME" ] || [ "$GITHUB_REPO" = "YOUR_GITHUB_REPO" ]; then
+        err "GITHUB_USER / GITHUB_REPO not configured in install.sh."
+        exit 1
+    fi
+
+    if ! check_upgrade; then
+        return 1
+    fi
+
+    if [ "$OS" = "Darwin" ]; then
         os_type="macos"
-        local arch
-        arch="$(uname -m)"
+        arch="$ARCH"
         archive_name="MediaDownloader-macOS-${arch}-CLI-${version}.zip"
     else
         os_type="linux"
+        arch="x86_64"
         archive_name="MediaDownloader-Linux-x86_64-${version}.tar.gz"
     fi
     local raw_url="https://github.com/$GITHUB_USER/$GITHUB_REPO/releases/download/$RELEASE_TAG/$archive_name"
@@ -192,79 +499,49 @@ install_binary() {
         "https://ghproxy.net/$raw_url"
     )
 
-    if [ -f "$local_file" ]; then
+    local tmp_archive
+    tmp_archive="$(mktemp)"
+    TMP_FILES+=("$tmp_archive")
+
+    local download_ok=false mirror_idx=1 mirror_total=${#MIRROR_URLS[@]}
+    for url in "${MIRROR_URLS[@]}"; do
+        local dl_label
         if [ "$USER_LANG" = "zh" ]; then
-            echo -e "📦 检测到本地已编译好的二进制文件，正在安装 $name ..."
+            dl_label="下载 $archive_name (镜像 $mirror_idx/$mirror_total)"
         else
-            echo -e "📦 Local pre-compiled binary found, installing $name ..."
+            dl_label="Downloading $archive_name (mirror $mirror_idx/$mirror_total)"
         fi
-        cp "$local_file" "$INSTALL_DIR/"
-        # Also ship a locally-built browser sidecar when present.
-        if [ -d "dist/ms-playwright" ]; then
-            cp -r "dist/ms-playwright" "$INSTALL_DIR/"
-        fi
-    else
-        if [ "$GITHUB_USER" = "YOUR_GITHUB_USERNAME" ] || [ "$GITHUB_REPO" = "YOUR_GITHUB_REPO" ]; then
-            echo -e "${RED}❌ Error: GITHUB_USER / GITHUB_REPO not configured in install.sh.${NC}"
-            exit 1
-        fi
-
-        local tmp_archive
-        tmp_archive="$(mktemp)"
-        local download_ok=false
-
-        local mirror_idx=1
-        local mirror_total=${#MIRROR_URLS[@]}
-        for url in "${MIRROR_URLS[@]}"; do
-            local dl_label
-            if [ "$USER_LANG" = "zh" ]; then
-                dl_label="下载 $archive_name (镜像 $mirror_idx/$mirror_total)"
-            else
-                dl_label="Downloading $archive_name (mirror $mirror_idx/$mirror_total)"
-            fi
-            if download_with_progress "$url" "$tmp_archive" "$dl_label"; then
-                download_ok=true
-                break
-            fi
-            rm -f "$tmp_archive"
-            if [ "$mirror_idx" -lt "$mirror_total" ]; then
-                if [ "$USER_LANG" = "zh" ]; then
-                    echo -e "   ⚠ 下载失败，尝试下一个镜像..."
-                else
-                    echo -e "   ⚠ Download failed, trying next mirror..."
-                fi
-            fi
-            mirror_idx=$((mirror_idx + 1))
-        done
-
-        if [ "$download_ok" != "true" ]; then
-            rm -f "$tmp_archive"
-            if [ "$USER_LANG" = "zh" ]; then
-                echo -e "${RED}❌ 错误: 所有下载源均失败（$RELEASE_TAG）。${NC}"
-                echo -e "${RED}   请检查网络或开启代理后重试。${NC}"
-            else
-                echo -e "${RED}❌ Error: All download sources failed ($RELEASE_TAG).${NC}"
-                echo -e "${RED}   Please check your network or enable a proxy and retry.${NC}"
-            fi
-            exit 1
-        fi
-
-        if [ "$os_type" = "macos" ]; then
-            unzip -q -o "$tmp_archive" -d "$INSTALL_DIR"
-        else
-            # Extract everything: the binary plus the bundled ms-playwright sidecar
-            tar -xzf "$tmp_archive" -C "$INSTALL_DIR"
+        if download_with_progress "$url" "$tmp_archive" "$dl_label" \
+            && verify_checksum "$archive_name" "$tmp_archive"; then
+            download_ok=true
+            break
         fi
         rm -f "$tmp_archive"
+        if [ "$mirror_idx" -lt "$mirror_total" ]; then
+            warn "$(T "下载失败，尝试下一个镜像..." "Download failed, trying next mirror...")"
+        fi
+        mirror_idx=$((mirror_idx + 1))
+    done
 
-        if [ ! -f "$INSTALL_DIR/$name" ]; then
-            if [ "$USER_LANG" = "zh" ]; then
-                echo -e "${RED}❌ 错误: 解压后未找到 $name。${NC}"
-            else
-                echo -e "${RED}❌ Error: $name not found after extraction.${NC}"
-            fi
+    if [ "$download_ok" != "true" ]; then
+        err "$(T "错误: 所有下载源均失败（${RELEASE_TAG}）。" "Error: All download sources failed ($RELEASE_TAG).")"
+        err "$(T "请检查网络或开启代理后重试。" "Please check your network or enable a proxy and retry.")"
+        exit 1
+    fi
+
+    if [ "$os_type" = "macos" ]; then
+        if ! command -v unzip >/dev/null 2>&1; then
+            err "$(T "未找到 unzip，请先安装（如: brew install unzip）。" "unzip is required; install it first (e.g. brew install unzip).")"
             exit 1
         fi
+        unzip -q -o "$tmp_archive" -d "$INSTALL_DIR"
+    else
+        tar -xzf "$tmp_archive" -C "$INSTALL_DIR"
+    fi
+
+    if [ ! -f "$INSTALL_DIR/$name" ]; then
+        err "$(T "错误: 解压后未找到 ${name}。" "Error: $name not found after extraction.")"
+        exit 1
     fi
 
     chmod +x "$INSTALL_DIR/$name"
@@ -273,9 +550,81 @@ install_binary() {
     if [ "$os_type" = "macos" ]; then
         xattr -dr com.apple.quarantine "$INSTALL_DIR/$name" 2>/dev/null || true
     fi
+
+    ok "$(T "已安装到 $INSTALL_DIR" "Installed to $INSTALL_DIR")"
+    return 0
 }
 
-# Show the changelog for the version being installed (CLI + 全平台 entries)
+# -----------------------------------------------------------------------------
+# Step 3 · Link the command
+# -----------------------------------------------------------------------------
+configure_command() {
+    step "$(T "配置启动命令" "Configuring command")"
+    ln -sf "$INSTALL_DIR/$CLI_NAME" "$BIN_DIR/$CLI_NAME"
+    ok "$(T "命令已链接: $BIN_DIR/$CLI_NAME" "Command linked: $BIN_DIR/$CLI_NAME")"
+}
+
+# -----------------------------------------------------------------------------
+# Step 4 · PATH configuration (shell-aware)
+# -----------------------------------------------------------------------------
+configure_path() {
+    step "$(T "配置环境变量" "Configuring PATH")"
+    if [[ ":$PATH:" == *":$BIN_DIR:"* ]]; then
+        ok "$(T "已在 PATH 中，跳过配置。" "Already on PATH; skipping.")"
+        return 0
+    fi
+
+    local -a rc_files=()
+    case "${SHELL:-}" in
+        */zsh) rc_files=("$HOME/.zshrc") ;;
+        */bash) rc_files=("$HOME/.bashrc") ;;
+        *)
+            warn "$(T "无法识别的 shell: ${SHELL:-unknown}。请手动将以下内容加入你的配置文件：" "Unrecognized shell: ${SHELL:-unknown}. Add the following line to your shell config manually:")"
+            warn 'export PATH="$HOME/.local/bin:$PATH"'
+            return 1
+            ;;
+    esac
+
+    local updated=false rc
+    for rc in "${rc_files[@]}"; do
+        if [ -f "$rc" ] && ! grep -qF 'export PATH="$HOME/.local/bin:$PATH"' "$rc"; then
+            printf '\n# added by tiktok-douyin-dl installer\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$rc"
+            updated=true
+        elif [ ! -f "$rc" ]; then
+            printf '# added by tiktok-douyin-dl installer\nexport PATH="$HOME/.local/bin:$PATH"\n' > "$rc"
+            updated=true
+        fi
+    done
+
+    if [ "$updated" = "true" ]; then
+        NEED_SOURCE=true
+        ok "$(T "已写入 $(basename "${rc_files[0]}")，新终端生效。" "Written to $(basename "${rc_files[0]}"); effective in new terminals.")"
+    else
+        ok "$(T "PATH 配置已就绪。" "PATH configuration is already in place.")"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Step 5 · Verify the installation
+# -----------------------------------------------------------------------------
+verify_install() {
+    step "$(T "验证安装" "Verifying installation")"
+    if [ -x "$INSTALL_DIR/$CLI_NAME" ]; then
+        INSTALLED_VER="$(installed_version 2>/dev/null)" || INSTALLED_VER=""
+        if [ -n "$INSTALLED_VER" ]; then
+            ok "$(T "安装成功，版本 v$INSTALLED_VER" "Installed successfully, v$INSTALLED_VER")"
+        else
+            ok "$(T "安装成功" "Installed successfully")"
+        fi
+    else
+        err "$(T "验证失败：未找到可执行文件。" "Verification failed: executable not found.")"
+        exit 1
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Changelog for the installed version (CLI + 全平台 entries)
+# -----------------------------------------------------------------------------
 show_changelog() {
     local version="${RELEASE_TAG#v}"
     local raw_url="https://raw.githubusercontent.com/$GITHUB_USER/$GITHUB_REPO/main/changelog.json"
@@ -287,6 +636,7 @@ show_changelog() {
     )
     local tmp_json
     tmp_json="$(mktemp)"
+    TMP_FILES+=("$tmp_json")
     for url in "${MIRROR_URLS[@]}"; do
         if curl -fsL --connect-timeout 8 --max-time 15 "$url" -o "$tmp_json" 2>/dev/null; then
             break
@@ -314,84 +664,106 @@ try:
         sys.exit(0)
     title = "📝 本版本更新内容" if lang == "zh" else "📝 Changelog for this version"
     print()
-    print(f"{title}  v{version}")
-    print("-" * 50)
+    print(f"  {title}  v{version}")
+    print("  " + "-" * 48)
     for e in entries:
         for line in str(e).splitlines():
-            print(f"  • {line}")
-    print("-" * 50)
+            print(f"    • {line}")
+    print("  " + "-" * 48)
 except Exception:
     pass
 PY
     fi
-    rm -f "$tmp_json"
 }
 
-# Install the unified auto-detecting CLI
-install_binary "media-downloader"
+# -----------------------------------------------------------------------------
+# Success message
+# -----------------------------------------------------------------------------
+print_success() {
+    [ "$QUIET" = "1" ] && return
+    local bar success cmd notes_header source_msg
+    bar=$(color '32' "──────────────────────────────────────────────")
+    success="$(T "🎉 安装与配置成功！" "🎉 Installation & Configuration Successful!")"
+    cmd="media-downloader \"$(T "分享文本或链接" "share text or link")\""
+    notes_header="$(T "使用提示 / Notes:" "Notes:")"
+    source_msg="$(T "新开一个终端窗口（或运行 source ~/.zshrc / ~/.bashrc）使 PATH 生效。" "Open a new terminal window (or run 'source ~/.zshrc') to apply PATH.")"
 
-# 2.5 Show the changelog of the installed version
-show_changelog
-
-# 3. Configure terminal command
-echo -e "\n${YELLOW}💬 配置启动命令 / Configure Startup Commands:${NC}"
-ln -sf "$INSTALL_DIR/media-downloader" "$BIN_DIR/media-downloader"
-
-# 4. Check Environment $PATH
-NEED_SOURCE=false
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]] && [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    if [ "$USER_LANG" = "zh" ]; then
-        echo -e "\n⚙️  正在检测并配置环境变量..."
-    else
-        echo -e "\n⚙️  Detecting and configuring environment PATH..."
+    printf '\n%s\n' "$bar"
+    printf '    %s\n' "$(color '1;32' "$success")"
+    printf '%s\n' "$bar"
+    printf '    %s\n' "$(color '34' "📁  $INSTALL_DIR")"
+    printf '    %s\n' "$(color '1;32' "🚀  $cmd")"
+    printf '    %s\n' "$(T "🔎  自动识别抖音或 TikTok 链接。" "🔎  Platform is auto-detected from the link.")"
+    printf '\n'
+    printf '    %s\n' "$(color '33' "🔔  $notes_header")"
+    if [ "$NEED_SOURCE" = "true" ]; then
+        printf '    1. %s\n' "$(color '33' "$source_msg")"
     fi
-    
-    # Write ~/.bashrc
-    if [ -f "$HOME/.bashrc" ]; then
-        if ! grep -q "export PATH=\"\$HOME/.local/bin:\$PATH\"" "$HOME/.bashrc"; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-            NEED_SOURCE=true
+    printf '    2. %s\n' "$(T "查看帮助: media-downloader --help" "See help: media-downloader --help")"
+    printf '    3. %s\n' "$(T "卸载: 重新运行本脚本并加 --uninstall 参数" "Uninstall: rerun this script with --uninstall")"
+    printf '\n'
+}
+
+# -----------------------------------------------------------------------------
+# Uninstall
+# -----------------------------------------------------------------------------
+do_uninstall() {
+    printf '\n%s\n' "$(color '1;36' "🗑  TikTok & Douyin Downloader 卸载 / Uninstall")"
+    printf '\n'
+
+    rm -f "$BIN_DIR/$CLI_NAME"
+    ok "$(T "已删除命令链接 $BIN_DIR/$CLI_NAME" "Removed command link $BIN_DIR/$CLI_NAME")"
+
+    rm -rf "$INSTALL_DIR"
+    ok "$(T "已删除安装目录 $INSTALL_DIR" "Removed installation directory $INSTALL_DIR")"
+
+    local -a rc_files=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile" "$HOME/.zprofile")
+    local rc
+    for rc in "${rc_files[@]}"; do
+        if [ -f "$rc" ] && grep -qF 'export PATH="$HOME/.local/bin:$PATH"' "$rc"; then
+            sed -i.bak \
+                '/# added by tiktok-douyin-dl installer/d; /^export PATH="\$HOME\/\.local\/bin:\$PATH"$/d' \
+                "$rc" && rm -f "$rc.bak"
+            ok "$(T "已从 $rc 移除 PATH 配置。" "Removed PATH entry from $rc.")"
         fi
-    fi
-    
-    # Write ~/.zshrc
-    if [ -f "$HOME/.zshrc" ]; then
-        if ! grep -q "export PATH=\"\$HOME/.local/bin:\$PATH\"" "$HOME/.zshrc"; then
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
-            NEED_SOURCE=true
-        fi
-    fi
-fi
+    done
 
-# Print Success message
-echo -e "${GREEN}==================================================${NC}"
-if [ "$USER_LANG" = "zh" ]; then
-    echo -e "${GREEN}🎉 安装与配置成功！${NC}"
-    echo -e "${GREEN}==================================================${NC}"
-    echo -e "📁 程序保存路径: ${BLUE}$INSTALL_DIR${NC}"
-    echo -e "🚀 统一下载命令: ${BLUE}media-downloader \"分享文本或链接\"${NC}"
-    echo -e "🔎 程序会自动识别抖音或 TikTok 链接。"
-    echo -e ""
-    echo -e "${YELLOW}🔔 使用提示:${NC}"
-    if [ "$NEED_SOURCE" = true ]; then
-        echo -e "1. 💡 ${YELLOW}请先运行 'source ~/.bashrc' (或 'source ~/.zshrc') 使配置生效！${NC}"
-        echo -e "2. 之后在终端任意目录运行 ${GREEN}media-downloader \"分享文本或链接\"${NC} 即可下载！"
-    else
-        echo -e "1. 终端任意目录下直接运行 ${GREEN}media-downloader \"分享文本或链接\"${NC} 即可下载！"
+    local done_msg
+    done_msg="$(T "卸载完成。" "Uninstall complete.")"
+    printf '\n%s\n' "$(color '1;32' "✔  $done_msg")"
+}
+
+# -----------------------------------------------------------------------------
+# Main
+# -----------------------------------------------------------------------------
+main() {
+    parse_args "$@"
+    if [ "$DO_UNINSTALL" = "1" ]; then
+        do_uninstall
+        exit 0
     fi
-else
-    echo -e "${GREEN}🎉 Installation & Configuration Successful!${NC}"
-    echo -e "${GREEN}==================================================${NC}"
-    echo -e "📁 Installation Directory: ${BLUE}$INSTALL_DIR${NC}"
-    echo -e "🚀 Unified command: ${BLUE}media-downloader \"share text or link\"${NC}"
-    echo -e "🔎 The platform is detected automatically from the link."
-    echo -e ""
-    echo -e "${YELLOW}🔔 Note:${NC}"
-    if [ "$NEED_SOURCE" = true ]; then
-        echo -e "1. 💡 ${YELLOW}Please run 'source ~/.bashrc' (or 'source ~/.zshrc') to apply PATH changes!${NC}"
-        echo -e "2. Then run ${GREEN}media-downloader \"share text or link\"${NC} anywhere in the terminal."
-    else
-        echo -e "1. Run ${GREEN}media-downloader \"share text or link\"${NC} anywhere in the terminal."
+    detect_tty
+
+    mkdir -p "$INSTALL_DIR" "$BIN_DIR"
+
+    STEP_TOTAL=5
+    choose_language
+    print_banner
+
+    # Write language configuration
+    printf '{"lang": "%s"}\n' "$USER_LANG" > "$INSTALL_DIR/config.json"
+
+    detect_env
+    if install_binary "$CLI_NAME"; then
+        SHOW_CHANGELOG=1
     fi
-fi
-echo -e "=================================================="
+    configure_command
+    configure_path || true
+    verify_install
+    if [ "$SHOW_CHANGELOG" = "1" ] && [ "$QUIET" = "0" ]; then
+        show_changelog
+    fi
+    print_success
+}
+
+main "$@"
