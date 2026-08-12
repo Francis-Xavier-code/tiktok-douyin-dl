@@ -39,7 +39,6 @@ DO_UNINSTALL=0
 FORCE_LANG=""
 NEED_SOURCE=false
 USER_LANG=""
-SHOW_CHANGELOG=0
 INSTALLED_VER=""
 
 TMP_FILES=()
@@ -797,13 +796,11 @@ main() {
     printf '{"lang": "%s"}\n' "$USER_LANG" > "$INSTALL_DIR/config.json"
 
     detect_env
-    if install_binary "$CLI_NAME"; then
-        SHOW_CHANGELOG=1
-    fi
+    if install_binary "$CLI_NAME"; then :; fi
     configure_command
     configure_path || true
     verify_install
-    if [ "$SHOW_CHANGELOG" = "1" ] && [ "$QUIET" = "0" ]; then
+    if [ "$QUIET" = "0" ]; then
         show_changelog
     fi
     print_success
