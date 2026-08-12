@@ -1587,45 +1587,6 @@ wheels = [
 ]
 
 [[package]]
-name = "media-downloader"
-version = "2.0.0"
-source = { editable = "." }
-dependencies = [
-    { name = "pillow", version = "10.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "pillow", version = "12.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "playwright", version = "1.60.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "playwright", version = "1.62.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "playwright-stealth" },
-    { name = "requests", version = "2.32.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "requests", version = "2.34.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-]
-web = [
-    { name = "gradio", version = "4.44.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "gradio", version = "6.22.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-]
-windows = [
-    { name = "sv-ttk" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "gradio", marker = "extra == 'web'", specifier = ">=4.0.0" },
-    { name = "pillow", specifier = ">=10.0.0" },
-    { name = "playwright", specifier = ">=1.40.0" },
-    { name = "playwright-stealth", specifier = ">=1.0.6" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "sv-ttk", marker = "extra == 'windows'", specifier = ">=2.6.0" },
-]
-provides-extras = ["dev", "web", "windows"]
-
-[[package]]
 name = "numpy"
 version = "2.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3049,6 +3010,45 @@ sdist = { url = "https://files.pythonhosted.org/packages/4e/ca/9625914e7a7e58ce9
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/36/32629d8bab9bccd54a36716a960ba1148fca4c1fd453370dba0b42d712ea/sv_ttk-2.6.1-py3-none-any.whl", hash = "sha256:8ca5944f95431a911986b00c54e7f44608f3f811382cd985fd14bb3e65f95d97", size = 50076, upload-time = "2025-06-08T16:14:20.402Z" },
 ]
+
+[[package]]
+name = "tiktok-douyin-dl"
+version = "2.0.0"
+source = { editable = "." }
+dependencies = [
+    { name = "pillow", version = "10.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pillow", version = "12.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "playwright", version = "1.60.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "playwright", version = "1.62.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "playwright-stealth" },
+    { name = "requests", version = "2.32.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "requests", version = "2.34.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+web = [
+    { name = "gradio", version = "4.44.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "gradio", version = "6.22.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+windows = [
+    { name = "sv-ttk" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "gradio", marker = "extra == 'web'", specifier = ">=4.0.0" },
+    { name = "pillow", specifier = ">=10.0.0" },
+    { name = "playwright", specifier = ">=1.40.0" },
+    { name = "playwright-stealth", specifier = ">=1.0.6" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "sv-ttk", marker = "extra == 'windows'", specifier = ">=2.6.0" },
+]
+provides-extras = ["dev", "web", "windows"]
 
 [[package]]
 name = "tomli"
