@@ -97,6 +97,10 @@ usage() {
     cat <<'EOF'
 Usage: install.sh [options]
 
+Run without options on an interactive terminal to choose an action from a menu
+(install / force-reinstall / uninstall / exit). Options are for scripting and
+piped installs (curl URL | bash -s -- <option>):
+
 Options:
   --lang zh|en     Force language (auto-detected from $LANG by default)
   --yes, -y        Skip all prompts (non-interactive mode)
@@ -734,6 +738,36 @@ do_uninstall() {
 }
 
 # -----------------------------------------------------------------------------
+# Interactive action menu (shown when run without options on a real terminal)
+# -----------------------------------------------------------------------------
+run_menu() {
+    while true; do
+        local installed=""
+        if [ -x "$INSTALL_DIR/$CLI_NAME" ]; then
+            installed="$(installed_version 2>/dev/null)" || installed=""
+            printf '    %s\n' "$(color '1;33' "⚙  $(T "当前已安装:" "Currently installed:") v${installed:-?}")"
+        else
+            printf '    %s\n' "$(color '33' "ℹ  $(T "未检测到已安装的程序" "No installation detected")")"
+        fi
+        printf '\n    %s\n' "$(color '1;36' "$(T "请选择操作 / Choose an action:" "Choose an action:")")"
+        printf '    1) %s\n' "$(T "🚀 安装 / 重新安装" "🚀 Install / Reinstall")"
+        printf '    2) %s\n' "$(T "🔁 强制重新安装" "🔁 Force reinstall")"
+        printf '    3) %s\n' "$(T "🗑  卸载" "🗑  Uninstall")"
+        printf '    4) %s\n' "$(T "退出" "Exit")"
+        printf '    %s [1-4]: ' "$(color '1;33' "$(T "请输入 / Enter" "Enter")")"
+        local choice=""
+        if read -r choice < /dev/tty; then :; else choice=""; fi
+        case "$choice" in
+            1) FORCE=0; printf '\n'; return 0 ;;
+            2) FORCE=1; printf '\n'; return 0 ;;
+            3) do_uninstall; exit 0 ;;
+            4|q|Q|exit) printf '\n'; exit 0 ;;
+            *) warn "$(T "无效选项: $choice" "Invalid option: $choice")"; printf '\n' ;;
+        esac
+    done
+}
+
+# -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
 main() {
@@ -749,6 +783,12 @@ main() {
     STEP_TOTAL=5
     choose_language
     print_banner
+
+    # Interactive menu unless an explicit action was given on the command line.
+    if [ "$INTERACTIVE" = "1" ] && [ "$ASSUME_YES" = "0" ] \
+        && [ "$FORCE" = "0" ] && [ -z "$FORCE_LANG" ]; then
+        run_menu
+    fi
 
     # Write language configuration
     printf '{"lang": "%s"}\n' "$USER_LANG" > "$INSTALL_DIR/config.json"
