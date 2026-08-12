@@ -136,9 +136,16 @@ parse_args() {
 detect_tty() {
     [ -t 1 ] && USE_COLOR=1 || USE_COLOR=0
     [ -t 1 ] && ANIMATE=1 || ANIMATE=0
-    [ -t 0 ] && INTERACTIVE=1 || INTERACTIVE=0
     [ "$NO_COLOR" = "1" ] && USE_COLOR=0
     [ "$QUIET" = "1" ] && { ANIMATE=0; USE_COLOR=0; }
+    # Interactive prompts read from /dev/tty so they keep working even when the
+    # script itself is piped in (e.g. `curl URL | bash`), as long as the user
+    # is sitting at a real terminal.
+    if : < /dev/tty 2>/dev/null; then
+        INTERACTIVE=1
+    else
+        INTERACTIVE=0
+    fi
     return 0
 }
 
@@ -754,16 +761,18 @@ run_menu() {
         printf '\n    %s\n' "$(color '1;36' "$(T "请选择操作 / Choose an action:" "Choose an action:")")"
         printf '    1) %s\n' "$(T "🚀 安装 / 重新安装" "🚀 Install / Reinstall")"
         printf '    2) %s\n' "$(T "🔁 强制重新安装" "🔁 Force reinstall")"
-        printf '    3) %s\n' "$(T "🗑  卸载" "🗑  Uninstall")"
-        printf '    4) %s\n' "$(T "退出" "Exit")"
-        printf '    %s [1-4]: ' "$(color '1;33' "$(T "请输入 / Enter" "Enter")")"
+        printf '    3) %s\n' "$(T "📝 查看更新日志" "📝 View changelog")"
+        printf '    4) %s\n' "$(T "🗑  卸载" "🗑  Uninstall")"
+        printf '    5) %s\n' "$(T "退出" "Exit")"
+        printf '    %s [1-5]: ' "$(color '1;33' "$(T "请输入 / Enter" "Enter")")"
         local choice=""
         if read -r choice < /dev/tty; then :; else choice=""; fi
         case "$choice" in
             1) FORCE=0; printf '\n'; return 0 ;;
             2) FORCE=1; printf '\n'; return 0 ;;
-            3) do_uninstall; exit 0 ;;
-            4|q|Q|exit) printf '\n'; exit 0 ;;
+            3) show_changelog; printf '\n'; continue ;;
+            4) do_uninstall; exit 0 ;;
+            5|q|Q|exit) printf '\n'; exit 0 ;;
             *) warn "$(T "无效选项: $choice" "Invalid option: $choice")"; printf '\n' ;;
         esac
     done
