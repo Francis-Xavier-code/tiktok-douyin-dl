@@ -700,11 +700,14 @@ print_success() {
     printf '    %s\n' "$(T "🔎  自动识别抖音或 TikTok 链接。" "🔎  Platform is auto-detected from the link.")"
     printf '\n'
     printf '    %s\n' "$(color '33' "🔔  $notes_header")"
+    local n=1
     if [ "$NEED_SOURCE" = "true" ]; then
-        printf '    1. %s\n' "$(color '33' "$source_msg")"
+        printf '    %d. %s\n' "$n" "$(color '33' "$source_msg")"
+        n=$((n + 1))
     fi
-    printf '    2. %s\n' "$(T "查看帮助: media-downloader --help" "See help: media-downloader --help")"
-    printf '    3. %s\n' "$(T "卸载: 重新运行本脚本并加 --uninstall 参数" "Uninstall: rerun this script with --uninstall")"
+    printf '    %d. %s\n' "$n" "$(T "查看帮助: media-downloader --help" "See help: media-downloader --help")"
+    n=$((n + 1))
+    printf '    %d. %s\n' "$n" "$(T "卸载: 重新运行本脚本选“卸载”菜单项（或加 --uninstall 参数）" "Uninstall: rerun this script and pick Uninstall in the menu (or pass --uninstall)")"
     printf '\n'
 }
 
