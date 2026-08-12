@@ -103,6 +103,48 @@ def get_lang() -> str:
 
 
 # ============================================================================
+# 主题调色板（sv-ttk 不覆盖 tk.Text 等原生控件，颜色需自行适配）
+# ============================================================================
+
+PALETTES = {
+    "dark": {
+        "bg": "#1e1f22", "fg": "#e6edf3", "dim": "#8b949e",
+        "badge_bg": "#26292e",
+        "log_bg": "#161719", "log_fg": "#c9d1d9",
+        "info": "#c9d1d9", "success": "#3fb950", "warning": "#d29922", "error": "#f85149",
+    },
+    "light": {
+        "bg": "#ffffff", "fg": "#24292f", "dim": "#6e7781",
+        "badge_bg": "#eaeef2",
+        "log_bg": "#f6f8fa", "log_fg": "#24292f",
+        "info": "#24292f", "success": "#1a7f37", "warning": "#9a6700", "error": "#cf222e",
+    },
+}
+
+
+def _detect_system_theme() -> str:
+    """跟随系统明暗主题；无法检测时回退暗色。macOS 分支仅为开发者本地预览。"""
+    try:
+        if sys.platform == "win32":
+            import winreg
+            with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+            ) as k:
+                v, _ = winreg.QueryValueEx(k, "AppsUseLightTheme")
+            return "light" if v == 1 else "dark"
+        if sys.platform == "darwin":
+            out = subprocess.run(
+                ["defaults", "read", "-g", "AppleInterfaceStyle"],
+                capture_output=True, text=True, timeout=3,
+            )
+            return "dark" if "Dark" in out.stdout else "light"
+    except Exception:
+        pass
+    return "dark"
+
+
+# ============================================================================
 # 工具函数
 # ============================================================================
 
@@ -233,6 +275,8 @@ class _GuiLogWriter:
     约定消息格式：
       ("log", "info" | "error" | "warning", text)
       ("progress", current, total)
+      ("links", [url, ...])          # 解析出的链接列表
+      ("item", index, ok)            # 单条链接下载结果
       ("done", {"success": N, "fail": M, "cancelled": bool, "path": output_dir})
     """
 
@@ -270,7 +314,10 @@ def _current_lang() -> str:
 
 
 def _run_text(key: str, lang: str, **variables) -> str:
-    return translate(f"gui.run.{key}", locale=lang, **variables)
+    text = translate(f"gui.run.{key}", locale=lang, **variables)
+    if text == f"gui.run.{key}":
+        text = translate(f"gui.run.{key}", locale="en", **variables)
+    return text
 
 
 # ============================================================================
@@ -299,6 +346,22 @@ def _send_done(log_queue, success: int, fail: int, cancelled: bool, path: str):
 def _send_progress(log_queue, current: int, total: int):
     try:
         log_queue.put(("progress", int(current), int(total)))
+    except Exception:
+        pass
+
+
+def _send_links(log_queue, urls):
+    """解析出的链接列表，供 GUI 结果列表逐行展示。"""
+    try:
+        log_queue.put(("links", list(urls)))
+    except Exception:
+        pass
+
+
+def _send_item(log_queue, index: int, ok: bool):
+    """单条链接下载完成状态（成功 / 失败）。"""
+    try:
+        log_queue.put(("item", int(index), bool(ok)))
     except Exception:
         pass
 
@@ -349,6 +412,7 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
             _send_done(log_queue, 0, 0, False, actual_output_dir)
             return
         total = len(urls)
+        _send_links(log_queue, urls)
 
         if total == 0:
             _send_log(log_queue, "info", _run_text("no_links", lang))
@@ -399,6 +463,7 @@ def run_download(platform: str, raw_text: str, output_dir: str, log_queue, cance
                             success += 1
                         else:
                             fail += 1
+                        _send_item(log_queue, i, bool(result))
                     except Exception as e:
                         fail += 1
                         _send_log(log_queue, "error", _run_text(
@@ -460,7 +525,11 @@ def _t(key: str, **variables) -> str:
     """Read a GUI string from the shared translation catalog."""
     if "err" in variables and "error" not in variables:
         variables["error"] = variables["err"]
-    return translate(f"gui.ui.{key}", locale=_current_lang(), **variables)
+    text = translate(f"gui.ui.{key}", locale=_current_lang(), **variables)
+    if text == f"gui.ui.{key}":
+        # 缺键兜底：回退英文，避免界面上漏出 gui.ui.xxx 原始 key
+        text = translate(f"gui.ui.{key}", locale="en", **variables)
+    return text
 
 
 # ============================================================================
@@ -625,10 +694,12 @@ class App(tk.Tk):
         self.minsize(900, 680)
         self.geometry("1000x720")
         
-        # 注入现代化 Fluent Design 主题
+        # 跟随系统明暗主题（sv-ttk 主题 + 原生控件调色板）
+        self._theme = _detect_system_theme()
+        self._palette = PALETTES.get(self._theme, PALETTES["dark"])
         try:
             import sv_ttk
-            sv_ttk.set_theme("dark")  # 启用暗黑模式
+            sv_ttk.set_theme(self._theme)
         except ImportError:
             pass
 
@@ -672,8 +743,9 @@ class App(tk.Tk):
 
     def _build_ui(self):
         pad = {"padx": 16, "pady": 6}
-        dark_bg = "#1e1f22"
-        fg = "#e6edf3"
+        p = self._palette
+        dark_bg = p["bg"]
+        fg = p["fg"]
 
         # ================= 顶部横幅 =================
         header = ttk.Frame(self)
@@ -704,6 +776,9 @@ class App(tk.Tk):
             selectbackground="#3d7eff", selectforeground="#ffffff",
         )
         self._links_text.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+        # 输入校验提示（内联红字，替代模态弹窗）
+        self._links_hint = ttk.Label(links_frame, text="", foreground=p["error"])
+        self._links_hint.pack(anchor="w", padx=10, pady=(0, 6))
         # 粘贴/输入链接后自动识别平台（防抖 500ms）
         self._links_text.bind("<<Modified>>", self._on_links_modified)
 
@@ -714,7 +789,7 @@ class App(tk.Tk):
         ttk.Label(row3, text=_t("platform_label"), width=8).pack(side="left", padx=(4, 0))
         self._platform_badge = tk.Label(
             row3, text=f"  ⚪ {_t('platform_unknown')}  ",
-            bg="#26292e", fg="#8b949e",
+            bg=p["badge_bg"], fg=p["dim"],
             font=("Segoe UI", 9, "bold"), padx=8, pady=2,
         )
         self._platform_badge.pack(side="left", padx=(0, 12))
@@ -743,15 +818,13 @@ class App(tk.Tk):
         self._about_btn.pack(side="right")
 
         def _toggle_lang():
+            if self.is_downloading:
+                return
             cfg = load_config()
             new_lang = "en" if cfg.get("lang", "zh") == "zh" else "zh"
             cfg["lang"] = new_lang
             save_config(cfg)
-            if messagebox.askyesno(_t("language_restart_title"), _t("language_restart_message"), parent=self):
-                self.destroy()
-                import os
-                import sys
-                os.execl(sys.executable, sys.executable, *sys.argv)
+            self._apply_language()
 
         self._lang_btn = ttk.Button(row4, text="🌐 " + _t("language_button"), command=_toggle_lang)
         self._lang_btn.pack(side="right", padx=(0, 8))
@@ -764,29 +837,54 @@ class App(tk.Tk):
         self._progress_label = ttk.Label(row5, text="0/0", width=12, anchor="e")
         self._progress_label.pack(side="left", padx=(8, 0))
 
-        # ================= 日志窗口 =================
-        log_frame = ttk.LabelFrame(self, text=f"  {_t('log_title')}  ")
-        log_frame.pack(fill="both", expand=True, padx=16, pady=(4, 8))
+        # ================= 下载结果列表 =================
+        results_frame = ttk.LabelFrame(self, text=f"  {_t('results_label')}  ")
+        results_frame.pack(fill="both", expand=True, padx=16, pady=(4, 2))
+        tree_wrap = ttk.Frame(results_frame)
+        tree_wrap.pack(fill="both", expand=True, padx=10, pady=(4, 4))
+        self._tree = ttk.Treeview(
+            tree_wrap, columns=("status",), show="tree headings", selectmode="browse",
+        )
+        self._tree.heading("#0", text=_t("link_col"))
+        self._tree.heading("status", text=_t("status_col"))
+        self._tree.column("#0", stretch=True)
+        self._tree.column("status", width=100, anchor="center", stretch=False)
+        self._tree.tag_configure("ok", foreground=p["success"])
+        self._tree.tag_configure("fail", foreground=p["error"])
+        tree_scroll = ttk.Scrollbar(tree_wrap, orient="vertical", command=self._tree.yview)
+        self._tree.configure(yscrollcommand=tree_scroll.set)
+        tree_scroll.pack(side="right", fill="y")
+        self._tree.pack(side="left", fill="both", expand=True)
+
+        # ================= 日志窗口（可折叠，默认隐藏） =================
+        self._log_visible = tk.BooleanVar(value=False)
+        log_header = ttk.Frame(self)
+        log_header.pack(fill="x", padx=16, pady=(2, 0))
+        ttk.Checkbutton(
+            log_header, text=_t("log_show"), variable=self._log_visible,
+            command=self._toggle_log,
+        ).pack(anchor="w")
+        self._log_frame = ttk.LabelFrame(self, text=f"  {_t('log_title')}  ")
         self._log_text = scrolledtext.ScrolledText(
-            log_frame, state="disabled", height=14, wrap="word",
+            self._log_frame, state="disabled", height=10, wrap="word",
             font=("Consolas", 9), relief="flat",
-            bg=dark_bg, fg="#c9d1d9", insertbackground="#c9d1d9",
+            bg=p["log_bg"], fg=p["log_fg"], insertbackground=p["log_fg"],
             selectbackground="#3d7eff", selectforeground="#ffffff",
         )
-        self._log_text.tag_configure("info", foreground="#c9d1d9")
-        self._log_text.tag_configure("success", foreground="#3fb950")
-        self._log_text.tag_configure("warning", foreground="#d29922")
-        self._log_text.tag_configure("error", foreground="#f85149")
-        self._log_text.tag_configure("dim", foreground="#8b949e")
+        self._log_text.tag_configure("info", foreground=p["info"])
+        self._log_text.tag_configure("success", foreground=p["success"])
+        self._log_text.tag_configure("warning", foreground=p["warning"])
+        self._log_text.tag_configure("error", foreground=p["error"])
+        self._log_text.tag_configure("dim", foreground=p["dim"])
         self._log_text.pack(fill="both", expand=True, padx=10, pady=(4, 10))
 
-        # ------------------- 注册右键菜单 -------------------
+        # ------------------- 注册右键菜单（跟随语言） -------------------
         self._context_menu = tk.Menu(self, tearoff=0)
-        self._context_menu.add_command(label="剪切 / Cut", command=lambda: self.focus_get().event_generate("<<Cut>>"))
-        self._context_menu.add_command(label="复制 / Copy", command=lambda: self.focus_get().event_generate("<<Copy>>"))
-        self._context_menu.add_command(label="粘贴 / Paste", command=lambda: self.focus_get().event_generate("<<Paste>>"))
+        self._context_menu.add_command(label=_t("ctx_cut"), command=lambda: self.focus_get().event_generate("<<Cut>>"))
+        self._context_menu.add_command(label=_t("ctx_copy"), command=lambda: self.focus_get().event_generate("<<Copy>>"))
+        self._context_menu.add_command(label=_t("ctx_paste"), command=lambda: self.focus_get().event_generate("<<Paste>>"))
         self._context_menu.add_separator()
-        self._context_menu.add_command(label="全选 / Select All", command=lambda: self.focus_get().event_generate("<<SelectAll>>"))
+        self._context_menu.add_command(label=_t("ctx_select_all"), command=lambda: self.focus_get().event_generate("<<SelectAll>>"))
 
         def _show_context_menu(event):
             widget = event.widget
@@ -799,9 +897,12 @@ class App(tk.Tk):
         self.bind_class("TEntry", "<Button-3>", _show_context_menu)
         self.bind_class("ScrolledText", "<Button-3>", _show_context_menu)
 
-        # 状态栏
-        self._status_label = ttk.Label(self, text=_t("status_ready"), anchor="w", relief="sunken")
-        self._status_label.pack(fill="x", side="bottom")
+        # 状态栏（扁平样式，不再用 90 年代 sunken 边框）
+        status_frame = ttk.Frame(self)
+        status_frame.pack(fill="x", side="bottom")
+        ttk.Separator(status_frame).pack(fill="x")
+        self._status_label = ttk.Label(status_frame, text=_t("status_ready"), anchor="w", padding=(16, 5))
+        self._status_label.pack(fill="x")
 
     def _init_default_path(self):
         """根据上次保存或默认路径初始化输出目录。"""
@@ -999,8 +1100,86 @@ class App(tk.Tk):
     # ------------------------------------------------------------------ 事件处理
 
 
+    def _apply_language(self):
+        """免重启切换语言：保存状态 → 重建界面 → 恢复状态。"""
+        try:
+            links = self._links_text.get("1.0", "end-1c") if self._links_text else ""
+            outdir = self._output_dir_var.get()
+            platform = self._detected_platform
+            for w in self.winfo_children():
+                try:
+                    w.destroy()
+                except Exception:
+                    pass
+            self._build_ui()
+            if self._links_text is not None:
+                self._links_text.insert("1.0", links)
+            self._output_dir_var.set(outdir)
+            self._detected_platform = platform
+            self._update_platform_badge(platform)
+            try:
+                self._status_label.configure(text=_t("status_ready"))
+            except Exception:
+                pass
+            if self.is_downloading:
+                try:
+                    self._progress_bar.configure(value=0, maximum=100)
+                    self._progress_label.configure(text="0/0")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _toggle_log(self):
+        """展开 / 收起日志窗口。"""
+        try:
+            if self._log_visible.get():
+                self._log_frame.pack(fill="both", expand=True, padx=16, pady=(2, 8))
+            else:
+                self._log_frame.pack_forget()
+        except Exception:
+            pass
+
+    def _clear_tree(self):
+        try:
+            if self._tree:
+                self._tree.delete(*self._tree.get_children())
+        except Exception:
+            pass
+
+    def _set_hint(self, text):
+        """设置/清除输入框下方的内联校验提示。"""
+        try:
+            self._links_hint.configure(text=text)
+        except Exception:
+            pass
+
+    def _populate_tree(self, urls):
+        """结果列表：每个链接一行，初始状态为待处理。"""
+        try:
+            self._clear_tree()
+            if not urls:
+                self._tree.insert("", "end", iid="0", text=_t("status_no_links"), values=("",))
+                return
+            for i, u in enumerate(urls, 1):
+                self._tree.insert("", "end", iid=str(i), text=u, values=(_t("status_pending"),))
+        except Exception:
+            pass
+
+    def _mark_item(self, index, ok):
+        """把某条链接标记为成功 / 失败。"""
+        try:
+            iid = str(index)
+            if self._tree.exists(iid):
+                tag = "ok" if ok else "fail"
+                label = _t("status_ok") if ok else _t("status_fail")
+                self._tree.item(iid, values=(label,), tags=(tag,))
+        except Exception:
+            pass
+
     def _on_links_modified(self, _event=None):
         """链接输入变化后（防抖）自动识别平台。"""
+        self._set_hint("")
         if self._links_text.edit_modified():
             self._links_text.edit_modified(False)
         try:
@@ -1176,7 +1355,8 @@ class App(tk.Tk):
             platform = self._current_platform()
             raw_text = self._links_text.get("1.0", "end-1c")
             if not raw_text.strip():
-                messagebox.showerror(_t("app_title"), _t("empty_links_error"), parent=self)
+                self._set_hint(_t("empty_links_error"))
+                self._links_text.focus_set()
                 return
             detected = detect_platform_from_text(raw_text)
             if detected is None:
@@ -1184,21 +1364,14 @@ class App(tk.Tk):
                 has_douyin = "douyin.com" in lower or "iesdouyin.com" in lower
                 has_tiktok = "tiktok.com" in lower
                 if has_douyin and has_tiktok:
-                    messagebox.showerror(
-                        _t("app_title"),
-                        _t("mixed_platform_error"),
-                        parent=self,
-                    )
+                    self._set_hint(_t("mixed_platform_error"))
                     return
                 # 纯数字作品 ID 视为抖音（与 douyin 模块的 ID 支持一致）
                 if raw_text.strip().isdigit() and len(raw_text.strip()) >= 15:
                     detected = "douyin"
                 else:
-                    messagebox.showerror(
-                        _t("app_title"),
-                        _t("no_links_detected"),
-                        parent=self,
-                    )
+                    self._set_hint(_t("no_links_detected"))
+                    self._links_text.focus_set()
                     return
             if platform != detected:
                 self._detected_platform = detected
@@ -1222,6 +1395,7 @@ class App(tk.Tk):
             self.cancel_event.clear()
             self._action_btn.configure(text=_t("cancel_btn"), state="normal")
             self._clear_log()
+            self._clear_tree()
             self._progress_bar.configure(value=0, maximum=100)
             self._progress_label.configure(text="0/0")
             self._status_label.configure(text=_t("status_downloading"))
@@ -1277,6 +1451,14 @@ class App(tk.Tk):
                 level = item[1] if item[1] in ("info", "warning", "error") else "info"
                 text = str(item[2])
                 self._log_append(level, text)
+                # 出错时自动展开日志，方便看到具体原因
+                if level == "error" and not self._log_visible.get():
+                    self._log_visible.set(True)
+                    self._toggle_log()
+            elif msg_type == "links" and len(item) >= 2:
+                self._populate_tree(item[1] if isinstance(item[1], list) else [])
+            elif msg_type == "item" and len(item) >= 3:
+                self._mark_item(item[1], bool(item[2]))
             elif msg_type == "progress" and len(item) >= 3:
                 current = int(item[1]) if isinstance(item[1], (int, float)) else 0
                 total = int(item[2]) if isinstance(item[2], (int, float)) else 0
