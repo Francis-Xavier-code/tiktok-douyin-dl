@@ -5,11 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.1] - 2026-08-08
+## [2.0.1] - 2026-08-14
 
 ### Added
 
 - **[CLI]** 统一入口 `media-downloader` 支持自动更新：启动时静默检测新版本并打印本端更新日志（changelog.json 镜像，fail-open）；打包版（frozen）检测到新版本时自动下载并替换自身二进制（与 `douyin` / `tiktok` 入口行为一致），源码运行仅提示不替换。
+- **[CLI]** 修复在线脚本不好看的情况
+- **[Windows]** 修复GUI的打开文件夹显示成函数的BUG。
+- **[全平台]** 下载量高达200次13 star？ 何意味
+- **[全平台]** 2.0.0版本太稳了，此次更新仅修复windows、maos 、Linux端的cli，给点star下个版本上新UI
+- **[全平台]** 给点star不然软件白做了，😭
 
 ## [2.0.0] - 2026-08-08
 

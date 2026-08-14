@@ -1,13 +1,22 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-07T19:04:59Z",
+  "updated_at": "2026-08-14T12:03:34Z",
   "versions": [
     {
       "version": "2.0.1",
-      "date": "2026-08-08",
+      "date": "2026-08-14",
       "entries": {
+        "all": [
+          "下载量高达200次13 star？ 何意味",
+          "2.0.0版本太稳了，此次更新仅修复windows、maos 、Linux端的cli，给点star下个版本上新UI",
+          "给点star不然软件白做了，😭"
+        ],
         "cli": [
-          "统一入口 `media-downloader` 支持自动更新：启动时静默检测新版本并打印本端更新日志（changelog.json 镜像，fail-open）；打包版（frozen）检测到新版本时自动下载并替换自身二进制（与 `douyin` / `tiktok` 入口行为一致），源码运行仅提示不替换。"
+          "统一入口 `media-downloader` 支持自动更新：启动时静默检测新版本并打印本端更新日志（changelog.json 镜像，fail-open）；打包版（frozen）检测到新版本时自动下载并替换自身二进制（与 `douyin` / `tiktok` 入口行为一致），源码运行仅提示不替换。",
+          "修复在线脚本不好看的情况"
+        ],
+        "windows": [
+          "修复GUI的打开文件夹显示成函数的BUG。"
         ]
       }
     },
@@ -24,11 +33,12 @@
           "客户端完成：支持抖音与 TikTok 解析/下载（WebView 兜底）、远程策略 Ed25519 验签（fail-closed）、自动更新检查与按端过滤的更新日志（含国内镜像兜底）；版本号与主版本线对齐（2.0.0），Release CI 自动构建并上传 `douyin-download-Android-{version}.apk`。"
         ],
         "cli": [
-          "内置无头浏览器：Windows / Linux / macOS CLI 产物现在随包附带 Playwright headless Chromium（`ms-playwright/` 侧车目录，仅 headless shell，~200MB），首次运行不再需要联网下载浏览器；没有侧车时回退到原有自动下载。Windows GUI 安装包同步改用 `--only-shell`，安装包体积大幅缩小。",
+          "内置无头浏览器：Windows / Linux / macOS CLI 产物现在随包附带 Playwright headless Chromium（`ms-playwright/` 侧车目录，仅 headless shell，~200MB），首次运行不再需要联网下载浏览器；没有侧车时回退到原有自动下载。",
           "macOS CLI 打包：新增 `scripts/build-macos-cli.sh`（PyInstaller 单文件），按 Apple 芯片（arm64）与 Intel（x86_64）双架构产出 `MediaDownloader-macOS-{arch}-CLI-{version}.zip`；CI 每次 Release 自动构建上传。`install.sh` 一键安装脚本现同时支持 Linux 与 macOS，并在 macOS 上自动解除 quarantine 属性。",
           "更新提示显示本端更新日志：打包版 `media-downloader` 启动时静默检查新版本并打印本端更新日志（不自动替换）；Agent skill 支持 macOS 安装，并修复安装时下载不存在的裸二进制资产的错误。",
           "更新检测免限流：检查更新不再调用 GitHub REST API（api.github.com，匿名 60 次/小时限制），改用共享 changelog.json 镜像获取版本与更新日志（与 Windows / macOS / iOS 一致）；自更新支持新版归档资产（zip / tar.gz，含浏览器侧车），自动解压替换。",
-          "install.sh 安装时展示本版本更新日志：安装完成后打印当前版本 CLI + 全平台（[全平台]）的更新内容（changelog.json 镜像，python3 解析，缺失时静默跳过）。"
+          "install.sh 安装时展示本版本更新日志：安装完成后打印当前版本 CLI + 全平台（[全平台]）的更新内容（changelog.json 镜像，python3 解析，缺失时静默跳过）。",
+          "新增windows在线下载脚本，Windows端提供在线卸载命令。"
         ],
         "ios": [
           "修复更新检测：改为读取共享 changelog.json 获取最新版本与更新日志（原来查找不存在的 `ios-v*` 标签，永远检测不到更新）。"
@@ -37,7 +47,7 @@
           "检查更新：主窗口与菜单栏新增「检查更新」，弹窗显示新版本与按端过滤的更新日志（可一键打开更新包/前往发布页）；被版本策略硬阻挡时自动下载 DMG 更新。"
         ],
         "windows": [
-          "GUI 自动识别平台：粘贴/输入链接后自动识别抖音或 TikTok 并切换平台下拉框（可手动覆盖）；同时包含两种平台的链接会报错提示分开下载。",
+          "GUI 自动识别平台：粘贴/输入链接后自动识别抖音或 TikTok 并切换平台下拉框（可手动覆盖）；同时包含两种平台的链接会报错提示分开下载。Windows GUI 安装包同步内置无头浏览器，无需额外下载浏览器，安装改用 `--only-shell`，安装包体积大幅缩小。",
           "修复更新弹窗：改用共享 changelog.json 替代被限流/被墙的 GitHub API，更新日志不再截断 300 字。",
           "关于窗口显示项目贡献者：带头像、可点击跳转贡献者主页；数据直接取自 GitHub 贡献者页面（非 REST API，避免限流），加载失败时回退为贡献者页面链接。"
         ]
