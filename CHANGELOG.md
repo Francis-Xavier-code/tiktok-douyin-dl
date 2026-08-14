@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[全平台]** 给点star不然软件白做了，😭
 - **[macOS]** 检查更新改用共享 changelog.json 优先（GitHub API 兜底），国内网络不再依赖可能被限流/墙的 GitHub API，可稳定检测到新版本。
 - **[Android]** 修复「检查更新」不对比最新版本的问题：改为读取共享 changelog.json 对比最新版本并弹出更新框（附更新日志 + APK 下载），不再永远显示「已是最新版本」。
+- **[Android]** APK 更新下载增加 gh-proxy / ghproxy 国内镜像兜底：直连 GitHub 失败或限速时自动切换镜像节点下载，避免更新包下载失败。
 
 ## [2.0.0] - 2026-08-08
 
