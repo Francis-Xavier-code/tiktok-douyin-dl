@@ -8,7 +8,7 @@ README can embed a chart that never depends on a flaky third-party service.
 Run manually:
     python3 scripts/update-star-history.py
 
-Or let .github/workflows/star-history.yml run it weekly (cron) and commit
+Or let .github/workflows/star-history.yml run it daily (cron) and commit
 the result back to main.
 """
 
@@ -25,7 +25,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HISTORY = os.path.join(ROOT, "assets", "star-history.json")
 SVG = os.path.join(ROOT, "assets", "star-history.svg")
 
-MAX_POINTS = 365  # keep the chart JSON small (weekly -> ~1 year)
+MAX_POINTS = 365  # keep the chart JSON small (daily -> ~1 year)
 
 
 def fetch_stars() -> int:
@@ -119,8 +119,8 @@ def main() -> int:
 
     today = datetime.date.today().isoformat()
     hist = load_history()
-    if hist and hist[-1]["stars"] == stars:
-        print(f"no change (still {stars} stars); refreshing chart only")
+    if hist and hist[-1]["date"] == today:
+        hist[-1] = {"date": today, "stars": stars}
     else:
         hist.append({"date": today, "stars": stars})
     hist = hist[-MAX_POINTS:]
