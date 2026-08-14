@@ -6,7 +6,7 @@
 
 <!-- 语言切换：置顶显眼，新手一眼可见 -->
 <p align="center">
-  <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_English-点我阅读英文-blue?style=for-the-badge" alt="English"></a>
+  <a href="README.en.md"><img src="https://img.shields.io/badge/🌐_English-Read in English-blue?style=for-the-badge" alt="English"></a>
 </p>
 
 <p align="center">
