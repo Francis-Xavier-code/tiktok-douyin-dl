@@ -114,9 +114,7 @@ enum AppUpdateService {
     }
 
     static func checkForUpdates() async throws -> AppUpdateResult {
-        let currentVersion = Bundle.main.object(
-            forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "2.0.1"
+        let currentVersion = Self.currentVersion
 
         // 1. Preferred: the shared changelog.json via raw-file mirrors. Works in
         //    China, no GitHub API rate limits, and gives the per-platform notes.
@@ -182,10 +180,14 @@ enum AppUpdateService {
         throw receivedValidReleaseList ? AppUpdateError.noMacOSRelease : AppUpdateError.invalidResponse
     }
 
-    private static func makeResult(for release: GitHubRelease) -> AppUpdateResult {
-        let currentVersion = Bundle.main.object(
+    private static var currentVersion: String {
+        Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
         ) as? String ?? "2.0.1"
+    }
+
+    private static func makeResult(for release: GitHubRelease) -> AppUpdateResult {
+        let currentVersion = Self.currentVersion
         let latestVersion = release.tagName.hasPrefix("v") ? String(release.tagName.dropFirst(1)) : release.tagName
 
         // Find the unsigned DMG asset.
