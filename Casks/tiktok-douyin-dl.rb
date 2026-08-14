@@ -1,6 +1,6 @@
 cask "tiktok-douyin-dl" do
   version "2.0.1"
-  sha256 "7cab78a2225bc53efec9db6987c4168f27fda4b89b1788d07768e672091b3e18"
+  sha256 "be543cbe1746d52a68a07a7ea49f441aea4753f42e74f5089e2ffbb86310a1a2"
 
   url "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/download/v#{version}/MediaDownloader-macOS-#{version}-unsigned.dmg"
   name "MediaDownloader"
