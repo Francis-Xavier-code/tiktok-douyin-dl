@@ -1,27 +1,27 @@
 {
   "schema": 1,
   "updated_at": "2026-08-14T12:09:41Z",
-  "message": "当前版本已停止支持，请升级到 2.0.0 或以上版本以继续使用。",
+  "message": "当前版本已停止支持，请升级到 2.0.1 或以上版本以继续使用。",
   "update_url": "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/latest",
   "platforms": {
     "cli": {
-      "min_version": "2.0.0",
+      "min_version": "2.0.1",
       "hard_block": true
     },
     "windows": {
-      "min_version": "2.0.0",
+      "min_version": "2.0.1",
       "hard_block": true
     },
     "macos": {
-      "min_version": "2.0.0",
+      "min_version": "2.0.1",
       "hard_block": true
     },
     "ios": {
-      "min_version": "2.0.0",
+      "min_version": "2.0.1",
       "hard_block": true
     },
     "android": {
-      "min_version": "2.0.0",
+      "min_version": "2.0.1",
       "hard_block": true
     }
   }
