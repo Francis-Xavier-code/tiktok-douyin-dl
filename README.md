@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="assets/app.ico" alt="MediaDownloader icon" width="128" height="128">
+  <img src="assets/app.ico" alt="MediaDownloader 图标" width="128" height="128">
 </p>
 
-<h1 align="center">TikTok &amp; Douyin No-Watermark Downloader</h1>
+<h1 align="center">TikTok &amp; 抖音无水印下载器</h1>
 
 <!-- 语言切换：置顶显眼，新手一眼可见 -->
 <p align="center">
-  <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_简体中文-点我阅读中文-red?style=for-the-badge" alt="简体中文"></a>
+  <a href="README_zh.md"><img src="https://img.shields.io/badge/🌐_English-点我阅读英文-blue?style=for-the-badge" alt="English"></a>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-v2.0.0-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v2.0.1-blue?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/python-3.9+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/swift-5.9+-orange?style=flat-square&logo=swift&logoColor=white" alt="Swift">
   <img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue?style=flat-square" alt="License">
@@ -20,23 +20,25 @@
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20iOS%20%7C%20Android%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
 </p>
 
-A fast, cross-platform tool suite for downloading TikTok and Douyin videos and photo posts without watermarks. The project provides a **modern Windows desktop client**, a **native SwiftUI iOS app**, an **Android client**, an **experimental Docker WebUI for NAS**, and an **independent Linux/macOS CLI**.
+一款跨平台的高效工具套件，用于下载 TikTok 和抖音无水印视频及图文作品。项目提供 **现代化 Windows 桌面客户端**、**原生 SwiftUI iOS App**、**Android 客户端**、适合 NAS 的 **实验性 Docker WebUI**，以及 **Linux/macOS 独立命令行工具**。
 
-Packaged desktop applications include the required runtime and browser components. The iOS client parses supported share pages and downloads media directly on the device without relying on a Python service or the Docker WebUI.
+打包后的桌面程序已包含所需运行环境与浏览器组件；iOS 客户端可在设备本地解析支持的分享页面并下载媒体，不依赖 Python 服务或 Docker WebUI。
 
-📝 **[Changelog](CHANGELOG.md)** — full release notes for every version.
+📝 **[更新日志](CHANGELOG.md)** —— 各版本完整变更记录。
 
 ---
 
-## 🖼️ Screenshots
+---
 
-### 🖥️ Windows GUI
+## 🖼️ 界面预览
+
+### 🖥️ Windows 图形界面
 
 <div align="center">
 
-| Main Window | Update Check |
+| 主界面 | 更新检查 |
 | :-: | :-: |
-| <img src="assets/windows-gui.png" width="380" alt="Windows GUI"> | <img src="assets/windows-gui-autoupdate-checkNewVison.png" width="380" alt="Update check"> |
+| <img src="assets/windows-gui.png" width="380" alt="主界面"> | <img src="assets/windows-gui-autoupdate-checkNewVison.png" width="380" alt="更新检查"> |
 
 </div>
 
@@ -44,9 +46,9 @@ Packaged desktop applications include the required runtime and browser component
 
 <div align="center">
 
-| Main Window | Menu Bar · Waiting for a Link | Menu Bar · Link Detected |
+| 主界面 | 菜单栏 · 等待分享链接 | 菜单栏 · 识别链接 |
 | :-: | :-: | :-: |
-| <img src="assets/macos-gui.png" width="280" alt="macOS app"> | <img src="assets/macos-menubar-preview.png" width="280" alt="Menu bar waiting"> | <img src="assets/macos-menubar-ready-preview.png" width="280" alt="Menu bar ready"> |
+| <img src="assets/macos-gui.png" width="280" alt="主界面"> | <img src="assets/macos-menubar-preview.png" width="280" alt="菜单栏等待"> | <img src="assets/macos-menubar-ready-preview.png" width="280" alt="菜单栏就绪"> |
 
 </div>
 
@@ -54,20 +56,20 @@ Packaged desktop applications include the required runtime and browser component
 
 <div align="center">
 
-| Select Video | Preview & Download | Downloaded Videos |
+| 选择视频 | 预览下载 | 查看已下载视频 |
 | :-: | :-: | :-: |
-| <img src="assets/ios-gui-select-video.png" width="230" alt="Select video"> | <img src="assets/ios-gui-preview-download.png" width="230" alt="Preview & download"> | <img src="assets/ios-look-downloaded-video.png" width="230" alt="Downloaded videos"> |
-| Settings | Disclaimer | Using the Downloader |
+| <img src="assets/ios-gui-select-video.png" width="230" alt="选择视频"> | <img src="assets/ios-gui-preview-download.png" width="230" alt="预览下载"> | <img src="assets/ios-look-downloaded-video.png" width="230" alt="查看已下载视频"> |
+| 设置 | 免责声明 | 使用下载器 |
 | :-: | :-: | :-: |
-| <img src="assets/ios-gui-setting.png" width="230" alt="Settings"> | <img src="assets/ios-login-免责声明.png" width="230" alt="Disclaimer"> | <img src="assets/ios-gui-useDownload.png" width="230" alt="Using the downloader"> |
+| <img src="assets/ios-gui-setting.png" width="230" alt="设置"> | <img src="assets/ios-login-免责声明.png" width="230" alt="免责声明"> | <img src="assets/ios-gui-useDownload.png" width="230" alt="使用下载器"> |
 
 </div>
 
-### 🐧 Linux CLI
+### 🐧 Linux 命令行
 
 <div align="center">
 
-| Terminal |
+| 终端 |
 | :-: |
 | <img src="assets/linux-cli.png" width="640" alt="Linux CLI"> |
 
@@ -77,133 +79,119 @@ Packaged desktop applications include the required runtime and browser component
 
 <div align="center">
 
-| Main | Settings |
+| 主界面 | 设置 |
 | :-: | :-: |
-| <img src="assets/android-gui-index.png" width="230" alt="Android main"> | <img src="assets/android-setting-gui.png" width="230" alt="Android settings"> |
+| <img src="assets/android-gui-index.png" width="230" alt="主界面"> | <img src="assets/android-setting-gui.png" width="230" alt="设置"> |
 
 </div>
 
-### 🐳 WebUI (experimental) · coming soon
+### 🐳 WebUI（实验性）· 即将上线
 
 <!-- 预留：截图就绪后放到 assets/webui-preview.png，替换下方占位行即可 -->
-| Preview |
+| 预览 |
 |:---:|
-| _Coming soon in an upcoming release._ |
+| _即将上线，敬请期待。_ |
 
-## ✨ Highlights
+## ✨ 功能亮点
 
-* 🎨 **Modern UI Design**: A minimalist Windows 11 Fluent-style dark interface with **seamless language switching (Chinese/English)**.
-* 📱 **Native iOS App**: Parses supported Douyin/TikTok share links directly on the device, downloads no-watermark videos and photo posts, and manages local files through a native SwiftUI interface.
-* ☁️ **Optional iOS Multi-Location Saving**: Keeps files locally in the app by default, with optional copies of supported media in Photos and a user-selected iCloud Drive folder.
-* 📁 **Automatic Creator Archives**: Extracts creator names and automatically organizes downloaded videos and images into dedicated creator folders.
-* 📦 **Standard Installer**: Provides a standard Windows `Setup.exe` with automatic installation, desktop shortcut creation, and a clean uninstaller.
-* 🛡️ **Stealth Mode**: Uses anti-detection techniques to conceal WebDriver fingerprints and reduce the risk of triggering platform protections while downloading.
+* 🎨 **现代化 UI 设计**：全新引入 Windows 11 Fluent 风格的暗黑模式极简界面，并**新增了跨语言无缝切换 (中/英)**。
+* 📱 **原生 iOS App**：直接在设备上解析支持的抖音/TikTok 分享链接，下载无水印视频和图文作品，并通过原生 SwiftUI 界面管理本地文件。
+* ☁️ **可选的 iOS 多位置保存**：默认保留 App 本地文件；按需将支持的媒体额外保存到系统相册，并镜像到用户选择的 iCloud Drive 文件夹。
+* 📁 **自动构建专属档案库**：下载内容不再杂乱无章！智能提取视频作者名，自动为你建立“作者专属文件夹”归档图文和视频。
+* 📦 **规范化安装包**：提供标准的 Windows `Setup.exe`，包含自动安装、桌面快捷方式生成以及“不留痕迹”的暴力卸载。
+* 🛡️ **终极风控伪装 (Stealth Mode)**：底层引入了最强防检测注入代码，隐匿 WebDriver 痕迹，最大程度防止下载时被官方风控。
 
-## 📥 Download & Install
+## 📥 下载与安装
 
-### 💻 Windows / 🍎 macOS / 📱 iOS Users (GUI Recommended)
+### 💻 Windows / 🍎 macOS / 📱 iOS 用户 (图形界面推荐)
 
-Visit the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) to download the latest installer:
+前往[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载最新安装包：
 
-- **Windows**: `MediaDownloader-Windows-x64-Setup-<ver>.exe`
-- **macOS**: `MediaDownloader-macOS-<ver>.dmg` (ad-hoc signed; if Gatekeeper blocks the first launch, go to System Settings → Privacy & Security → Open Anyway)
-- **iOS**: `MediaDownloader-iOS-<ver>-unsigned.ipa` (needs re-signing with your own Apple ID)
+- **Windows**：`MediaDownloader-Windows-x64-Setup-<ver>.exe`
+- **macOS**：`MediaDownloader-macOS-<ver>.dmg`（ad-hoc 签名；如首次打开被 Gatekeeper 拦截，请前往 系统设置 → 隐私与安全性 → 仍要打开）
+- **iOS**：`MediaDownloader-iOS-<ver>-unsigned.ipa`（需使用自己的 Apple ID 重新签名）
 
-### 🤖 Android Users
+### 🤖 Android 用户
 
-Download `douyin-download-Android-<ver>.apk` from the [Releases page](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases) and install it on your phone (allow installing from unknown sources).
+在[发布页面](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)下载 `douyin-download-Android-<ver>.apk` 并安装到手机（需允许「安装未知来源应用」）。
 
 ### 🐍 Python CLI (PyPI)
 
-Install the Python package from PyPI (works on Windows / Linux / macOS):
+从 PyPI 安装 Python 包（支持 Windows / Linux / macOS）：
 
 ```bash
 pip install tiktok-douyin-dl
 python -m playwright install chromium
 ```
 
-Then run `media-downloader`, `douyin-dl`, or `tiktok-dl`.
+安装后可直接使用 `media-downloader`、`douyin-dl` 或 `tiktok-dl` 命令。
 
-### 🐧 Linux / 🍎 macOS CLI Users
+### 🐧 Linux / 🍎 macOS 用户 (CLI 命令行)
 
-Run the following command in your terminal to download the latest CLI (Linux x86_64, macOS Apple Silicon arm64) and create symlinks in `~/.local/bin`:
+在终端运行以下命令，即可自动拉取最新 CLI（Linux x86_64 / macOS Apple 芯片 arm64）并软链接至 `~/.local/bin`：
 
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.sh?v=$(date +%s)" | bash
 ```
 
-### 🪟 Windows CLI Users
+### 🪟 Windows 用户 (CLI 命令行)
 
-Run the following command in PowerShell to install the Windows CLI (adds `%LOCALAPPDATA%\MediaDownloader` to your user PATH, no admin needed):
+在 PowerShell 中运行以下命令，即可安装 Windows CLI（将 `%LOCALAPPDATA%\MediaDownloader` 加入用户 PATH，无需管理员权限）：
 
 ```powershell
 irm https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/install.ps1 | iex
 ```
 
-Uninstall with:
+卸载：
 
 ```powershell
 irm https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/uninstall.ps1 | iex
 ```
 
-## 🤖 One-Sentence AI Prompt
+## 🤖 给 AI 的一句话指令
 
-Copy the sentence below, replace `<link>` with the Douyin/TikTok share link or result URL, and send it to any AI assistant — the AI reads the skill file itself, then downloads the work. **No installation or commands needed.**
+复制下面这句话，把 `<链接>` 换成你要下载的抖音 / TikTok 分享链接或作品链接，直接发给任意 AI 助手即可——AI 会自己读取技能文件并按其中的方法帮你下载。**无需安装，不用敲命令。**
 
 ```text
-Read the Media Downloader skill at https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md, then download this work using it: <link>
+请先阅读技能文件 https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md ，然后按其中的方法帮我下载这个作品：<链接>
 ```
 
-To search instead of pasting a link: `Read the skill at https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md, find a public Douyin or TikTok video matching "<keywords>", show me the result, and download it.`
+想搜索而不是粘贴链接：`请先阅读技能文件 https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/skills/media-downloader/SKILL.md ，搜索符合“<关键词>”的公开抖音或 TikTok 视频，告诉我选中的结果，然后下载。`
 
-OpenClaw / AgentSkills users can install the skill instead: `openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader` and then use `$media-downloader`.
+OpenClaw / AgentSkills 环境可改为安装：`openclaw skills install skills-sh:Francis-Xavier-code/tiktok-douyin-dl/media-downloader`，之后直接用 `$media-downloader`。
+
+对于不支持自动发现 Skill 的代理，可直接说：`读取 skills/media-downloader/SKILL.md，并使用其完整脚本下载这个搜索结果或分享链接：<URL>`。
 
 ---
 
-## 🚀 Usage
+## 🚀 使用方法
 
-### Windows GUI
-
-Open **MediaDownloader** from the desktop, paste the share text or link copied from Douyin/TikTok, select the corresponding platform, and click "Start Download."
+### Windows 图形界面
+双击桌面生成的 **MediaDownloader** 图标，在文本框内直接粘贴你在抖音/TikTok复制的“分享文本”或纯链接，选择对应平台，点击“开始下载”即可。
 
 ### iOS App
 
-Paste Douyin/TikTok share text or a link into the download screen and start the task. Completed media is stored only in the app's local files directory by default. Optional Photos or iCloud Drive copies can be enabled in Settings.
+在下载页面粘贴抖音/TikTok 分享文本或链接并开始任务。下载完成后默认只保存在 App 的本地文件目录；如需相册或 iCloud Drive 副本，可前往设置页面手动开启。
 
-### CLI (Linux, macOS or Windows CMD)
-
+### 命令行静默调用 (适用于 Linux 或 Windows CMD)
 ```bash
-media-downloader "Share text or link" [output_directory]
+media-downloader "分享文本或链接" [保存目录]
 ```
 
-Windows/macOS CLI zips and the Linux tar.gz are attached to every [Release](https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases)
-(the macOS CLI ships Apple Silicon arm64 builds). All CLI archives bundle the Playwright headless
-Chromium as a sidecar (`ms-playwright/`), so no browser download is needed on first run. If macOS reports
-an unidentified developer on first run, remove the quarantine attribute once:
+CLI 会根据链接域名自动识别抖音或 TikTok；带 `modal_id` 的抖音搜索结果链接会自动转换为直接作品链接，不再要求必须提供手机分享文案。只有需要手动覆盖时才使用 `--platform douyin` 或 `--platform tiktok`。
 
-```bash
-xattr -d com.apple.quarantine $(which media-downloader)
-```
+## 项目结构
 
-The CLI automatically detects Douyin or TikTok from the link domain. Douyin search-result URLs containing `modal_id` are converted to direct work URLs automatically, so mobile share text is not required. Use `--platform douyin` or `--platform tiktok` only when a manual override is needed.
+各平台应用位于 `apps/`，可安装的 Python 包位于 `python/`，Apple 共享 Swift 代码位于 `apple/`，自主 AI 代理 Skill 位于 `skills/`，构建入口位于 `scripts/`。详细说明见 [`docs/architecture.md`](docs/architecture.md)。
 
-### Update changelog
+执行 `./scripts/build-apple.sh all` 可按 `2.0.1` 版本同时构建 iOS 与 macOS 无签名产物；将 `all` 改为 `ios` 或 `macos` 可单独构建。
 
-Every client (Windows GUI, macOS/iOS apps, Android, CLI) checks for updates and shows a **per-platform changelog** — only the entries relevant to that client (tagged `[Windows]` / `[macOS]` / `[iOS]` / `[Android]` / `[CLI]` / `[全平台]` in [CHANGELOG.md](CHANGELOG.md)). All clients read the same machine-readable [`changelog.json`](changelog.json), which is regenerated from CHANGELOG.md at each release, so a single long changelog file serves every platform.
-
-## Project layout
-
-Application shells live in `apps/`, the installable Python package in `python/`, shared Swift code in `apple/`, the autonomous-agent skill in `skills/`, and reproducible build entry points in `scripts/`. See [`docs/architecture.md`](docs/architecture.md) for details.
-
-Build both unsigned Apple artifacts at version `2.0.0` with `./scripts/build-apple.sh all`. Use `ios` or `macos` instead of `all` to build one platform.
-
-## ⚖️ Disclaimer
-
-This software is intended solely for personal study, academic exchange, and technical testing of webpage backups. Commercial use, illegal scraping, and cyberattacks are strictly prohibited. Users assume full responsibility for any copyright disputes or account restrictions resulting from use of this software.
+## ⚖️ 免责声明
+本软件仅限用于个人学习研究、学术交流及网页技术备份测试，严禁用于任何商业用途、非法抓取或网络攻击。因使用本软件导致的一切版权纠纷或账号风控后果，均由使用者自行承担全部责任。
 
 ## ⭐ Star History
 
-If this project helps you, please give it a ⭐ — it motivates us to keep improving. The chart below is self-hosted (regenerated weekly by CI), so it always renders:
+如果本项目对你有帮助，请点个 ⭐ 支持我们。下方图表为**自托管**（CI 每周自动更新），不会因第三方服务不稳定而加载失败：
 
 <p align="center">
   <img src="https://img.shields.io/github/stars/Francis-Xavier-code/tiktok-douyin-dl?style=for-the-badge&logo=github&color=gold" alt="GitHub Stars">
@@ -212,5 +200,5 @@ If this project helps you, please give it a ⭐ — it motivates us to keep impr
 </p>
 
 <div align="center">
-  <img src="assets/star-history.svg" alt="Star History Chart" width="760">
+  <img src="assets/star-history.svg" alt="Star History 图表" width="760">
 </div>
