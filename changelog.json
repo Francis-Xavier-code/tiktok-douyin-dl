@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-14T12:09:42Z",
+  "updated_at": "2026-08-14T12:34:41Z",
   "versions": [
     {
       "version": "2.0.1",
@@ -11,9 +11,15 @@
           "2.0.0版本太稳了，此次更新仅修复windows、maos 、Linux端的cli，给点star下个版本上新UI",
           "给点star不然软件白做了，😭"
         ],
+        "android": [
+          "修复「检查更新」不对比最新版本的问题：改为读取共享 changelog.json 对比最新版本并弹出更新框（附更新日志 + APK 下载），不再永远显示「已是最新版本」。"
+        ],
         "cli": [
           "统一入口 `media-downloader` 支持自动更新：启动时静默检测新版本并打印本端更新日志（changelog.json 镜像，fail-open）；打包版（frozen）检测到新版本时自动下载并替换自身二进制（与 `douyin` / `tiktok` 入口行为一致），源码运行仅提示不替换。",
           "修复在线脚本不好看的情况"
+        ],
+        "macos": [
+          "检查更新改用共享 changelog.json 优先（GitHub API 兜底），国内网络不再依赖可能被限流/墙的 GitHub API，可稳定检测到新版本。"
         ],
         "windows": [
           "修复GUI的打开文件夹显示成函数的BUG。"
