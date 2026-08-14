@@ -26,8 +26,12 @@ Locations rewritten (kept in sync by scripts/release.sh before tagging):
     apps/macos/MediaDownloader/AppUpdateService.swift            Bundle fallback
     apps/ios/MediaDownloader/Views/SettingsView.swift            Bundle fallback
     apps/android/app/build.gradle.kts            versionName / versionCode
+    apps/windows/gui/gui_downloader.py           About fallback version
+    apps/ios/scripts/build-unsigned-ipa.sh       IOS_VERSION fallback
+    scripts/build-apple.sh                       version.json fallback echo
+    scripts/build-windows.ps1                    $DefaultVersion fallback
 (scripts/build-apple.sh and scripts/build-windows.ps1 read version.json
- directly at runtime, so they need no sync.)
+ directly at runtime, but their fallback defaults are synced here too.)
 With --policies, also mirrors version-policy.json platforms.*.min_version and
 download-policy.json platforms.android.min_version (hard_block flags untouched).
 """
@@ -131,6 +135,18 @@ def sync_versions(root: Path, data: dict, policies: bool = False) -> list[str]:
          r'versionName = "[^"]*"', f'versionName = "{android_name}"'),
         (root / "apps/android/app/build.gradle.kts",
          r'versionCode = \d+', f'versionCode = {android_code}'),
+        (root / "apps/windows/gui/gui_downloader.py",
+         r'except ImportError:\n            version = "[^"]*"',
+         f'except ImportError:\n            version = "{main}"'),
+        (root / "apps/ios/scripts/build-unsigned-ipa.sh",
+         r'VERSION="\$\{IOS_VERSION:-[^"]*\}"',
+         f'VERSION="${{IOS_VERSION:-{main}}}"'),
+        (root / "scripts/build-apple.sh",
+         r'\|\| echo [0-9]+\.[0-9]+\.[0-9]+',
+         f'|| echo {main}'),
+        (root / "scripts/build-windows.ps1",
+         r'else \{ "[^"]*" \}',
+         f'else {{ "{main}" }}'),
     ]
     for item in edits:
         path, pattern, replacement = item[0], item[1], item[2]

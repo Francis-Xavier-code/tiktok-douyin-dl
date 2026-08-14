@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TARGET="${1:-all}"
 # version.json is the single source of truth; fall back to last-known values
 # if it is unreadable (scripts/sync-versions.py keeps everything consistent).
-VERSION="${APPLE_VERSION:-$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["main"])' "$REPO_ROOT/version.json" 2>/dev/null || echo 2.0.0)}"
+VERSION="${APPLE_VERSION:-$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["main"])' "$REPO_ROOT/version.json" 2>/dev/null || echo 2.0.1)}"
 BUILD_NUMBER="${APPLE_BUILD_NUMBER:-$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["apple"]["buildNumber"])' "$REPO_ROOT/version.json" 2>/dev/null || echo 1)}"
 OUTPUT_ROOT="${APPLE_OUTPUT_DIR:-$REPO_ROOT/dist/apple}"
 
