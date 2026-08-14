@@ -114,6 +114,32 @@ enum AppUpdateService {
     }
 
     static func checkForUpdates() async throws -> AppUpdateResult {
+        let currentVersion = Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String ?? "2.0.1"
+
+        // 1. Preferred: the shared changelog.json via raw-file mirrors. Works in
+        //    China, no GitHub API rate limits, and gives the per-platform notes.
+        //    Releases are tagged plain v* (e.g. v2.0.1), so the release and DMG
+        //    URLs are derived directly from the changelog's newest version.
+        let (latestFromChangelog, notes) = await fetchChangelog(platform: "macos", currentVersion: currentVersion)
+        if let latest = latestFromChangelog {
+            let releaseURL = URL(
+                string: "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/tag/v\(latest)"
+            ) ?? URL(string: "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases")!
+            let dmgURL = URL(
+                string: "https://github.com/Francis-Xavier-code/tiktok-douyin-dl/releases/download/v\(latest)/MediaDownloader-macOS-\(latest)-unsigned.dmg"
+            )
+            return AppUpdateResult(
+                currentVersion: currentVersion,
+                latestVersion: latest,
+                releaseURL: releaseURL,
+                dmgURL: dmgURL,
+                changelog: notes
+            )
+        }
+
+        // 2. Fallback: GitHub API releases list (any v* tag).
         let endpoints = [
             "https://api.github.com/repos/Francis-Xavier-code/tiktok-douyin-dl/releases?per_page=10",
             "https://gh-proxy.com/https://api.github.com/repos/Francis-Xavier-code/tiktok-douyin-dl/releases?per_page=10"
