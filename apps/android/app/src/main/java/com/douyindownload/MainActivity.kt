@@ -215,12 +215,45 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             if (!silent) toast("正在检查更新…")
             when (val result = VersionPolicyService.evaluate()) {
-                is VersionPolicyResult.Allow -> {
-                    if (!silent) toast("当前已是最新版本")
-                }
                 is VersionPolicyResult.Block -> showForceUpdateDialog(result)
+                is VersionPolicyResult.Allow -> {
+                    // 策略没拦截时，再对比 changelog.json 里的最新版本，避免"已是最新"的误报。
+                    val update = ChangelogService.fetchUpdateInfo()
+                    val latest = update?.latestVersion ?: ""
+                    if (latest.isNotBlank() && VersionPolicyService.isNewer(
+                            BuildConfig.VERSION_NAME, latest
+                        )
+                    ) {
+                        showUpdateAvailableDialog(latest, update?.changelog ?: "")
+                    } else if (!silent) {
+                        toast("当前已是最新版本")
+                    }
+                }
             }
         }
+    }
+
+    private fun showUpdateAvailableDialog(latestVersion: String, changelog: String) {
+        if (isFinishing || isDestroyed) return
+
+        val message = StringBuilder("发现新版本 v")
+            .append(latestVersion)
+            .append("，当前版本为 v")
+            .append(BuildConfig.VERSION_NAME)
+            .append("。")
+        if (changelog.isNotBlank()) {
+            message.append("\n\n更新日志：\n").append(changelog)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("软件更新")
+            .setMessage(message.toString())
+            .setCancelable(true)
+            .setPositiveButton("立即更新") { _, _ ->
+                startAutoUpdate(VersionPolicyService.apkUrlFor(latestVersion))
+            }
+            .setNegativeButton("稍后再说", null)
+            .show()
     }
 
     private fun showForceUpdateDialog(result: VersionPolicyResult.Block) {

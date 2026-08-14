@@ -100,4 +100,12 @@ object VersionPolicyService {
         }
         return 0
     }
+
+    fun isNewer(a: String, b: String): Boolean = compareVersions(a, b) < 0
+
+    /** 按发布资产命名规则构建指定版本的 APK 下载地址。 */
+    fun apkUrlFor(version: String): String {
+        val v = version.removePrefix("v")
+        return "$DEFAULT_UPDATE_URL/download/v$v/douyin-download-Android-$v.apk"
+    }
 }

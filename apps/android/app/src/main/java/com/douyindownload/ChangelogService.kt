@@ -53,6 +53,61 @@ object ChangelogService {
         "获取日志失败，请检查网络后重试"
     }
 
+    /** 最新版本及其 Android 相关更新内容。失败时返回 null（fail-open）。 */
+    data class UpdateInfo(
+        val latestVersion: String,
+        val changelog: String,
+    )
+
+    /** 获取 changelog.json 中最新的版本号与 Android 相关条目（用于"检查更新"对比）。 */
+    suspend fun fetchUpdateInfo(): UpdateInfo? = withContext(Dispatchers.IO) {
+        for (url in urls) {
+            try {
+                val request = Request.Builder().url(url).build()
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val raw = response.body?.string() ?: ""
+                        parseUpdateInfo(raw)?.let { return@withContext it }
+                    }
+                }
+            } catch (e: Exception) {
+                // 当前源失败，尝试下一个镜像
+            }
+        }
+        null
+    }
+
+    private fun parseUpdateInfo(jsonStr: String): UpdateInfo? {
+        return try {
+            val json = JSONObject(jsonStr)
+            val versions = json.optJSONArray("versions") ?: return null
+            val v = versions.optJSONObject(0) ?: return null
+            val verName = v.optString("version").removePrefix("v")
+            val date = v.optString("date")
+            val entries = v.optJSONObject("entries") ?: return null
+
+            val allEntries = entries.optJSONArray("all")
+            val androidEntries = entries.optJSONArray("android")
+            val hasAll = allEntries != null && allEntries.length() > 0
+            val hasAndroid = androidEntries != null && androidEntries.length() > 0
+
+            val sb = StringBuilder("版本 ").append(verName).append(" (").append(date).append(")：\n")
+            if (allEntries != null) {
+                for (j in 0 until allEntries.length()) {
+                    sb.append("  • ").append(allEntries.optString(j)).append("\n")
+                }
+            }
+            if (androidEntries != null) {
+                for (j in 0 until androidEntries.length()) {
+                    sb.append("  • ").append(androidEntries.optString(j)).append("\n")
+                }
+            }
+            UpdateInfo(verName, sb.toString().trim())
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /** 解析 changelog.json 并提取 [all] 和 [android] 相关条目。 */
     private fun parseJson(jsonStr: String): String {
         return try {
