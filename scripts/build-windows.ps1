@@ -8,7 +8,7 @@ $BrowserCache = Join-Path $RepoRoot "ms-playwright"
 # version.json is the single source of truth (scripts/sync-versions.py); fall
 # back to the last-known value when it is unreadable.
 $VersionFile = Join-Path $RepoRoot "version.json"
-$DefaultVersion = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw | ConvertFrom-Json).main } else { "2.0.1" }
+$DefaultVersion = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw | ConvertFrom-Json).main } else { "2.1.0" }
 $Version = if ([string]::IsNullOrWhiteSpace($env:APP_VERSION)) { $DefaultVersion } else { $env:APP_VERSION }
 
 python -m pip install --upgrade pip

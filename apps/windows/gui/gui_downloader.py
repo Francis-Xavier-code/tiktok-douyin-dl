@@ -929,7 +929,7 @@ class App(tk.Tk):
             import auto_updater
             version = auto_updater.CURRENT_VERSION
         except ImportError:
-            version = "2.0.1"
+            version = "2.1.0"
 
         import webbrowser
         about_win = tk.Toplevel(self)

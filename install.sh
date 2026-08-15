@@ -19,7 +19,7 @@ set -euo pipefail
 # GitHub Repository Configuration
 GITHUB_USER="Francis-Xavier-code"
 GITHUB_REPO="tiktok-douyin-dl"
-RELEASE_TAG="v2.0.1"
+RELEASE_TAG="v2.1.0"
 
 INSTALL_DIR="$HOME/.local/share/tiktok-douyin-dl"
 BIN_DIR="$HOME/.local/bin"

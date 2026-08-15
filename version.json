@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-14T13:00:43Z",
-  "main": "2.0.1",
+  "updated_at": "2026-08-15T11:18:31Z",
+  "main": "2.1.0",
   "android": {
     "versionName": "2.0.1",
     "versionCode": 4

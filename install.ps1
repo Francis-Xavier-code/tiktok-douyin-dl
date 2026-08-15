@@ -33,7 +33,7 @@ $ErrorActionPreference = 'Stop'
 # -----------------------------------------------------------------------------
 $GITHUB_USER = "Francis-Xavier-code"
 $GITHUB_REPO = "tiktok-douyin-dl"
-$RELEASE_TAG = "v2.0.1"
+$RELEASE_TAG = "v2.1.0"
 
 # -----------------------------------------------------------------------------
 # Helpers

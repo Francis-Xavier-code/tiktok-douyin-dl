@@ -183,7 +183,7 @@ enum AppUpdateService {
     private static var currentVersion: String {
         Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "2.0.1"
+        ) as? String ?? "2.1.0"
     }
 
     private static func makeResult(for release: GitHubRelease) -> AppUpdateResult {
