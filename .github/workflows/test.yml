@@ -1,0 +1,40 @@
+name: Tests
+
+# 质量门禁：纯单元测试(无网络无浏览器) + 下载策略 Ed25519 签名校验。
+# 任何 main 分支推送或 PR 都必须通过，否则不允许合入/发版。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    name: Python unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install --quiet pytest pynacl
+      - name: Run pytest (python/)
+        working-directory: python
+        run: python -m pytest -q
+
+  policy-signature:
+    name: download-policy.json signature check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify committed policy carries a valid Ed25519 signature
+        run: |
+          pip install --quiet pynacl
+          python3 scripts/sign-policy.py --verify download-policy.json
