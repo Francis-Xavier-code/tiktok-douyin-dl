@@ -14,7 +14,7 @@
 | **CLI**（Windows/Linux/macOS） | `python/src/media_downloader/` | Python，PyInstaller 单文件 | `MediaDownloader-Windows-x64-CLI-<v>.zip`、`MediaDownloader-Linux-x86_64-<v>.tar.gz`、`MediaDownloader-macOS-arm64-CLI-<v>.zip` | `core/updater.py VERSION`（sync） | 启动时 `cli.py` → `check_for_updates(silent=True)`；`douyin`/`tiktok` 入口另走交互模式 |
 | **Windows GUI** | `apps/windows/gui/`（tkinter + sv-ttk），安装包 `apps/windows/installer/` | Python + Inno Setup | `MediaDownloader-Windows-x64-Setup-<v>.exe` | `gui/auto_updater.py CURRENT_VERSION`（sync） | 启动/手动「检查更新」，读 changelog.json 镜像 |
 | **macOS app** | `apps/macos/`（SwiftUI）+ `apple/MediaDownloaderCore` | Swift / SPM | `MediaDownloader-macOS-<v>-unsigned.dmg` | `AppUpdateService.swift` Bundle fallback（sync）+ Xcode `MARKETING_VERSION` | `AppUpdateService.swift`，主窗口/菜单栏「检查更新」 |
-| **iOS app** | `apps/ios/`（SwiftUI）+ 同一 `apple/` 库 | Swift / SPM | `MediaDownloader-iOS-<v>-unsigned.ipa` | `SettingsView.swift` fallback（sync）+ Xcode `MARKETING_VERSION` | `AppUpdateService.swift`，启动时检查 |
+| **iOS app** | `apps/ios/`（SwiftUI）+ 同一 `apple/` 库 | Swift / SPM | `MediaDownloader-iOS-<v>-unsigned.ipa` | `SettingsView.swift` fallback（sync）+ Xcode `MARKETING_VERSION` | `AppUpdateService.swift`，启动时检查；版本/下载策略逻辑在共享库 `PolicyServices.swift` |
 | **Android** | `apps/android/`（Kotlin + Gradle） | Kotlin | `douyin-download-Android-<v>.apk`（debug 变体） | `build.gradle.kts versionName/versionCode`（sync）——**独立版本线** | 启动时自动检查更新 |
 | **WebUI** | `apps/web/webui.py`（单文件 Gradio） | Python | 不打包、不上 Release，直接 `python webui.py` 跑 | 跟随 python 包 | 无独立更新逻辑 |
 
@@ -100,7 +100,7 @@ git log --oneline -5                          # 最近提交
 
 ### 步骤
 
-1. **改代码** → 跑测试（`cd python && uv run pytest`，61 个用例，无网络无浏览器）。
+1. **改代码** → 跑测试（`cd python && uv run pytest`，72 个用例，无网络无浏览器；CI 的 `test.yml` 会在 push/PR 时强制跑）。
 2. **加 CHANGELOG 条目**：写进当前攒的版本 section（如 `## [2.1.0]`），标签写对该端。
 3. **版本号**：
    - 若还没为这批改动 bump 过 → 改 `version.json` 的 `main` 到下个版本 → `python3 scripts/sync-versions.py`。
@@ -188,7 +188,8 @@ UV_PUBLISH_TOKEN=<pypi-token> uv publish   # 或 twine upload dist/*
 - 平时**只动** `updated_at`（release.sh 自动刷）。`message` 是给用户看的文案，可改。
 - 想强制升级旧版时：`version.json` bump 后跑 `python3 scripts/sync-versions.py --policies`，会把 `platforms.*.min_version`（cli/windows/macos/ios + android）同步成新版本，然后照常发版。
 - `download-policy.json` 的全局 `min_version` 是 1.7.0（历史遗留），per-platform 的 android 是 2.0.0——`--policies` 只同步 android 的 per-platform 字段，全局字段保持不动。
-- 有 `scripts/toggle-download.sh` 可快速开/关下载策略。
+- 有 `scripts/toggle-download.sh` 可快速开/关下载策略（会自动重新 Ed25519 签名）。
+- **所有客户端都验签**：Python 核心（CLI / Windows GUI / WebUI）与共享 Swift 库（iOS / macOS）自 v2.1.0 起与 Android 一样强制 Ed25519 验签，公钥见 `core/policy_verifier.py` / `PolicyServices.swift` / `PolicyVerifier.kt`（三处必须一致）。
 
 ### 紧急停服流程（收到律师函 / 平台投诉 / 账号警告时）
 
@@ -233,7 +234,9 @@ curl -s https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/m
 
 ## 7. 测试与质量门禁
 
-- `cd python && uv run pytest`（本机是 `.venv/bin/python -m pytest`）——**61 个纯单元测试**：无网络、无浏览器、无外部服务。
+- `cd python && uv run pytest`（本机是 `.venv/bin/python -m pytest`）——**72 个纯单元测试**：无网络、无浏览器、无外部服务。
+- **CI 质量门禁**（`.github/workflows/test.yml`）：push 到 main / PR 必须通过 pytest 全量 + `download-policy.json` 的 Ed25519 签名校验。
+- **下载策略签名是强制要求**：`download-policy.json` 的 `updated_at` 属于签名内容，任何修改（toggle-download.sh / release.sh bump）后都必须重新运行 `scripts/sign-policy.py`；未签名/签名失效的策略会被所有客户端（CLI / Windows / macOS / iOS / Android）视为不可信并阻止下载（fail-closed）。`release.sh` 已内置必做签名步骤（私钥缺失会报错终止）。
 - 解析器 fixture 放 `python/tests/fixtures/`，**必须脱敏**（不含 cookie / 私人数据）。
 - Playwright 浏览器只在实际下载时用，测试不触发。
 - 改 `apple/` 共享库后，iOS 和 macOS 两个 Xcode 工程都要能编译（本机无 Xcode 时至少保证语法/API 一致）。

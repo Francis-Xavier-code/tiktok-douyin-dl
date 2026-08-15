@@ -1,16 +1,11 @@
 {
   "schema": 1,
-  "updated_at": "2026-08-14T12:51:13Z",
+  "updated_at": "2026-08-15T11:18:31Z",
   "versions": [
     {
       "version": "2.0.1",
       "date": "2026-08-14",
       "entries": {
-        "all": [
-          "下载量高达200次13 star？ 何意味",
-          "2.0.0版本太稳了，此次更新仅修复windows、maos 、Linux端的cli，给点star下个版本上新UI",
-          "给点star不然软件白做了，😭"
-        ],
         "android": [
           "修复「检查更新」不对比最新版本的问题：改为读取共享 changelog.json 对比最新版本并弹出更新框（附更新日志 + APK 下载），不再永远显示「已是最新版本」。",
           "APK 更新下载增加 gh-proxy / ghproxy 国内镜像兜底：直连 GitHub 失败或限速时自动切换镜像节点下载，避免更新包下载失败。"

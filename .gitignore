@@ -73,3 +73,7 @@ test_extract/
 plan.md
 # Added by code-review-graph
 .code-review-graph/
+
+# Local build/tool caches
+.uv-cache/
+.swift-module-cache/

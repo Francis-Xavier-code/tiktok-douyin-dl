@@ -28,7 +28,7 @@ apple/                   # Shared Swift library (MediaDownloaderCore) for iOS + 
 apps/
   ios/                   # Xcode project, SwiftUI app
   macos/                 # Xcode project, SwiftUI app
-  android/               # Android app (Kotlin, Gradle; Douyin downloader, versioned 0.1.x independently)
+  android/               # Android app (Kotlin, Gradle; Douyin downloader, versioned independently via version.json -> android.*)
   windows/               # Python GUI (gui/) + Inno Setup installer (installer/)
   web/                   # Gradio WebUI (single file webui.py)
 scripts/                 # Build entry points (see Build section)
@@ -50,7 +50,7 @@ version.json             # SINGLE source of truth for all version numbers (scrip
 
 Clients: Windows GUI, macOS/iOS native apps, Android (Kotlin), CLI (Windows/Linux/macOS), WebUI.
 The shared policy/changelog platform keys are: `cli`, `windows`, `macos`, `ios`, `android` (plus `all` for changelog).
-Android versions (0.1.x) are independent of the `media_downloader.__version__` line.
+Android versions are independent of the `media_downloader.__version__` line (currently aligned at 2.0.1 via `version.json` -> `android.*`).
 
 ## Commands
 
@@ -94,7 +94,7 @@ Apple build env vars: `APPLE_VERSION`, `APPLE_BUILD_NUMBER`, `APPLE_OUTPUT_DIR`,
 `./scripts/release.sh` does NOT build locally. It:
 1. Reads version from `media_downloader.__version__`
 2. Verifies the tag doesn't exist and working tree is clean
-3. Bumps `updated_at` in `version-policy.json` and `download-policy.json`
+3. Bumps `updated_at` in `version-policy.json` and `download-policy.json`, then re-signs `download-policy.json` with `scripts/sign-policy.py` (Ed25519; fails loudly when the private key is missing — every client verifies the signature)
 4. Pushes branch + tag → `.github/workflows/release.yml` builds all platforms on GitHub runners
 
 ## Version management
@@ -106,7 +106,7 @@ Version is defined in exactly one place: `version.json` at the repo root.
 ```
 
 - `main` — shared by CLI / Windows GUI / macOS / iOS (matches `media_downloader.__version__`)
-- `android.*` — the Android app versions its own line (0.1.x, independent of main)
+- `android.*` — the Android app versions its own line (independent of main; currently aligned with it)
 - `apple.buildNumber` — `APPLE_BUILD_NUMBER` / `CURRENT_PROJECT_VERSION`
 
 **Bump flow**: edit `version.json` → run `python3 scripts/sync-versions.py` → commit.

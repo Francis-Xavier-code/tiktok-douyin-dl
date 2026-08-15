@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **[全平台]** 下载策略验签补齐：`download-policy.json` 现在强制 Ed25519 验签（与 Android 端一致），未签名或签名无效的策略视为不可信并阻止下载（fail-closed）；新增 `scripts/sign-policy.py` 签发/校验工具，`release.sh` 发版时自动重新签名。
+- **[全平台]** 修复 `media-downloader` 主入口未执行版本策略检查的问题：现在与 `douyin-dl` / `tiktok-dl` 入口一致，EOL 版本启动即被拦截或提示。
+- **[CLI]** 打包版自更新增加 SHA-256 完整性校验：从 GitHub API 尽力获取发布资产 digest（网络/限流不可达时回退为不校验，不影响更新流程）。
+- **[Android]** 修复版本策略忽略 `hard_block` 标志的问题：非硬阻挡策略现在只弹提示框（可稍后再说），不再强制更新。
+- **[Windows]** Windows GUI 下载策略检查增加 Ed25519 验签（复用 Python 核心）。
+- **[iOS]/[macOS]** 版本/下载策略服务逻辑抽到共享库 `MediaDownloaderCore`（消除两端逐行重复），并增加下载策略 Ed25519 验签。
+
+### Changed
+
+- **[WebUI]** 增加下载策略闸门（fail-closed）；支持通过环境变量 `GRADIO_AUTH_USER` / `GRADIO_AUTH_PASS` 开启 HTTP Basic 鉴权。
+- **[全平台]** 清理死代码、调试残留脚本与未引用截图；版本解析统一收敛到 `core/versions.py`（原三处重复实现）。
+- **[全平台]** CI 新增质量门禁：`pytest` 全量单元测试（72 个）+ 下载策略签名校验，main 推送或 PR 必须通过。
+
 ## [2.0.1] - 2026-08-14
 
 ### Added
@@ -12,9 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[CLI]** 统一入口 `media-downloader` 支持自动更新：启动时静默检测新版本并打印本端更新日志（changelog.json 镜像，fail-open）；打包版（frozen）检测到新版本时自动下载并替换自身二进制（与 `douyin` / `tiktok` 入口行为一致），源码运行仅提示不替换。
 - **[CLI]** 修复在线脚本不好看的情况
 - **[Windows]** 修复GUI的打开文件夹显示成函数的BUG。
-- **[全平台]** 下载量高达200次13 star？ 何意味
-- **[全平台]** 2.0.0版本太稳了，此次更新仅修复windows、maos 、Linux端的cli，给点star下个版本上新UI
-- **[全平台]** 给点star不然软件白做了，😭
 - **[macOS]** 检查更新改用共享 changelog.json 优先（GitHub API 兜底），国内网络不再依赖可能被限流/墙的 GitHub API，可稳定检测到新版本。
 - **[Android]** 修复「检查更新」不对比最新版本的问题：改为读取共享 changelog.json 对比最新版本并弹出更新框（附更新日志 + APK 下载），不再永远显示「已是最新版本」。
 - **[Android]** APK 更新下载增加 gh-proxy / ghproxy 国内镜像兜底：直连 GitHub 失败或限速时自动切换镜像节点下载，避免更新包下载失败。
