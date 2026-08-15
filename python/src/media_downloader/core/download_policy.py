@@ -22,7 +22,9 @@ import json
 from typing import Optional
 
 from media_downloader.core.network import http_get_bytes
+from media_downloader.core.policy_verifier import verify_policy_signature
 from media_downloader.core.updater import GITHUB_USER, GITHUB_REPO, VERSION
+from media_downloader.core.versions import parse_version
 from media_downloader.i18n import translate
 
 # One of the platform keys declared in download-policy.json. ``cli`` covers the
@@ -73,15 +75,6 @@ def _t(key: str, **kwargs) -> str:
     return translate(f"cli.common.{key}", **kwargs)
 
 
-def parse_version(v_str: str):
-    """\"1.6.0\" -> (1, 6, 0); unparseable -> (0,)."""
-    import re
-    try:
-        return tuple(int(x) for x in re.findall(r"\d+", v_str))
-    except Exception:
-        return (0,)
-
-
 def fetch_policy() -> Optional[dict]:
     """Try each source in order; return the first valid policy dict, else None.
 
@@ -93,7 +86,10 @@ def fetch_policy() -> Optional[dict]:
             raw = http_get_bytes(url, timeout=_TIMEOUT, verify=True,
                                  headers={"User-Agent": "Mozilla/5.0 download-policy"})
             data = json.loads(raw.decode("utf-8"))
-            if isinstance(data, dict):
+            # Ed25519 gate (same as Android): only accept a policy that carries
+            # a valid signature from the maintainer's key. An unsigned or
+            # tampered file is treated as an unreachable source -> fail-closed.
+            if isinstance(data, dict) and verify_policy_signature(data):
                 return data
         except Exception:
             continue

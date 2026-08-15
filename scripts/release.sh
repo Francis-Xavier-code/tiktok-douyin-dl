@@ -109,6 +109,31 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 1.2 重新签名 download-policy.json（Ed25519）— 必做！
+#     updated_at 属于签名内容，bump 后旧签名必然失效；未签名/签名无效的
+#     策略会被所有客户端（CLI / Windows / macOS / iOS / Android）视为不可信
+#     并阻止下载（fail-closed）。因此私钥缺失时必须显式报错，不能静默发版。
+# ---------------------------------------------------------------------------
+SIGNER="$SCRIPT_DIR/sign-policy.py"
+POLICY_KEY="$REPO_ROOT/secrets/policy-private-key.pem"
+if [[ -f "$SIGNER" ]]; then
+  if [[ -f "$POLICY_KEY" ]]; then
+    "$PYTHON_BIN" "$SIGNER" "$REPO_ROOT/download-policy.json" --key "$POLICY_KEY"
+    git -C "$REPO_ROOT" add "$REPO_ROOT/download-policy.json"
+    if ! git -C "$REPO_ROOT" diff --cached --quiet -- "$REPO_ROOT/download-policy.json"; then
+      git -C "$REPO_ROOT" commit -m "release: re-sign download-policy.json for $VERSION"
+      echo "==> Committed download-policy.json signature"
+    fi
+  else
+    echo "::error:: 未找到私钥 $POLICY_KEY：download-policy.json 无法签名，所有客户端将阻止下载！请先恢复私钥。" >&2
+    exit 1
+  fi
+else
+  echo "::error:: 未找到 $SIGNER：download-policy.json 无法签名，所有客户端将阻止下载！" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
 # 1.5 重新生成 changelog.json（各端共用的机器可读更新日志；单一事实来源为 CHANGELOG.md）
 # ---------------------------------------------------------------------------
 if [[ "${SKIP_POLICY_BUMP:-0}" != "1" ]]; then

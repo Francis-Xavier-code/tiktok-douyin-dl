@@ -71,4 +71,4 @@ fi
 
 echo ""
 echo "✅ 操作完成！请执行以下命令正式生效："
-echo "git add download-policy.json && git commit -m \"policy: toggle download $STATUS\" && git push origin master"
+echo "git add download-policy.json && git commit -m \"policy: toggle download $STATUS\" && git push origin main"

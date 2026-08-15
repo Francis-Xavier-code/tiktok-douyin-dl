@@ -82,6 +82,36 @@ def test_evaluate_issue_url_propagates():
 
 # --- fetch_policy: source fallback + fail-closed ----------------------------
 
+def _signed_policy(monkeypatch, enabled=True, updated_at="2026-08-15T00:00:00Z",
+                   message="ok"):
+    """Build a policy dict signed by an ephemeral test key.
+
+    The module-global public key is patched to the ephemeral keypair so the
+    whole verify path (canonicalize + Ed25519) is exercised for real.
+    """
+    import base64
+
+    import nacl.signing
+
+    from media_downloader.core import policy_verifier as pv
+
+    key = nacl.signing.SigningKey.generate()
+    monkeypatch.setattr(pv, "PUBLIC_KEY_B64",
+                        base64.b64encode(key.verify_key.encode()).decode("ascii"))
+    payload = "\n".join([
+        updated_at,
+        "true" if enabled else "false",
+        message,
+        "0.0.0",
+    ]).encode("utf-8")
+    signature = base64.b64encode(key.sign(payload).signature).decode("ascii")
+    return {
+        "updated_at": updated_at,
+        "signature": signature,
+        "download": {"enabled": enabled, "min_version": "0.0.0", "message": message},
+    }
+
+
 def test_fetch_policy_tries_sources_until_success(monkeypatch):
     import media_downloader.core.download_policy as dp
 
@@ -90,7 +120,7 @@ def test_fetch_policy_tries_sources_until_success(monkeypatch):
     def fake_get(url, *a, **k):
         calls.append(url)
         if "gh-proxy.com" in url:
-            return json.dumps({"download": {"enabled": True}}).encode()
+            return json.dumps(_signed_policy(monkeypatch)).encode()
         raise OSError("unreachable")
 
     monkeypatch.setattr(dp, "http_get_bytes", fake_get)
@@ -100,6 +130,22 @@ def test_fetch_policy_tries_sources_until_success(monkeypatch):
     assert isinstance(result, dict)
     assert result["download"]["enabled"] is True
     assert len(calls) == 2  # direct fails, first mirror wins
+
+
+def test_fetch_policy_rejects_unsigned_or_tampered(monkeypatch):
+    """Signature gate: unsigned or tampered policy is treated as unreachable."""
+    import media_downloader.core.download_policy as dp
+
+    monkeypatch.setattr(dp, "http_get_bytes",
+                        lambda *a, **k: json.dumps({"download": {"enabled": True}}).encode())
+    monkeypatch.setattr(dp, "_SOURCES", ["https://unreachable.invalid/a.json"])
+    assert fetch_policy() is None
+
+    # Tampered content: valid signature over a DIFFERENT payload must fail.
+    signed = _signed_policy(monkeypatch, message="authentic")
+    signed["download"]["message"] = "tampered"
+    monkeypatch.setattr(dp, "http_get_bytes", lambda *a, **k: json.dumps(signed).encode())
+    assert fetch_policy() is None
 
 
 def test_fetch_policy_all_fail_returns_none(monkeypatch):
