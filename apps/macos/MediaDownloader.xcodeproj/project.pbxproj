@@ -17,6 +17,7 @@
 		B00100010000000000000010 /* VersionPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000011 /* VersionPolicyService.swift */; };
 		B00100010000000000000011 /* DownloadPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000012 /* DownloadPolicyService.swift */; };
 		B00100010000000000000012 /* AppUpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000013 /* AppUpdateService.swift */; };
+		B00100010000000000000013 /* PolicyServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000014 /* PolicyServices.swift */; };
 		B00100010000000000000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00200010000000000000010 /* Assets.xcassets */; };
 		/* End PBXBuildFile section */
 
@@ -33,6 +34,7 @@
 		B00200010000000000000011 /* VersionPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionPolicyService.swift; sourceTree = "<group>"; };
 		B00200010000000000000012 /* DownloadPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadPolicyService.swift; sourceTree = "<group>"; };
 		B00200010000000000000013 /* AppUpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateService.swift; sourceTree = "<group>"; };
+		B00200010000000000000014 /* PolicyServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyServices.swift; sourceTree = "<group>"; };
 		B00200010000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
@@ -77,6 +79,7 @@
 				B00200010000000000000004 /* NativeMediaScraper.swift */,
 				B00200010000000000000005 /* MediaDownloadService.swift */,
 				B00200010000000000000006 /* Models.swift */,
+				B00200010000000000000014 /* PolicyServices.swift */,
 			);
 			name = MediaDownloaderCore;
 			path = ../../apple/Sources/MediaDownloaderCore;
@@ -152,6 +155,7 @@
 				B00100010000000000000010 /* VersionPolicyService.swift in Sources */,
 				B00100010000000000000011 /* DownloadPolicyService.swift in Sources */,
 				B00100010000000000000012 /* AppUpdateService.swift in Sources */,
+				B00100010000000000000013 /* PolicyServices.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,7 +200,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MediaDownloader;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xynrin.MediaDownloader.macos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -217,7 +221,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = MediaDownloader;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xynrin.MediaDownloader.macos;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

@@ -216,6 +216,7 @@ class MainActivity : AppCompatActivity() {
             if (!silent) toast("正在检查更新…")
             when (val result = VersionPolicyService.evaluate()) {
                 is VersionPolicyResult.Block -> showForceUpdateDialog(result)
+                is VersionPolicyResult.Nag -> showUpdateNagDialog(result)
                 is VersionPolicyResult.Allow -> {
                     // 策略没拦截时，再对比 changelog.json 里的最新版本，避免"已是最新"的误报。
                     val update = ChangelogService.fetchUpdateInfo()
@@ -252,6 +253,24 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("立即更新") { _, _ ->
                 startAutoUpdate(VersionPolicyService.apkUrlFor(latestVersion))
             }
+            .setNegativeButton("稍后再说", null)
+            .show()
+    }
+
+    /** 软提示：非硬阻挡策略，可稍后再说。 */
+    private fun showUpdateNagDialog(result: VersionPolicyResult.Nag) {
+        if (isFinishing || isDestroyed) return
+
+        val message = StringBuilder(result.message)
+        if (result.changelog.isNotBlank()) {
+            message.append("\n\n更新日志：\n").append(result.changelog)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("发现新版本")
+            .setMessage(message.toString())
+            .setCancelable(true)
+            .setPositiveButton("立即更新") { _, _ -> startAutoUpdate(result.apkUrl) }
             .setNegativeButton("稍后再说", null)
             .show()
     }

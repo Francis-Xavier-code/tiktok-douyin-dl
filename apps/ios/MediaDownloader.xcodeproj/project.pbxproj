@@ -22,6 +22,7 @@
 		A00100010000000000000014 /* DownloadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000015 /* DownloadStore.swift */; };
 		A00100010000000000000015 /* VersionPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000016 /* VersionPolicyService.swift */; };
 		A00100010000000000000016 /* DownloadPolicyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000017 /* DownloadPolicyService.swift */; };
+		A00100010000000000000017 /* PolicyServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00200010000000000000018 /* PolicyServices.swift */; };
 		/* End PBXBuildFile section */
 
 		/* Begin PBXFileReference section */
@@ -42,6 +43,7 @@
 		A00200010000000000000015 /* DownloadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadStore.swift; sourceTree = "<group>"; };
 		A00200010000000000000016 /* VersionPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionPolicyService.swift; sourceTree = "<group>"; };
 		A00200010000000000000017 /* DownloadPolicyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadPolicyService.swift; sourceTree = "<group>"; };
+		A00200010000000000000018 /* PolicyServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolicyServices.swift; sourceTree = "<group>"; };
 		/* End PBXFileReference section */
 
 		/* Begin PBXFrameworksBuildPhase section */
@@ -117,6 +119,7 @@
 				A00200010000000000000008 /* NativeMediaScraper.swift */,
 				A00200010000000000000003 /* MediaDownloadService.swift */,
 				A00200010000000000000002 /* Models.swift */,
+				A00200010000000000000018 /* PolicyServices.swift */,
 			);
 			name = MediaDownloaderCore;
 			path = ../../apple/Sources/MediaDownloaderCore;
@@ -190,6 +193,7 @@
 				A00100010000000000000014 /* DownloadStore.swift in Sources */,
 				A00100010000000000000015 /* VersionPolicyService.swift in Sources */,
 				A00100010000000000000016 /* DownloadPolicyService.swift in Sources */,
+				A00100010000000000000017 /* PolicyServices.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -238,7 +242,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xynrin.MediaDownloader;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -265,7 +269,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xynrin.MediaDownloader;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

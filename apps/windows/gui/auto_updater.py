@@ -9,7 +9,7 @@ import tempfile
 import subprocess
 import tkinter.messagebox as messagebox
 
-CURRENT_VERSION = "2.0.1"
+CURRENT_VERSION = "2.1.0"
 
 # Remote version-policy enforcement (fail-open). Lets the maintainer retire old
 # builds without re-shipping every binary. See version-policy.json / docs.
@@ -105,8 +105,9 @@ def check_download_policy(platform: str = "windows") -> str:
     """Pre-download gate. Returns one of: 'allow', 'disabled', 'version', 'unreachable'.
 
     Tries direct GitHub first, then 9 domestic mirrors in order; the first
-    source that returns valid JSON wins. If EVERY source fails, returns
-    'unreachable' (fail-closed): the caller must block the download.
+    source that returns a VALID, Ed25519-SIGNED policy wins. If EVERY source
+    fails (or every signature check fails), returns 'unreachable' (fail-closed):
+    the caller must block the download.
 
     Supports per-platform overrides: if download.platforms.<platform> exists,
     its values take precedence over the global download settings.
@@ -123,13 +124,22 @@ def check_download_policy(platform: str = "windows") -> str:
         "https://gh.api.99988866.xyz/https://raw.githubusercontent.com/Francis-Xavier-code/tiktok-douyin-dl/main/download-policy.json",
         "https://fastly.jsdelivr.net/gh/Francis-Xavier-code/tiktok-douyin-dl@main/download-policy.json",
     ]
+    # Ed25519 gate (same public key as Android / CLI / macOS / iOS): only accept
+    # a policy that carries a valid maintainer signature. The verifier comes from
+    # the shared Python core; if the core is missing we fail closed (no policy).
+    try:
+        from media_downloader.core.policy_verifier import verify_policy_signature
+    except Exception:
+        verify_policy_signature = None
+
     policy = None
     for url in sources:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=4) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-            if isinstance(data, dict):
+            if isinstance(data, dict) and verify_policy_signature is not None \
+                    and verify_policy_signature(data):
                 policy = data
                 break
         except Exception:

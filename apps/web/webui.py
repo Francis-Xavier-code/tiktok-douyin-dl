@@ -16,15 +16,28 @@ except ImportError:
     print("请先安装 WebUI 依赖: pip install -e './python[web]'")
     raise SystemExit(1)
 
+from media_downloader.core.download_policy import check_download_allowed
 from media_downloader.platforms.douyin import download_douyin_links
 from media_downloader.platforms.tiktok import download_tiktok_links
 
 OUTPUT_DIR = os.environ.get("DOWNLOAD_DIR", "/downloads")
 
+# 可选鉴权：设置 GRADIO_AUTH_USER / GRADIO_AUTH_PASS 后，WebUI 需要登录才能使用。
+_AUTH_USER = os.environ.get("GRADIO_AUTH_USER", "")
+_AUTH_PASS = os.environ.get("GRADIO_AUTH_PASS", "")
+_AUTH = (("admin", _AUTH_PASS),) if _AUTH_USER == "admin" else None
+if _AUTH_USER and _AUTH_USER != "admin":
+    _AUTH = ((_AUTH_USER, _AUTH_PASS),)
+
 
 def start_download(platform: str, text: str) -> str:
     if not text.strip():
         return "❌ 请输入链接"
+
+    # 下载策略闸门（fail-closed，Ed25519 验签）：策略不可达/无效时拒绝下载。
+    decision = check_download_allowed(silent=True)
+    if decision.is_block:
+        return f"❌ 下载已暂停：{decision.message}"
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     links = [line.strip() for line in text.splitlines() if line.strip()]
@@ -58,4 +71,6 @@ with gr.Blocks(title="MediaDownloader WebUI", theme=gr.themes.Soft()) as demo:
 
 if __name__ == "__main__":
     print(f"[*] WebUI 下载目录: {OUTPUT_DIR}")
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    if _AUTH:
+        print("[*] 已启用 HTTP Basic 鉴权（GRADIO_AUTH_USER / GRADIO_AUTH_PASS）")
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=False, auth=_AUTH)

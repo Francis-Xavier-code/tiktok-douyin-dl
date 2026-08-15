@@ -10,6 +10,14 @@ import java.util.concurrent.TimeUnit
 /** 版本策略结果。 */
 sealed class VersionPolicyResult {
     object Allow : VersionPolicyResult()
+    /** 软提示（hard_block=false）：旧版本仍可用，仅提醒升级。 */
+    data class Nag(
+        val message: String,
+        val updateUrl: String,
+        val apkUrl: String,
+        val changelog: String = ""
+    ) : VersionPolicyResult()
+    /** 硬阻挡（hard_block=true）：旧版本被强制拦截，必须更新。 */
     data class Block(
         val message: String, 
         val updateUrl: String, 
@@ -73,6 +81,9 @@ object VersionPolicyService {
             return@withContext VersionPolicyResult.Allow
         }
 
+        // 与 iOS/macOS/CLI 一致：hard_block=false 时只是软提示（Nag），不强制更新。
+        val hardBlock = entry.optBoolean("hard_block", false)
+
         val message = p.optString("message", "").ifBlank {
             "发现新版本，请升级到最新版本以获得最佳体验。"
         }
@@ -86,7 +97,11 @@ object VersionPolicyService {
             p.optString("changelog", "")
         }
         
-        VersionPolicyResult.Block(message, updateUrl, apkUrl, changelog)
+        return@withContext if (hardBlock) {
+            VersionPolicyResult.Block(message, updateUrl, apkUrl, changelog)
+        } else {
+            VersionPolicyResult.Nag(message, updateUrl, apkUrl, changelog)
+        }
     }
 
     private fun compareVersions(a: String, b: String): Int {
