@@ -17,22 +17,15 @@ import os
 import sys
 
 from media_downloader.core.network import http_get_bytes, http_json
+from media_downloader.core.versions import parse_version
 from media_downloader.i18n import translate
 
 # --- release identity (single source of truth) ---
-VERSION = "2.0.1"
+VERSION = "2.1.0"
 GITHUB_USER = "Francis-Xavier-code"
 GITHUB_REPO = "tiktok-douyin-dl"
 
 _WEB_LATEST = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
-
-
-def parse_version(v_str: str):
-    """Parse a version string into a comparable tuple of ints."""
-    try:
-        return tuple(int(x) for x in __import__("re").findall(r"\d+", v_str))
-    except Exception:
-        return (0,)
 
 
 def _t(key: str, **kwargs) -> str:
@@ -202,17 +195,59 @@ def check_for_updates(silent: bool = False) -> None:
 
         download_url = _cli_asset_url(latest_version)
         if download_url:
+            # Best-effort integrity check: the GitHub API exposes the asset
+            # digest; when the API is unreachable (rate limit / CN network) we
+            # fall back to an unverified update rather than breaking the flow.
+            expected_sha256 = _resolve_asset_sha256(
+                latest_version, os.path.basename(download_url)
+            )
             if getattr(sys, "frozen", False):
                 if not silent:
                     confirm = input(_t("update_confirm")).strip().lower()
                     if confirm in ["y", "yes"]:
-                        perform_self_update(download_url)
+                        perform_self_update(download_url, expected_sha256=expected_sha256)
                 else:
                     # Silent mode: auto-update frozen binary without prompting.
-                    perform_self_update(download_url)
+                    perform_self_update(download_url, expected_sha256=expected_sha256)
             else:
                 if not silent:
                     print(_t("source_mode_update_skipped"))
+
+
+def _resolve_asset_sha256(version: str, asset_name: str) -> str | None:
+    """Best-effort SHA-256 digest (hex) of a release asset via the GitHub API.
+
+    Returns None on any failure (rate limit, network, missing digest) so the
+    self-update path degrades gracefully to an unverified download. The digest
+    only helps when GitHub itself is reachable, but that is also the host we
+    download the archive from.
+    """
+    import json as _json
+    import urllib.request as _request
+
+    api_url = (
+        f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}"
+        f"/releases/tags/v{version}"
+    )
+    try:
+        req = _request.Request(
+            api_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 updater",
+                "Accept": "application/vnd.github+json",
+            },
+        )
+        with _request.urlopen(req, timeout=8) as resp:
+            release = _json.loads(resp.read().decode("utf-8"))
+        for asset in release.get("assets") or []:
+            if asset.get("name") == asset_name:
+                digest = str(asset.get("digest") or "").strip()
+                if digest.startswith("sha256:"):
+                    return digest[len("sha256:"):].strip().lower()
+                return None
+    except Exception:
+        return None
+    return None
 
 
 def _cli_asset_url(version: str) -> str:

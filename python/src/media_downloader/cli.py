@@ -62,6 +62,12 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     except Exception:
         pass
     try:
+        # 版本策略硬拦（fail-open）：与 douyin-dl / tiktok-dl 入口行为一致
+        from media_downloader.core.version_policy import check_version_policy
+        check_version_policy(silent=True)
+    except Exception:
+        pass
+    try:
         platform = Platform(args.platform) if args.platform else detect_platform(args.share_text)
     except ValueError as error:
         parser.error(str(error))

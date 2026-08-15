@@ -23,6 +23,7 @@ from typing import Optional
 
 from media_downloader.core.network import http_get_bytes
 from media_downloader.core.updater import GITHUB_USER, GITHUB_REPO, VERSION
+from media_downloader.core.versions import parse_version
 from media_downloader.i18n import translate
 
 # One of the platform keys declared in version-policy.json. ``cli`` covers the
@@ -71,15 +72,6 @@ def _read_cache() -> Optional[dict]:
         return data if isinstance(data, dict) else None
     except Exception:
         return None
-
-
-def parse_version(v_str: str):
-    """\"1.6.0\" -> (1, 6, 0); unparseable -> (0,)."""
-    import re
-    try:
-        return tuple(int(x) for x in re.findall(r"\d+", v_str))
-    except Exception:
-        return (0,)
 
 
 def fetch_policy() -> Optional[dict]:

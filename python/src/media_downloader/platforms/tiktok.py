@@ -130,11 +130,6 @@ def process_single(url, browser, output_base, index, total):
         if not aweme_id:
             aweme_id = str(int(time.time()))
 
-        # 获取作者信息用于归档 (不再创建子文件夹)
-        author_info = item.get("author", {})
-        author_name = author_info.get("nickname") or author_info.get("uniqueId") or "Unknown_Author"
-        author_clean = re.sub(r'[\\/*?:"<>|]', "", str(author_name)).replace("\n", " ").replace("\r", " ").strip()[:30]
-
         video_info = item.get("video", {})
         play_addr = video_info.get("playAddr")
 

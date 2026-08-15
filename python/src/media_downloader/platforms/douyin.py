@@ -290,11 +290,6 @@ def process_single(url, browser, output_base, index, total):
         if not aweme_id:
             raise Exception("Failed to parse aweme_id.")
 
-        # 获取作者信息用于归档（不再创建子文件夹，仅做保留）
-        author_info = aweme_detail.get('author', {})
-        author_name = author_info.get('nickname') or author_info.get('sec_uid') or "Unknown_Author"
-        author_clean = re.sub(r'[\\/*?:"<>|]', "", str(author_name)).strip()[:30]
-
         # 1. 优先提取图文相册
         images = aweme_detail.get('images')
         if images and isinstance(images, list):

@@ -21,6 +21,7 @@ FIXTURES = {
     "python/src/media_downloader/core/updater.py": 'VERSION = "1.8.2"\n',
     "apps/windows/gui/auto_updater.py": 'CURRENT_VERSION = "1.8.2"\n',
     "install.sh": 'RELEASE_TAG="v1.8.2"\n',
+    "install.ps1": '$RELEASE_TAG = "v1.8.2"\n',
     "Casks/tiktok-douyin-dl.rb": 'cask "tiktok-douyin-dl"\nversion "1.8.2"\n',
     "apps/macos/MediaDownloader.xcodeproj/project.pbxproj":
         "MARKETING_VERSION = 1.8.2;\nMARKETING_VERSION = 1.8.2;\n",
@@ -35,6 +36,14 @@ FIXTURES = {
         '        ) as? String ?? "1"\n',
     "apps/android/app/build.gradle.kts":
         '        versionCode = 4\n        versionName = "0.1.3"\n',
+    "apps/windows/gui/gui_downloader.py":
+        '        except ImportError:\n            version = "1.8.2"\n',
+    "apps/ios/scripts/build-unsigned-ipa.sh":
+        'VERSION="${IOS_VERSION:-1.8.2}"\n',
+    "scripts/build-apple.sh":
+        '|| echo 1.8.2\n',
+    "scripts/build-windows.ps1":
+        'else { "1.8.2" }\n',
     "version-policy.json": json.dumps({
         "platforms": {
             "cli": {"min_version": "1.8.2", "hard_block": True},

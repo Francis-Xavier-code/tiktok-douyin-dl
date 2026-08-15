@@ -17,10 +17,6 @@ def format_size(byte_count: int) -> str:
     return f"{size:.2f} TB"
 
 
-def unique_urls(urls: List[str]) -> List[str]:
-    """Remove duplicate URLs while preserving their first-seen order."""
-    return list(dict.fromkeys(urls))
-
 
 def download(request: DownloadRequest) -> None:
     """Dispatch one request to the selected platform implementation."""

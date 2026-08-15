@@ -42,17 +42,6 @@ def http_get_bytes(url: str, *, timeout: int = 60, verify: bool = True,
         return resp.read()
 
 
-def http_stream(url: str, *, chunk_size: int = 8192, timeout: int = 60,
-                verify: bool = True, headers: Optional[dict] = None):
-    """Yield response body in chunks (for large media/asset downloads)."""
-    req = urllib.request.Request(url, headers=headers or {"User-Agent": DEFAULT_UA})
-    with urllib.request.urlopen(req, timeout=timeout, context=_context(verify)) as resp:
-        while True:
-            chunk = resp.read(chunk_size)
-            if not chunk:
-                break
-            yield chunk
-
 
 def verify_sha256(path: str, expected: str) -> bool:
     """Return True when the file at ``path`` matches ``expected`` (hex digest)."""
